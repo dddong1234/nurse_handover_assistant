@@ -1,139 +1,192 @@
-from copy import deepcopy
+class InMemoryPatientRepo:
 
-from numpy.random.mtrand import beta
+    def __init__(self, data):
+        self.data = data
 
-patient_data_template = {
-    "patient_id": None,
-    "diagnosis": [],
-    "vitals":{
-        "systolic":None,
-        "diastolic":None,
-        "respiratory":None,
-        "heartrate":None,
-        "saturation":None,
-        "body_temperature":None
-    },
-    "medication":{},
-    "퇴원예정일": [],
-    "notes":[]
+    def get_data(self):
+        return self.data
+
+    def update_category(self, category, value):
+        self.data[category] = value
+
+    def update_vital(self, key, value):
+        self.data["vitals"][key] = value
+
+    def add_medication(self, name, info):
+        self.data["medication"][name] = info
+
+    def delete_medication(self, name):
+        self.data["medication"].pop(name, None)
+
+
+def handle_vitals(repo):
+    vitals = repo.get_data()["vitals"]
+    keys = list(vitals.keys())
+
+    key = input(f"{keys} 선택 (0:취소): ")
+    if key == "0" or key not in keys:
+        return
+
+    val = input("새 값: ")
+    repo.update_vital(key, val)
+
+
+def handle_medication(repo):
+    action = input("add / delete / edit (0:취소): ")
+
+    if action == "0":
+        return
+
+    if action == "add":
+        name = input("약 이름: ")
+        route = input("경로: ")
+        freq = input("빈도: ")
+        repo.add_medication(name, [route, freq])
+
+    elif action == "delete":
+        name = input("삭제할 약: ")
+        repo.delete_medication(name)
+
+    elif action == "edit":
+        name = input("수정할 약: ")
+        route = input("경로: ")
+        freq = input("빈도: ")
+        repo.add_medication(name, [route, freq])
+
+
+def handle_list(repo, category):
+    data = repo.get_data()[category]
+
+    mode = input("append / overwrite (0:취소): ")
+
+    if mode == "0":
+        return
+
+    if mode == "append":
+        data.append(input("추가 값: "))
+    elif mode == "overwrite":
+        repo.update_category(category, [input("새 값: ")])
+
+
+handlers = {
+    "vitals": handle_vitals,
+    "medication": handle_medication,
+    "diagnosis": lambda repo: handle_list(repo, "diagnosis"),
+    "notes": lambda repo: handle_list(repo, "notes"),
+    "discharge_date": lambda repo: handle_list(repo, "discharge_date"),
 }
 
-patients = ("POO1")
+def detect_changes(prev, curr):
+    changes = []
 
-patient_data = {
+    # vitals 비교
+    for k in prev["vitals"]:
+        if prev["vitals"][k] != curr["vitals"][k]:
+            changes.append(f"{k} 변화: {prev['vitals'][k]} → {curr['vitals'][k]}")
+
+    # medication 비교
+    prev_meds = set(prev["medication"].keys())
+    curr_meds = set(curr["medication"].keys())
+
+    added = curr_meds - prev_meds
+    removed = prev_meds - curr_meds
+
+    for m in added:
+        changes.append(f"{m} 신규 처방")
+
+    for m in removed:
+        changes.append(f"{m} 중단")
+
+    return changes
+
+def print_handover(changes):
+    print("\n=== 인수인계 ===")
+    if not changes:
+        print("변화 없음")
+    else:
+        for c in changes:
+            print(f"- {c}")
+
+
+from copy import deepcopy
+
+
+def main(patient_data):
+
+    prev_data = deepcopy(patient_data)
+    repo = InMemoryPatientRepo(deepcopy(patient_data))
+
+    while True:
+        keys = list(repo.get_data().keys())
+
+        category = input(f"{keys} 선택 (0:종료): ")
+
+        if category == "0":
+            break
+
+        if category not in handlers:
+            print("잘못된 입력")
+            continue
+
+        handler = handlers[category]
+        handler(repo)
+
+    curr_data = repo.get_data()
+
+    changes = detect_changes(prev_data, curr_data)
+
+    print_handover(changes)
+
+
+prev_patient_data = {
     "patient_id": "P001",
     "diagnosis": [
         "acute pharyngitis"
     ],
-    "vitals":{
-        "systolic":120,
-        "diastolic":80,
-        "respiratory":16,
-        "heartrate":80,
-        "saturation":99,
-        "body_temperature":37.7
+    "vitals": {
+        "systolic": 120,
+        "diastolic": 80,
+        "respiratory": 16,
+        "heartrate": 78,
+        "saturation": 98,
+        "body_temperature": 37.5
     },
-    "medication":{
-        "이부프로펜 400mg":["PO","TID"],
-        "광동라푸티딘":["PO","BID"],
-        "타세놀정이알 500mg":["PO","TID"]
+    "medication": {
+        "이부프로펜 400mg": ["PO", "TID"],
+        "광동라푸티딘": ["PO", "BID"]
     },
     "discharge_date": [],
-    "notes":[]
+    "notes": []
 }
 
-#cli를 통해 변경원하는 카테고리를 입력받는 함수
-def get_category_input(keys) -> str:
-    category =  input(
-        f"카테고리 : {keys} \n 변경할 카테고리를 선택하세요(취소: 0) :"
-    )
-    return category
+curr_patient_data = {
+    "patient_id": "P001",
+    "diagnosis": [
+        "acute pharyngitis",
+    "hypertension"   # 추가됨
+    ],
+    "vitals": {
+        "systolic": 150,      # 상승
+        "diastolic": 95,      # 상승
+        "respiratory": 18,    # 증가
+        "heartrate": 92,      # 증가
+        "saturation": 97,     # 약간 감소
+        "body_temperature": 38.2  # 발열
+    },
+    "medication": {
+        "이부프로펜 400mg": ["PO", "TID"],   # 유지
+        "타세놀정 500mg": ["PO", "TID"],     # 신규 추가
+        # "광동라푸티딘" → 삭제됨
+    },
+    "discharge_date": ["2026-05-10"],  # 새로 입력
+    "notes": [
+        "환자 인후통 호소",
+        "미열 지속"
+    ]
+}
 
-#입력받은 카테고리 유효성 검사를 위한 함수
-# 0 입력시 취소(break), 오타 or 없는거 입력하면 (continue)
-def validate_category(category,keys) -> bool:
-    if category == "0":
-        print("취소되었습니다.")
-        return False
-    if category not in keys:
-        print("카테고리가 잘못되었습니다, 다시 입력해주세요(취소: 0)")
-        return False
+changes = detect_changes(prev_patient_data, curr_patient_data)
+print_handover(changes)
+# if __name__ == "__main__":
+#     main(prev_patient_data)
 
-# def get_subkey(data, category):
-#     subkey = data[category]
-#     if isinstance(subkey,dict):
-#         return list(subkey.keys())
-#     elif
-
-
-def get_input_data():
-    repeat = True
-    prev_patient_data = patient_data
-    keys = list(prev_patient_data.keys())
-    curr_patient_data = deepcopy(prev_patient_data)
-
-    while repeat:
-        category = input(
-            f"카테고리 : {keys} \n 변경할 카테고리를 선택하세요(취소: 0) :"
-        )
-
-        if category == "0":
-            print("취소되었습니다.")
-            break
-
-        if category not in keys:
-            print("카테고리가 잘못되었습니다, 다시 입력해주세요(취소: 0)")
-            continue
-
-        value = prev_patient_data[category]
-        edited_value = curr_patient_data[category]
-        if isinstance(value,dict):
-            subkeys = list(value.keys())
-            while True:
-                category_dict = input(
-                    f"카테고리 : {subkeys} \n 변경할 카테고리를 선택하세요(취소: 0) :"
-                )
-                if category_dict not in subkeys:
-                    print("입력이 잘못되었습니다. 다시 입력해주세요.")
-                    continue
-                elif category_dict == "0":
-                    print("취소되었습니다.")
-                    break
-                else:
-                    print(f"변경하실 category는 '{category_dict}' 입니다 계속하시겠습니까?")
-                    y_or_n = input("(y/n):")
-                    if y_or_n == "y":
-                        category_value = input("")
-        else:
-            while True:
-                append_or_overwrite = input("추가하시겠습니까? 덮어씌우시겠습니까?\n입력(append/overwrite/0):")
-                if append_or_overwrite == "0":
-                    break
-                if append_or_overwrite == "append":
-                    data_append = input("추가하실 내용을 입력해주세요:")
-                    edited_value.append(data_append)
-                    break
-                elif append_or_overwrite == "overwrite":
-                    data_overwrite = input("덮어 씌울 내용을 입력해주세요:")
-                    curr_patient_data[category] = [data_overwrite]
-                    break
-                else:
-                    print("입력이 잘못되었습니다. 다시입력해주세요.")
-                    continue
-        print(prev_patient_data)
-        print(curr_patient_data)
-
-
-
-
-
-
-def detect_changes(prev_data,curr_data):
-    handover_list = []
-
-    return handover_list
-
-def print_handover(handover_list:list):
-    pass
-
-get_input_data()
