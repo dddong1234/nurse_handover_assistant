@@ -1,0 +1,30 @@
+{
+  "patient_id": "P005",
+  "name": "이정호",
+  "room_no": "503",
+  "age": 61,
+  "sex": "M",
+  "diagnosis": [
+    "type 2 diabetes mellitus",
+    "right diabetic foot ulcer"
+  ],
+  "vitals": {
+    "systolic": 142,
+    "diastolic": 88,
+    "heartrate": 86,
+    "respiratory": 18,
+    "saturation": 98,
+    "body_temperature": 37.8
+  },
+  "medications": [
+    {
+      "name": "인슐린 글라진",
+      "route": "SC",
+      "frequency": "HS"
+    }
+  ],
+  "notes": [
+    "족부 드레싱 유지"
+  ],
+  "updated_at": "2026-06-28T05:00:00+09:00"
+}

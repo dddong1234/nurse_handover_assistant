@@ -1,0 +1,34 @@
+{
+  "patient_id": "P002",
+  "name": "김영희",
+  "room_no": "302",
+  "age": 54,
+  "sex": "F",
+  "diagnosis": [
+    "community acquired pneumonia"
+  ],
+  "vitals": {
+    "systolic": 132,
+    "diastolic": 80,
+    "heartrate": 96,
+    "respiratory": 24,
+    "saturation": 89,
+    "body_temperature": 38.4
+  },
+  "medications": [
+    {
+      "name": "세프트리악손 2g",
+      "route": "IV",
+      "frequency": "QD"
+    },
+    {
+      "name": "산소 3L/min",
+      "route": "NC",
+      "frequency": "continuous"
+    }
+  ],
+  "notes": [
+    "기침과 객담 지속"
+  ],
+  "updated_at": "2026-06-28T07:00:00+09:00"
+}

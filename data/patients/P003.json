@@ -1,0 +1,40 @@
+{
+  "patient_id": "P003",
+  "name": "박민수",
+  "room_no": "401",
+  "age": 72,
+  "sex": "M",
+  "diagnosis": [
+    "acute decompensated heart failure",
+    "atrial fibrillation"
+  ],
+  "vitals": {
+    "systolic": 150,
+    "diastolic": 90,
+    "heartrate": 170,
+    "respiratory": 30,
+    "saturation": 85,
+    "body_temperature": 38.9
+  },
+  "medications": [
+    {
+      "name": "푸로세미드 20mg",
+      "route": "IV",
+      "frequency": "BID"
+    },
+    {
+      "name": "디곡신 0.125mg",
+      "route": "PO",
+      "frequency": "QD"
+    },
+    {
+      "name": "와파린 3mg",
+      "route": "PO",
+      "frequency": "QD"
+    }
+  ],
+  "notes": [
+    "바이탈 흔들림"
+  ],
+  "updated_at": "2026-06-28T01:42:47+09:00"
+}

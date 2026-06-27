@@ -1,0 +1,34 @@
+{
+  "patient_id": "P004",
+  "name": "최수진",
+  "room_no": "205",
+  "age": 38,
+  "sex": "F",
+  "diagnosis": [
+    "post appendectomy"
+  ],
+  "vitals": {
+    "systolic": 122,
+    "diastolic": 74,
+    "heartrate": 88,
+    "respiratory": 20,
+    "saturation": 98,
+    "body_temperature": 37.1
+  },
+  "medications": [
+    {
+      "name": "세파졸린 1g",
+      "route": "IV",
+      "frequency": "TID"
+    },
+    {
+      "name": "트라마돌 50mg",
+      "route": "IV",
+      "frequency": "Q8H"
+    }
+  ],
+  "notes": [
+    "수술 후 회복실에서 병동 전동"
+  ],
+  "updated_at": "2026-06-27T22:00:00+09:00"
+}
