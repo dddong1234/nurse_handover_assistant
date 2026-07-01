@@ -9,22 +9,27 @@
     "right diabetic foot ulcer"
   ],
   "vitals": {
-    "systolic": 142,
-    "diastolic": 88,
-    "heartrate": 86,
+    "systolic": 138,
+    "diastolic": 86,
+    "heartrate": 84,
     "respiratory": 18,
     "saturation": 98,
-    "body_temperature": 37.8
+    "body_temperature": 37.5
   },
   "medications": [
     {
       "name": "인슐린 글라진",
       "route": "SC",
       "frequency": "HS"
+    },
+    {
+      "name": "피페라실린/타조박탐",
+      "route": "IV",
+      "frequency": "Q8H"
     }
   ],
   "notes": [
     "족부 드레싱 유지"
   ],
-  "updated_at": "2026-06-28T05:00:00+09:00"
+  "updated_at": "2026-07-02T07:00:00+09:00"
 }

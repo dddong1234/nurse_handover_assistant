@@ -9,12 +9,12 @@
     "atrial fibrillation"
   ],
   "vitals": {
-    "systolic": 150,
-    "diastolic": 90,
-    "heartrate": 170,
-    "respiratory": 30,
-    "saturation": 85,
-    "body_temperature": 38.9
+    "systolic": 104,
+    "diastolic": 64,
+    "heartrate": 108,
+    "respiratory": 20,
+    "saturation": 95,
+    "body_temperature": 36.7
   },
   "medications": [
     {
@@ -34,7 +34,8 @@
     }
   ],
   "notes": [
-    "바이탈 흔들림"
+    "야간 호흡곤란 호소",
+    "하지 부종 관찰"
   ],
-  "updated_at": "2026-06-28T01:42:47+09:00"
+  "updated_at": "2026-07-02T09:20:00+09:00"
 }

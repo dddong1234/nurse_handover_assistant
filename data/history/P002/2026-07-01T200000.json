@@ -8,12 +8,12 @@
     "community acquired pneumonia"
   ],
   "vitals": {
-    "systolic": 128,
-    "diastolic": 76,
-    "heartrate": 88,
-    "respiratory": 22,
-    "saturation": 92,
-    "body_temperature": 37.8
+    "systolic": 132,
+    "diastolic": 80,
+    "heartrate": 96,
+    "respiratory": 24,
+    "saturation": 89,
+    "body_temperature": 38.4
   },
   "medications": [
     {
@@ -22,19 +22,14 @@
       "frequency": "QD"
     },
     {
-      "name": "아세틸시스테인",
-      "route": "NEB",
-      "frequency": "TID"
-    },
-    {
-      "name": "산소 2L/min",
+      "name": "산소 3L/min",
       "route": "NC",
       "frequency": "continuous"
     }
   ],
   "notes": [
     "기침과 객담 지속",
-    "산소 유지 필요"
+    "발열 지속"
   ],
-  "updated_at": "2026-07-02T09:10:00+09:00"
+  "updated_at": "2026-07-01T20:00:00+09:00"
 }

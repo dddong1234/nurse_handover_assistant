@@ -8,9 +8,9 @@
     "post appendectomy"
   ],
   "vitals": {
-    "systolic": 122,
-    "diastolic": 74,
-    "heartrate": 88,
+    "systolic": 124,
+    "diastolic": 78,
+    "heartrate": 92,
     "respiratory": 20,
     "saturation": 98,
     "body_temperature": 37.1
@@ -28,7 +28,7 @@
     }
   ],
   "notes": [
-    "수술 후 회복실에서 병동 전동"
+    "수술 후 통증 NRS 6"
   ],
-  "updated_at": "2026-06-27T22:00:00+09:00"
+  "updated_at": "2026-07-01T18:00:00+09:00"
 }

@@ -6,6 +6,7 @@ import streamlit as st
 
 from services.handover_service import detect_changes, generate_handover_text
 from services.patient_service import build_patient_data, patient_to_form_data, summarize_patient_row
+from services.query_service import run_query
 from services.storage_service import (
     clear_patient_data,
     get_latest_snapshot,
@@ -20,6 +21,7 @@ def _init_session_state() -> None:
     st.session_state.setdefault("selected_patient_id", None)
     st.session_state.setdefault("handover_result", "")
     st.session_state.setdefault("new_patient_mode", False)
+    st.session_state.setdefault("query_result", None)
 
 
 def _bootstrap_demo_data() -> None:
@@ -144,6 +146,7 @@ def _render_dataset_controls() -> None:
         reset_demo_dataset()
         st.session_state.selected_patient_id = "P001"
         st.session_state.handover_result = ""
+        st.session_state.query_result = None
         st.success("샘플 데이터셋을 기본 상태로 다시 생성했습니다.")
         st.rerun()
 
@@ -151,6 +154,7 @@ def _render_dataset_controls() -> None:
         clear_patient_data()
         st.session_state.selected_patient_id = None
         st.session_state.handover_result = ""
+        st.session_state.query_result = None
         st.success("환자 데이터와 snapshot을 모두 초기화했습니다.")
         st.rerun()
 
@@ -208,6 +212,52 @@ def _render_handover_tab() -> None:
         st.json(current_patient)
 
 
+def _render_query_tab() -> None:
+    st.subheader("질의 조회")
+    st.caption("자연어로 환자 변동사항이나 키워드 환자를 검색합니다.")
+
+    example_queries = [
+        "P001 환자 변동사항 뭐야?",
+        "어제 열났던 환자 찾아줘",
+        "와파린 투약 중인 환자 보여줘",
+        "통증 메모 있는 환자 찾아줘",
+    ]
+    st.markdown("예시 질문")
+    for example in example_queries:
+        st.code(example, language="text")
+
+    with st.form("query_form", clear_on_submit=False):
+        question = st.text_input("질문 입력", placeholder="예: 어제 열났던 환자 찾아줘")
+        submitted = st.form_submit_button("조회")
+
+    if submitted:
+        st.session_state.query_result = run_query(question)
+
+    result = st.session_state.query_result
+    if not result:
+        return
+
+    status = result.get("status")
+    if status == "success":
+        st.success(result.get("message", ""))
+    elif status == "no_results":
+        st.info(result.get("message", ""))
+    else:
+        st.warning(result.get("message", ""))
+
+    if result.get("details"):
+        st.caption(result["details"])
+
+    if result.get("title"):
+        st.markdown(f"### {result['title']}")
+
+    if result.get("message") and status == "success" and "\n" in result["message"]:
+        st.code(result["message"], language="text")
+
+    if result.get("results"):
+        st.dataframe(result["results"], use_container_width=True, hide_index=True)
+
+
 def main() -> None:
     st.set_page_config(page_title="Nurse Handover Assistant", layout="wide")
     _init_session_state()
@@ -217,7 +267,9 @@ def main() -> None:
     st.caption("EMR 스타일 입력, JSON 저장, 인수인계 변화 요약 MVP")
     _render_dataset_controls()
 
-    tab_input, tab_list, tab_handover = st.tabs(["환자 입력", "환자 목록", "인수인계"])
+    tab_input, tab_list, tab_handover, tab_query = st.tabs(
+        ["환자 입력", "환자 목록", "인수인계", "질의 조회"]
+    )
 
     with tab_input:
         _render_patient_form()
@@ -225,6 +277,8 @@ def main() -> None:
         _render_patient_list()
     with tab_handover:
         _render_handover_tab()
+    with tab_query:
+        _render_query_tab()
 
 
 if __name__ == "__main__":

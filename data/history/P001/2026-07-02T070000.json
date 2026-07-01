@@ -8,12 +8,12 @@
     "acute pharyngitis"
   ],
   "vitals": {
-    "systolic": 120,
-    "diastolic": 80,
-    "heartrate": 78,
-    "respiratory": 16,
+    "systolic": 138,
+    "diastolic": 88,
+    "heartrate": 86,
+    "respiratory": 17,
     "saturation": 98,
-    "body_temperature": 37.5
+    "body_temperature": 37.9
   },
   "medications": [
     {
@@ -25,5 +25,5 @@
   "notes": [
     "인후통 호소"
   ],
-  "updated_at": "2026-06-28T07:00:00+09:00"
+  "updated_at": "2026-07-02T07:00:00+09:00"
 }

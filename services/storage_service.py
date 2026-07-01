@@ -13,16 +13,42 @@ DATA_DIR = BASE_DIR / "data"
 PATIENTS_DIR = DATA_DIR / "patients"
 HISTORY_DIR = DATA_DIR / "history"
 
+def _demo_record(
+    patient_id: str,
+    name: str,
+    room_no: str,
+    age: int,
+    sex: str,
+    diagnosis: list[str],
+    vitals: dict[str, Any],
+    medications: list[dict[str, str]],
+    notes: list[str],
+    updated_at: str,
+) -> dict[str, Any]:
+    return {
+        "patient_id": patient_id,
+        "name": name,
+        "room_no": room_no,
+        "age": age,
+        "sex": sex,
+        "diagnosis": diagnosis,
+        "vitals": vitals,
+        "medications": medications,
+        "notes": notes,
+        "updated_at": updated_at,
+    }
+
+
 DEMO_DATASET = {
     "patients": {
-        "P001": {
-            "patient_id": "P001",
-            "name": "홍길동",
-            "room_no": "301",
-            "age": 67,
-            "sex": "M",
-            "diagnosis": ["acute pharyngitis", "hypertension"],
-            "vitals": {
+        "P001": _demo_record(
+            "P001",
+            "홍길동",
+            "301",
+            67,
+            "M",
+            ["acute pharyngitis", "hypertension"],
+            {
                 "systolic": 150,
                 "diastolic": 95,
                 "heartrate": 92,
@@ -30,21 +56,21 @@ DEMO_DATASET = {
                 "saturation": 97,
                 "body_temperature": 38.2,
             },
-            "medications": [
+            [
                 {"name": "이부프로펜 400mg", "route": "PO", "frequency": "TID"},
                 {"name": "타세놀정 500mg", "route": "PO", "frequency": "TID"},
             ],
-            "notes": ["인후통 호소", "미열 지속"],
-            "updated_at": "2026-06-28T09:00:00+09:00",
-        },
-        "P002": {
-            "patient_id": "P002",
-            "name": "김영희",
-            "room_no": "302",
-            "age": 54,
-            "sex": "F",
-            "diagnosis": ["community acquired pneumonia"],
-            "vitals": {
+            ["인후통 호소", "미열 지속"],
+            "2026-07-02T09:00:00+09:00",
+        ),
+        "P002": _demo_record(
+            "P002",
+            "김영희",
+            "302",
+            54,
+            "F",
+            ["community acquired pneumonia"],
+            {
                 "systolic": 128,
                 "diastolic": 76,
                 "heartrate": 88,
@@ -52,22 +78,22 @@ DEMO_DATASET = {
                 "saturation": 92,
                 "body_temperature": 37.8,
             },
-            "medications": [
+            [
                 {"name": "세프트리악손 2g", "route": "IV", "frequency": "QD"},
                 {"name": "아세틸시스테인", "route": "NEB", "frequency": "TID"},
                 {"name": "산소 2L/min", "route": "NC", "frequency": "continuous"},
             ],
-            "notes": ["기침과 객담 지속", "산소 유지 필요"],
-            "updated_at": "2026-06-28T09:10:00+09:00",
-        },
-        "P003": {
-            "patient_id": "P003",
-            "name": "박민수",
-            "room_no": "401",
-            "age": 72,
-            "sex": "M",
-            "diagnosis": ["acute decompensated heart failure", "atrial fibrillation"],
-            "vitals": {
+            ["기침과 객담 지속", "산소 유지 필요"],
+            "2026-07-02T09:10:00+09:00",
+        ),
+        "P003": _demo_record(
+            "P003",
+            "박민수",
+            "401",
+            72,
+            "M",
+            ["acute decompensated heart failure", "atrial fibrillation"],
+            {
                 "systolic": 104,
                 "diastolic": 64,
                 "heartrate": 108,
@@ -75,22 +101,22 @@ DEMO_DATASET = {
                 "saturation": 95,
                 "body_temperature": 36.7,
             },
-            "medications": [
+            [
                 {"name": "푸로세미드 20mg", "route": "IV", "frequency": "BID"},
                 {"name": "디곡신 0.125mg", "route": "PO", "frequency": "QD"},
                 {"name": "와파린 3mg", "route": "PO", "frequency": "QD"},
             ],
-            "notes": ["야간 호흡곤란 호소", "하지 부종 관찰"],
-            "updated_at": "2026-06-28T09:20:00+09:00",
-        },
-        "P004": {
-            "patient_id": "P004",
-            "name": "최수진",
-            "room_no": "205",
-            "age": 38,
-            "sex": "F",
-            "diagnosis": ["post appendectomy"],
-            "vitals": {
+            ["야간 호흡곤란 호소", "하지 부종 관찰"],
+            "2026-07-02T09:20:00+09:00",
+        ),
+        "P004": _demo_record(
+            "P004",
+            "최수진",
+            "205",
+            38,
+            "F",
+            ["post appendectomy"],
+            {
                 "systolic": 118,
                 "diastolic": 72,
                 "heartrate": 76,
@@ -98,21 +124,21 @@ DEMO_DATASET = {
                 "saturation": 99,
                 "body_temperature": 36.5,
             },
-            "medications": [
+            [
                 {"name": "세파졸린 1g", "route": "IV", "frequency": "TID"},
                 {"name": "트라마돌 50mg", "route": "IV", "frequency": "PRN"},
             ],
-            "notes": ["복강경 수술 후 통증 감소", "보행 시작"],
-            "updated_at": "2026-06-28T08:40:00+09:00",
-        },
-        "P005": {
-            "patient_id": "P005",
-            "name": "이정호",
-            "room_no": "503",
-            "age": 61,
-            "sex": "M",
-            "diagnosis": ["type 2 diabetes mellitus", "right diabetic foot ulcer"],
-            "vitals": {
+            ["복강경 수술 후 통증 감소", "보행 시작"],
+            "2026-07-02T08:40:00+09:00",
+        ),
+        "P005": _demo_record(
+            "P005",
+            "이정호",
+            "503",
+            61,
+            "M",
+            ["type 2 diabetes mellitus", "right diabetic foot ulcer"],
+            {
                 "systolic": 136,
                 "diastolic": 84,
                 "heartrate": 82,
@@ -120,47 +146,64 @@ DEMO_DATASET = {
                 "saturation": 98,
                 "body_temperature": 37.2,
             },
-            "medications": [
+            [
                 {"name": "인슐린 글라진", "route": "SC", "frequency": "HS"},
                 {"name": "피페라실린/타조박탐", "route": "IV", "frequency": "Q8H"},
             ],
-            "notes": ["족부 드레싱 유지", "혈당 조절 필요"],
-            "updated_at": "2026-06-28T09:30:00+09:00",
-        },
+            ["족부 드레싱 유지", "혈당 조절 필요"],
+            "2026-07-02T09:30:00+09:00",
+        ),
     },
     "history": {
         "P001": {
-            "2026-06-28T070000": {
-                "patient_id": "P001",
-                "name": "홍길동",
-                "room_no": "301",
-                "age": 67,
-                "sex": "M",
-                "diagnosis": ["acute pharyngitis"],
-                "vitals": {
-                    "systolic": 120,
-                    "diastolic": 80,
-                    "heartrate": 78,
+            "2026-07-01T210000": _demo_record(
+                "P001",
+                "홍길동",
+                "301",
+                67,
+                "M",
+                ["acute pharyngitis"],
+                {
+                    "systolic": 122,
+                    "diastolic": 82,
+                    "heartrate": 80,
                     "respiratory": 16,
                     "saturation": 98,
-                    "body_temperature": 37.5,
+                    "body_temperature": 37.4,
                 },
-                "medications": [
-                    {"name": "이부프로펜 400mg", "route": "PO", "frequency": "TID"}
-                ],
-                "notes": ["인후통 호소"],
-                "updated_at": "2026-06-28T07:00:00+09:00",
-            }
+                [{"name": "이부프로펜 400mg", "route": "PO", "frequency": "BID"}],
+                ["인후통 시작"],
+                "2026-07-01T21:00:00+09:00",
+            ),
+            "2026-07-02T070000": _demo_record(
+                "P001",
+                "홍길동",
+                "301",
+                67,
+                "M",
+                ["acute pharyngitis"],
+                {
+                    "systolic": 138,
+                    "diastolic": 88,
+                    "heartrate": 86,
+                    "respiratory": 17,
+                    "saturation": 98,
+                    "body_temperature": 37.9,
+                },
+                [{"name": "이부프로펜 400mg", "route": "PO", "frequency": "TID"}],
+                ["인후통 호소"],
+                "2026-07-02T07:00:00+09:00",
+            ),
         },
         "P002": {
-            "2026-06-28T070000": {
-                "patient_id": "P002",
-                "name": "김영희",
-                "room_no": "302",
-                "age": 54,
-                "sex": "F",
-                "diagnosis": ["community acquired pneumonia"],
-                "vitals": {
+            "2026-07-01T200000": _demo_record(
+                "P002",
+                "김영희",
+                "302",
+                54,
+                "F",
+                ["community acquired pneumonia"],
+                {
                     "systolic": 132,
                     "diastolic": 80,
                     "heartrate": 96,
@@ -168,84 +211,170 @@ DEMO_DATASET = {
                     "saturation": 89,
                     "body_temperature": 38.4,
                 },
-                "medications": [
+                [
                     {"name": "세프트리악손 2g", "route": "IV", "frequency": "QD"},
                     {"name": "산소 3L/min", "route": "NC", "frequency": "continuous"},
                 ],
-                "notes": ["기침과 객담 지속"],
-                "updated_at": "2026-06-28T07:00:00+09:00",
-            }
+                ["기침과 객담 지속", "발열 지속"],
+                "2026-07-01T20:00:00+09:00",
+            ),
+            "2026-07-02T060000": _demo_record(
+                "P002",
+                "김영희",
+                "302",
+                54,
+                "F",
+                ["community acquired pneumonia"],
+                {
+                    "systolic": 130,
+                    "diastolic": 78,
+                    "heartrate": 92,
+                    "respiratory": 23,
+                    "saturation": 91,
+                    "body_temperature": 38.0,
+                },
+                [
+                    {"name": "세프트리악손 2g", "route": "IV", "frequency": "QD"},
+                    {"name": "산소 2L/min", "route": "NC", "frequency": "continuous"},
+                ],
+                ["기침과 객담 지속"],
+                "2026-07-02T06:00:00+09:00",
+            ),
         },
         "P003": {
-            "2026-06-28T060000": {
-                "patient_id": "P003",
-                "name": "박민수",
-                "room_no": "401",
-                "age": 72,
-                "sex": "M",
-                "diagnosis": ["acute decompensated heart failure"],
-                "vitals": {
-                    "systolic": 112,
+            "2026-07-01T220000": _demo_record(
+                "P003",
+                "박민수",
+                "401",
+                72,
+                "M",
+                ["acute decompensated heart failure"],
+                {
+                    "systolic": 114,
                     "diastolic": 68,
                     "heartrate": 118,
                     "respiratory": 24,
                     "saturation": 93,
                     "body_temperature": 36.8,
                 },
-                "medications": [
+                [
                     {"name": "푸로세미드 20mg", "route": "IV", "frequency": "QD"},
                     {"name": "와파린 3mg", "route": "PO", "frequency": "QD"},
                 ],
-                "notes": ["야간 호흡곤란 호소"],
-                "updated_at": "2026-06-28T06:00:00+09:00",
-            }
+                ["야간 호흡곤란 호소"],
+                "2026-07-01T22:00:00+09:00",
+            ),
+            "2026-07-02T060000": _demo_record(
+                "P003",
+                "박민수",
+                "401",
+                72,
+                "M",
+                ["acute decompensated heart failure"],
+                {
+                    "systolic": 108,
+                    "diastolic": 66,
+                    "heartrate": 112,
+                    "respiratory": 22,
+                    "saturation": 94,
+                    "body_temperature": 36.7,
+                },
+                [
+                    {"name": "푸로세미드 20mg", "route": "IV", "frequency": "BID"},
+                    {"name": "와파린 3mg", "route": "PO", "frequency": "QD"},
+                ],
+                ["야간 호흡곤란 호소", "소변량 증가"],
+                "2026-07-02T06:00:00+09:00",
+            ),
         },
         "P004": {
-            "2026-06-27T220000": {
-                "patient_id": "P004",
-                "name": "최수진",
-                "room_no": "205",
-                "age": 38,
-                "sex": "F",
-                "diagnosis": ["post appendectomy"],
-                "vitals": {
-                    "systolic": 122,
-                    "diastolic": 74,
-                    "heartrate": 88,
+            "2026-07-01T180000": _demo_record(
+                "P004",
+                "최수진",
+                "205",
+                38,
+                "F",
+                ["post appendectomy"],
+                {
+                    "systolic": 124,
+                    "diastolic": 78,
+                    "heartrate": 92,
                     "respiratory": 20,
                     "saturation": 98,
                     "body_temperature": 37.1,
                 },
-                "medications": [
+                [
                     {"name": "세파졸린 1g", "route": "IV", "frequency": "TID"},
                     {"name": "트라마돌 50mg", "route": "IV", "frequency": "Q8H"},
                 ],
-                "notes": ["수술 후 회복실에서 병동 전동"],
-                "updated_at": "2026-06-27T22:00:00+09:00",
-            }
+                ["수술 후 통증 NRS 6"],
+                "2026-07-01T18:00:00+09:00",
+            ),
+            "2026-07-02T060000": _demo_record(
+                "P004",
+                "최수진",
+                "205",
+                38,
+                "F",
+                ["post appendectomy"],
+                {
+                    "systolic": 120,
+                    "diastolic": 74,
+                    "heartrate": 84,
+                    "respiratory": 18,
+                    "saturation": 99,
+                    "body_temperature": 36.8,
+                },
+                [
+                    {"name": "세파졸린 1g", "route": "IV", "frequency": "TID"},
+                    {"name": "트라마돌 50mg", "route": "IV", "frequency": "PRN"},
+                ],
+                ["통증 감소", "침상 가장자리 앉기 시행"],
+                "2026-07-02T06:00:00+09:00",
+            ),
         },
         "P005": {
-            "2026-06-28T050000": {
-                "patient_id": "P005",
-                "name": "이정호",
-                "room_no": "503",
-                "age": 61,
-                "sex": "M",
-                "diagnosis": ["type 2 diabetes mellitus", "right diabetic foot ulcer"],
-                "vitals": {
+            "2026-07-01T190000": _demo_record(
+                "P005",
+                "이정호",
+                "503",
+                61,
+                "M",
+                ["type 2 diabetes mellitus", "right diabetic foot ulcer"],
+                {
                     "systolic": 142,
                     "diastolic": 88,
                     "heartrate": 86,
                     "respiratory": 18,
                     "saturation": 98,
-                    "body_temperature": 37.8,
+                    "body_temperature": 37.9,
                 },
-                "medications": [
-                    {"name": "인슐린 글라진", "route": "SC", "frequency": "HS"}
+                [{"name": "인슐린 글라진", "route": "SC", "frequency": "HS"}],
+                ["족부 드레싱 유지", "상처 삼출물 관찰"],
+                "2026-07-01T19:00:00+09:00",
+            ),
+            "2026-07-02T070000": _demo_record(
+                "P005",
+                "이정호",
+                "503",
+                61,
+                "M",
+                ["type 2 diabetes mellitus", "right diabetic foot ulcer"],
+                {
+                    "systolic": 138,
+                    "diastolic": 86,
+                    "heartrate": 84,
+                    "respiratory": 18,
+                    "saturation": 98,
+                    "body_temperature": 37.5,
+                },
+                [
+                    {"name": "인슐린 글라진", "route": "SC", "frequency": "HS"},
+                    {"name": "피페라실린/타조박탐", "route": "IV", "frequency": "Q8H"},
                 ],
-                "notes": ["족부 드레싱 유지"],
-                "updated_at": "2026-06-28T05:00:00+09:00",
-            }
+                ["족부 드레싱 유지"],
+                "2026-07-02T07:00:00+09:00",
+            ),
         },
     },
 }
@@ -337,3 +466,25 @@ def get_latest_snapshot(patient_id: str) -> dict[str, Any] | None:
         return None
 
     return json.loads(snapshots[-1].read_text(encoding="utf-8"))
+
+
+def load_patient_history(patient_id: str) -> list[dict[str, Any]]:
+    _ensure_data_dirs()
+    history_dir = _history_dir(patient_id)
+    if not history_dir.exists():
+        return []
+
+    snapshots = []
+    for path in sorted(history_dir.glob("*.json")):
+        snapshots.append(json.loads(path.read_text(encoding="utf-8")))
+
+    return sorted(snapshots, key=lambda item: item.get("updated_at", ""))
+
+
+def load_patient_timeline(patient_id: str) -> list[dict[str, Any]]:
+    timeline = load_patient_history(patient_id)
+    current = load_patient(patient_id)
+    if current is not None:
+        timeline.append(current)
+
+    return sorted(timeline, key=lambda item: item.get("updated_at", ""))

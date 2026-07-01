@@ -8,12 +8,12 @@
     "post appendectomy"
   ],
   "vitals": {
-    "systolic": 118,
-    "diastolic": 72,
-    "heartrate": 76,
+    "systolic": 120,
+    "diastolic": 74,
+    "heartrate": 84,
     "respiratory": 18,
     "saturation": 99,
-    "body_temperature": 36.5
+    "body_temperature": 36.8
   },
   "medications": [
     {
@@ -28,8 +28,8 @@
     }
   ],
   "notes": [
-    "복강경 수술 후 통증 감소",
-    "보행 시작"
+    "통증 감소",
+    "침상 가장자리 앉기 시행"
   ],
-  "updated_at": "2026-07-02T08:40:00+09:00"
+  "updated_at": "2026-07-02T06:00:00+09:00"
 }

@@ -5,15 +5,14 @@
   "age": 72,
   "sex": "M",
   "diagnosis": [
-    "acute decompensated heart failure",
-    "atrial fibrillation"
+    "acute decompensated heart failure"
   ],
   "vitals": {
-    "systolic": 104,
-    "diastolic": 64,
-    "heartrate": 108,
-    "respiratory": 20,
-    "saturation": 95,
+    "systolic": 108,
+    "diastolic": 66,
+    "heartrate": 112,
+    "respiratory": 22,
+    "saturation": 94,
     "body_temperature": 36.7
   },
   "medications": [
@@ -23,11 +22,6 @@
       "frequency": "BID"
     },
     {
-      "name": "디곡신 0.125mg",
-      "route": "PO",
-      "frequency": "QD"
-    },
-    {
       "name": "와파린 3mg",
       "route": "PO",
       "frequency": "QD"
@@ -35,7 +29,7 @@
   ],
   "notes": [
     "야간 호흡곤란 호소",
-    "하지 부종 관찰"
+    "소변량 증가"
   ],
-  "updated_at": "2026-06-28T09:20:00+09:00"
+  "updated_at": "2026-07-02T06:00:00+09:00"
 }

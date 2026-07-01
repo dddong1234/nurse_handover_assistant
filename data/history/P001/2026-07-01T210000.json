@@ -1,0 +1,29 @@
+{
+  "patient_id": "P001",
+  "name": "홍길동",
+  "room_no": "301",
+  "age": 67,
+  "sex": "M",
+  "diagnosis": [
+    "acute pharyngitis"
+  ],
+  "vitals": {
+    "systolic": 122,
+    "diastolic": 82,
+    "heartrate": 80,
+    "respiratory": 16,
+    "saturation": 98,
+    "body_temperature": 37.4
+  },
+  "medications": [
+    {
+      "name": "이부프로펜 400mg",
+      "route": "PO",
+      "frequency": "BID"
+    }
+  ],
+  "notes": [
+    "인후통 시작"
+  ],
+  "updated_at": "2026-07-01T21:00:00+09:00"
+}
