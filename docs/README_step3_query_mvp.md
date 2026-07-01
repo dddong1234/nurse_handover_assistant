@@ -169,6 +169,105 @@ Step 3 이후에는 아래 순서로 확장할 수 있다.
 4. orders / imaging / labs 스키마 확장
 5. OpenAI 기반 인수인계 문장화와 질의 응답 통합
 
+## 후속 MVP 개발 계획
+
+Step 3 이후의 후속 MVP는 OpenAI API를 검색 엔진 자체로 쓰기보다,
+기존 deterministic 로직 위에 `표현`과 `질문 해석` 계층을 추가하는 방향으로 진행한다.
+
+우선순위는 아래와 같다.
+
+### 1. 인수인계 문장화
+
+목표:
+
+- 기존 `detect_changes()` 결과를 더 읽기 쉬운 한국어 인수인계 문장으로 변환
+
+원칙:
+
+- 변화 검출은 기존 코드가 담당한다
+- LLM은 문장 재작성만 담당한다
+- 환자 원문 전체가 아니라 `changes` 중심의 축약 payload만 전달한다
+- API 실패 시 기존 rule-based bullet 결과로 fallback 한다
+
+예상 구현:
+
+- `services/openai_service.py`
+- `generate_ai_handover(changes, patient_context)`
+
+### 2. 질의형 질문 parser
+
+목표:
+
+- 현재의 규칙 기반 질문 해석을 더 자연스러운 자유 질문까지 확장
+
+원칙:
+
+- LLM은 질문을 `intent + filters` 구조로 파싱만 한다
+- 실제 환자 검색과 판정은 기존 Python 코드가 담당한다
+- 구조화 결과는 JSON schema 기반으로 검증한다
+
+예상 구현:
+
+- `parse_query_to_filters(question, supported_schema)`
+- 예: `어제 열났던 환자 중 산소 쓰는 사람` -> 발열 + 투약/산소 조건 필터
+
+### 3. 검색 결과 설명 생성
+
+목표:
+
+- 조회 결과가 여러 명일 때 테이블만 보여주지 않고 요약 문장을 함께 제공
+
+원칙:
+
+- 모델이 검색 결과를 새로 찾는 것이 아니라,
+  이미 검색된 결과를 설명 형태로 압축한다
+- 수치와 약물명은 원본 그대로 유지한다
+
+예상 구현:
+
+- `summarize_query_results(question, results)`
+
+### 4. 미지원 질의 응답 고도화
+
+목표:
+
+- 현재는 단순히 `조회되지 않는 항목`만 보여주지만,
+  이후에는 사용 가능한 대체 질의를 함께 안내
+
+예:
+
+- `CT 촬영한 환자` -> `현재는 CT/검사 오더 필드가 없어 조회할 수 없습니다. 대신 진단명, 투약, 메모, 활력징후 기반 조회는 가능합니다.`
+
+## API 키 관리 계획
+
+OpenAI API를 붙일 때 키 관리는 아래 원칙을 따른다.
+
+### 로컬 개발
+
+- `.env` 파일에 `OPENAI_API_KEY` 저장
+- 앱 시작 시 `python-dotenv` 또는 명시적 환경 변수 로딩으로 사용
+
+### Streamlit Community Cloud
+
+- GitHub에 키를 올리지 않는다
+- Streamlit Cloud의 `Secrets`에 `OPENAI_API_KEY` 저장
+- 앱에서는 `st.secrets["OPENAI_API_KEY"]`로 읽는다
+
+### 공통 원칙
+
+- API 키는 코드에 하드코딩하지 않는다
+- `.env`는 git에 포함하지 않는다
+- 키가 없으면 AI 기능을 비활성화하고 기존 deterministic 기능만 유지한다
+
+## 설계 원칙
+
+후속 MVP에서도 아래 원칙을 유지한다.
+
+1. 사실 검색과 변화 검출은 코드가 담당한다
+2. LLM은 문장화, 질문 해석, 결과 요약에만 사용한다
+3. 없는 데이터를 LLM이 추정해서 답하지 않도록 제한한다
+4. AI 기능은 항상 fallback 가능한 선택 계층으로 유지한다
+
 ## 구현 시 주의점
 
 1. 질의형 조회도 MVP 단계에서는 스키마 기반 deterministic 검색으로 제한하는 것이 안전하다
