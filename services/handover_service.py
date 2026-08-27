@@ -359,6 +359,154 @@ def build_handover_comparison(
     return result
 
 
+_SUMMARY_RECOMMENDATION = "간호사가 확인할 후속 항목을 입력하세요."
+_SUMMARY_BACKGROUND_CATEGORIES = {"diagnosis", "medications"}
+_SUMMARY_ASSESSMENT_CATEGORIES = {"vitals", "notes"}
+_SUMMARY_CHANGE_ACTIONS = {
+    "added": "추가",
+    "removed": "삭제",
+    "modified": "변경",
+}
+
+
+def _summary_value(value: Any) -> str:
+    if value is None:
+        return "없음"
+    if isinstance(value, dict):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if isinstance(value, list):
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    return str(value)
+
+
+def _summary_change_text(change: dict[str, Any]) -> str:
+    category = str(change.get("category", "기타 변화"))
+    change_type = str(change.get("changeType", "modified"))
+    label = str(change.get("label", ""))
+    previous_value = change.get("previousValue")
+    current_value = change.get("currentValue")
+
+    if category == "diagnosis":
+        subject = "진단"
+        value_for_added = label or _summary_value(current_value)
+        value_for_removed = label or _summary_value(previous_value)
+    elif category == "medications":
+        subject = "투약"
+        value_for_added = _summary_value(current_value)
+        value_for_removed = _summary_value(previous_value)
+    elif category == "vitals":
+        subject = label or "활력징후"
+        value_for_added = _summary_value(current_value)
+        value_for_removed = _summary_value(previous_value)
+    elif category == "notes":
+        subject = "간호 메모"
+        value_for_added = label or _summary_value(current_value)
+        value_for_removed = label or _summary_value(previous_value)
+    else:
+        subject = label or category
+        value_for_added = _summary_value(current_value)
+        value_for_removed = _summary_value(previous_value)
+
+    if change_type == "added":
+        return f"{subject} 추가: {value_for_added}"
+    if change_type == "removed":
+        return f"{subject} 삭제: {value_for_removed}"
+    return (
+        f"{subject} 변경: {_summary_value(previous_value)}"
+        f" -> {_summary_value(current_value)}"
+    )
+
+
+def _summary_situation_text(comparison: dict[str, Any], change_count: int) -> str:
+    patient = comparison.get("patient", {})
+    if not isinstance(patient, dict):
+        patient = {}
+    patient_id = patient.get("id")
+    patient_name = patient.get("name")
+    if patient_name and patient_id:
+        patient_text = f"{patient_name}({patient_id})"
+    else:
+        patient_text = str(patient_name or patient_id or "환자")
+
+    room = patient.get("room")
+    room_text = f"{room}호" if room else "병실 정보 없음"
+
+    interval = comparison.get("interval", {})
+    if not isinstance(interval, dict):
+        interval = {}
+    previous_recorded_at = interval.get("previousRecordedAt") or "이전 기록 없음"
+    current_recorded_at = interval.get("currentRecordedAt") or "현재 기록 시각 없음"
+    interval_text = f"{previous_recorded_at} -> {current_recorded_at}"
+    return (
+        f"{patient_text}, {room_text}, {interval_text} 사이에 "
+        f"총 {change_count}건의 변화가 확인되었습니다."
+    )
+
+
+def build_deterministic_summary(comparison: dict[str, Any]) -> dict[str, Any]:
+    """Build an evidence-preserving SBAR summary without clinical inference."""
+
+    if not isinstance(comparison, dict):
+        comparison = {}
+
+    raw_changes = comparison.get("changes", [])
+    changes = [change for change in raw_changes if isinstance(change, dict)]
+    evidence_ids = [
+        change["id"]
+        for change in changes
+        if "id" in change and change["id"] is not None
+    ]
+
+    def item(change: dict[str, Any]) -> dict[str, Any]:
+        change_id = change.get("id")
+        return {
+            "text": _summary_change_text(change),
+            "evidenceIds": [change_id] if change_id is not None else [],
+        }
+
+    background = [
+        item(change)
+        for change in changes
+        if change.get("category") in _SUMMARY_BACKGROUND_CATEGORIES
+    ]
+    assessment = [
+        item(change)
+        for change in changes
+        if change.get("category") in _SUMMARY_ASSESSMENT_CATEGORIES
+    ]
+    assessment.extend(
+        item(change)
+        for change in changes
+        if change.get("category") not in _SUMMARY_BACKGROUND_CATEGORIES
+        and change.get("category") not in _SUMMARY_ASSESSMENT_CATEGORIES
+    )
+
+    raw_warnings = comparison.get("dataWarnings", [])
+    if isinstance(raw_warnings, (list, tuple, set)):
+        warnings = sorted({str(warning) for warning in raw_warnings if warning})
+    else:
+        warnings = []
+
+    return {
+        "mode": "deterministic",
+        "sections": {
+            "situation": [
+                {
+                    "text": _summary_situation_text(comparison, len(changes)),
+                    "evidenceIds": evidence_ids.copy(),
+                }
+            ],
+            "background": background,
+            "assessment": assessment,
+            "recommendation": [
+                {"text": _SUMMARY_RECOMMENDATION, "evidenceIds": []}
+            ],
+        },
+        "evidenceIds": evidence_ids,
+        "warnings": warnings,
+    }
+
+
 def _medication_map(medications: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return {
         med.get("name"): med
