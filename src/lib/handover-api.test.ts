@@ -68,6 +68,27 @@ describe("comparePatientRecords", () => {
     );
   });
 
+  it("rejects before fetch when the caller signal is already aborted", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(comparePatientRecords(previousRecord, currentRecord, controller.signal)).rejects.toMatchObject({
+      code: "ABORTED",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("normalizes a fetch AbortError to the typed aborted result", async () => {
+    const controller = new AbortController();
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(Object.assign(new Error("aborted"), { name: "AbortError" })));
+
+    await expect(comparePatientRecords(previousRecord, currentRecord, controller.signal)).rejects.toMatchObject({
+      code: "ABORTED",
+    });
+  });
+
   it("rejects malformed and structurally invalid JSON responses", async () => {
     const malformed = { ok: true, status: 200, json: vi.fn().mockRejectedValue(new SyntaxError("bad json")) };
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(malformed));

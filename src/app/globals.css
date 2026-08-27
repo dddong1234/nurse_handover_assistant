@@ -795,8 +795,9 @@ ul {
 }
 
 .change-card.is-evidence-focused {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgb(23 105 224 / 18%);
+  outline: 3px solid rgb(23 105 224 / 18%);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px rgb(23 105 224 / 18%);
 }
 
 .priority-border-high {
@@ -1350,6 +1351,11 @@ ul {
   border-color: var(--primary);
   background: var(--primary);
   color: var(--surface);
+}
+
+.review-check input:focus-visible + .custom-checkbox {
+  outline: 3px solid rgb(23 105 224 / 28%);
+  outline-offset: 2px;
 }
 
 .review-check input:disabled + .custom-checkbox {

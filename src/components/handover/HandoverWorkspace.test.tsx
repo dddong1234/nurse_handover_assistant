@@ -440,4 +440,173 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     await user.click(checkbox);
     expect(reviewButton).toBeEnabled();
   });
+
+  it("preserves a reviewed API snapshot and avoids refetching when revisiting the patient", async () => {
+    const responses = buildDemoWorkspaceData();
+    const first = responses[0];
+    const second = responses[1];
+    if (!first || !second) throw new Error("데모 응답이 없습니다.");
+    const reviewedServerResponse = structuredClone(first);
+    reviewedServerResponse.summary.sections.situation[0]!.text = "검토 당시 서버 요약";
+    const lateReplacement = structuredClone(first);
+    lateReplacement.summary.sections.situation[0]!.text = "검토 후 재요청 요약";
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: vi.fn().mockResolvedValue(reviewedServerResponse) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: vi.fn().mockResolvedValue(lateReplacement) });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(
+      <HandoverWorkspace
+        data={responses}
+        recordPairs={{
+          P001: { previous: { patient_id: "P001" }, current: { patient_id: "P001" } },
+        }}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText("검토 당시 서버 요약")).toBeInTheDocument());
+    await user.click(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" }));
+    await user.click(screen.getByRole("button", { name: "검토 완료" }));
+    await user.click(screen.getByRole("button", { name: /김영희/ }));
+    await user.click(screen.getByRole("button", { name: /홍길동/ }));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("검토 당시 서버 요약")).toBeInTheDocument();
+    expect(screen.queryByText("검토 후 재요청 요약")).not.toBeInTheDocument();
+    expect(screen.getByText("검토 완료", { selector: ".queue-status" })).toBeInTheDocument();
+  });
+
+  it("keeps a settled fallback pair cached when revisiting the patient", async () => {
+    const responses = buildDemoWorkspaceData();
+    const first = responses[0];
+    const second = responses[1];
+    if (!first || !second) throw new Error("데모 응답이 없습니다.");
+    const fetchMock = vi.fn().mockRejectedValue(new Error("network"));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(
+      <HandoverWorkspace
+        data={responses}
+        recordPairs={{
+          P001: { previous: { patient_id: "P001" }, current: { patient_id: "P001" } },
+        }}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText("서버 요약을 불러오지 못해 검증된 데모 결과를 표시합니다.")).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /김영희/ }));
+    await user.click(screen.getByRole("button", { name: /홍길동/ }));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("서버 요약을 불러오지 못해 검증된 데모 결과를 표시합니다.")).toBeInTheDocument();
+  });
+
+  it("clears a prior API override before showing the immutable fixture after a changed-pair failure", async () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+    const fixtureText = response.summary.sections.situation[0]!.text;
+    const serverResponse = structuredClone(response);
+    serverResponse.summary.sections.situation[0]!.text = "이전 성공 서버 요약";
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: vi.fn().mockResolvedValue(serverResponse) })
+      .mockRejectedValueOnce(new Error("network"));
+    vi.stubGlobal("fetch", fetchMock);
+    const firstPair = { previous: { patient_id: "P001" }, current: { patient_id: "P001", updated_at: "first" } };
+    const changedPair = { previous: { patient_id: "P001" }, current: { patient_id: "P001", updated_at: "second" } };
+    const { rerender } = render(<HandoverWorkspace data={[response]} recordPairs={{ P001: firstPair }} />);
+
+    await waitFor(() => expect(screen.getByText("이전 성공 서버 요약")).toBeInTheDocument());
+    rerender(<HandoverWorkspace data={[response]} recordPairs={{ P001: changedPair }} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("서버 요약을 불러오지 못해 검증된 데모 결과를 표시합니다.")).toBeInTheDocument();
+    });
+    expect(screen.getByText(fixtureText)).toBeInTheDocument();
+    expect(screen.queryByText("이전 성공 서버 요약")).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("locks editing immediately when the selected patient receives a replacement pair", async () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+    const secondRequest = createDeferred<{
+      ok: boolean;
+      status: number;
+      json: () => Promise<unknown>;
+    }>();
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: vi.fn().mockResolvedValue(response) })
+      .mockReturnValueOnce(secondRequest.promise);
+    vi.stubGlobal("fetch", fetchMock);
+    const firstPair = { previous: { patient_id: "P001" }, current: { patient_id: "P001", updated_at: "first" } };
+    const changedPair = { previous: { patient_id: "P001" }, current: { patient_id: "P001", updated_at: "second" } };
+    const { rerender } = render(<HandoverWorkspace data={[response]} recordPairs={{ P001: firstPair }} />);
+    await waitFor(() => expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument());
+
+    rerender(<HandoverWorkspace data={[response]} recordPairs={{ P001: changedPair }} />);
+    const recommendation = screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" });
+    const toggle = screen.getAllByRole("button", { name: /근거 .*포함됨/ })[0];
+    if (!toggle) throw new Error("근거 토글이 없습니다.");
+    expect(screen.getByText("서버 요약을 불러오는 중입니다.")).toBeInTheDocument();
+    expect(recommendation).toBeDisabled();
+    expect(toggle).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "검토 완료" })).toBeDisabled();
+
+    secondRequest.resolve({
+      ok: true,
+      status: 200,
+      json: async () => response,
+    });
+    await waitFor(() => expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument());
+    expect(recommendation).toBeEnabled();
+    expect(toggle).toBeEnabled();
+    expect(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" })).toBeEnabled();
+  });
+
+  it("ignores a late response from the aborted patient request after switching patients", async () => {
+    const responses = buildDemoWorkspaceData();
+    const first = responses[0];
+    const second = responses[1];
+    if (!first || !second) throw new Error("데모 응답이 없습니다.");
+    const oldResponse = structuredClone(first);
+    oldResponse.summary.sections.situation[0]!.text = "늦게 도착한 이전 환자 요약";
+    const currentResponse = structuredClone(second);
+    currentResponse.summary.sections.situation[0]!.text = "현재 환자 서버 요약";
+    const oldRequest = createDeferred<{
+      ok: boolean;
+      status: number;
+      json: () => Promise<unknown>;
+    }>();
+    const fetchMock = vi.fn()
+      .mockReturnValueOnce(oldRequest.promise)
+      .mockResolvedValueOnce({ ok: true, status: 200, json: vi.fn().mockResolvedValue(currentResponse) });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(
+      <HandoverWorkspace
+        data={responses}
+        recordPairs={{
+          P001: { previous: { patient_id: "P001" }, current: { patient_id: "P001" } },
+          P002: { previous: { patient_id: "P002" }, current: { patient_id: "P002" } },
+        }}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /김영희/ }));
+    await waitFor(() => expect(screen.getByText("현재 환자 서버 요약")).toBeInTheDocument());
+
+    oldRequest.resolve({
+      ok: true,
+      status: 200,
+      json: async () => oldResponse,
+    });
+    await waitFor(() => {
+      expect(screen.getByText("현재 환자 서버 요약")).toBeInTheDocument();
+      expect(screen.queryByText("늦게 도착한 이전 환자 요약")).not.toBeInTheDocument();
+    });
+  });
 });

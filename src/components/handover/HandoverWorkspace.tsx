@@ -33,7 +33,11 @@ type PatientReviewSession = {
 };
 
 type PatientReviewSessions = Record<string, PatientReviewSession>;
-type PatientApiState = "pending" | "success" | "fallback";
+type PatientApiStatus = "pending" | "success" | "fallback" | "snapshot";
+type PatientApiState = {
+  pair: HandoverRecordPair;
+  status: PatientApiStatus;
+};
 
 function createReviewSession(response: HandoverApiResponse): PatientReviewSession {
   return {
@@ -58,7 +62,17 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const [fallbackByPatient, setFallbackByPatient] = useState<Record<string, boolean>>({});
   const [apiStateByPatient, setApiStateByPatient] = useState<Record<string, PatientApiState>>({});
   const [sessions, setSessions] = useState<PatientReviewSessions>({});
+  const apiStateRef = useRef<Record<string, PatientApiState>>({});
+  const sessionsRef = useRef<PatientReviewSessions>({});
   const requestVersion = useRef(0);
+
+  useEffect(() => {
+    apiStateRef.current = apiStateByPatient;
+  }, [apiStateByPatient]);
+
+  useEffect(() => {
+    sessionsRef.current = sessions;
+  }, [sessions]);
 
   const activePatientId = validResponses.some(
     (response) => response.comparison.patient.id === selectedPatientId,
@@ -72,10 +86,61 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
     ({ comparison }) => comparison.patient.id === activePatientId,
   ) ?? responses[0];
 
+  function setPatientApiState(patientId: string, pair: HandoverRecordPair, status: PatientApiStatus) {
+    const current = apiStateRef.current;
+    const previous = current[patientId];
+    if (previous?.pair === pair && previous.status === status) return;
+    const next = { ...current, [patientId]: { pair, status } };
+    apiStateRef.current = next;
+    setApiStateByPatient(next);
+  }
+
+  function clearPendingApiState(patientId: string, pair: HandoverRecordPair) {
+    const current = apiStateRef.current;
+    const previous = current[patientId];
+    if (previous?.pair !== pair || previous.status !== "pending") return;
+    const next = { ...current };
+    delete next[patientId];
+    apiStateRef.current = next;
+    setApiStateByPatient(next);
+  }
+
+  function clearApiPresentation(patientId: string) {
+    setResponseOverrides((current) => {
+      if (!(patientId in current)) return current;
+      const next = { ...current };
+      delete next[patientId];
+      return next;
+    });
+    setFallbackByPatient((current) => {
+      if (!(patientId in current)) return current;
+      const next = { ...current };
+      delete next[patientId];
+      return next;
+    });
+  }
+
   useEffect(() => {
     const patientId = activePatientId;
     const pair = recordPairs?.[patientId];
     if (!pair) return undefined;
+
+    const existingState = apiStateRef.current[patientId];
+    if (sessionsRef.current[patientId]?.reviewed) {
+      if (existingState?.pair !== pair || existingState.status !== "snapshot") {
+        setPatientApiState(patientId, pair, "snapshot");
+      }
+      return undefined;
+    }
+    if (
+      existingState?.pair === pair &&
+      (existingState.status === "pending" || existingState.status === "success" || existingState.status === "fallback")
+    ) {
+      return undefined;
+    }
+
+    setPatientApiState(patientId, pair, "pending");
+    clearApiPresentation(patientId);
 
     const controller = new AbortController();
     const requestId = requestVersion.current + 1;
@@ -83,10 +148,16 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
 
     void comparePatientRecords(pair.previous, pair.current, controller.signal)
       .then((apiResponse) => {
-        if (controller.signal.aborted || requestVersion.current !== requestId) return;
+        if (
+          controller.signal.aborted ||
+          requestVersion.current !== requestId ||
+          sessionsRef.current[patientId]?.reviewed
+        ) {
+          return;
+        }
         setResponseOverrides((current) => ({ ...current, [patientId]: apiResponse }));
         setFallbackByPatient((current) => ({ ...current, [patientId]: false }));
-        setApiStateByPatient((current) => ({ ...current, [patientId]: "success" }));
+        setPatientApiState(patientId, pair, "success");
       })
       .catch((error: unknown) => {
         if (
@@ -97,10 +168,13 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
           return;
         }
         setFallbackByPatient((current) => ({ ...current, [patientId]: true }));
-        setApiStateByPatient((current) => ({ ...current, [patientId]: "fallback" }));
+        setPatientApiState(patientId, pair, "fallback");
       });
 
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      clearPendingApiState(patientId, pair);
+    };
   }, [activePatientId, recordPairs]);
 
   if (!selectedResponse) {
@@ -119,7 +193,15 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
     selectedResponse.comparison.changes.map((change) => change.id),
   );
   const selectedEvidenceIds = session.selectedEvidenceIds.filter((id) => availableEvidenceIds.has(id));
-  const apiPending = Boolean(recordPairs?.[patientId]) && !["success", "fallback"].includes(apiStateByPatient[patientId] ?? "pending");
+  const activePair = recordPairs?.[patientId];
+  const patientApiState = apiStateByPatient[patientId];
+  const apiPending = Boolean(
+    activePair &&
+      !session.reviewed &&
+      (!patientApiState ||
+        patientApiState.pair !== activePair ||
+        (patientApiState.status !== "success" && patientApiState.status !== "fallback")),
+  );
   const reviewedPatientIds = new Set(
     Object.entries(sessions)
       .filter(([, patientSession]) => patientSession.reviewed)
@@ -160,9 +242,6 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   function handleSelectPatient(nextPatientId: string) {
     if (nextPatientId === patientId) return;
     setSelectedPatientId(nextPatientId);
-    if (recordPairs?.[nextPatientId]) {
-      setApiStateByPatient((current) => ({ ...current, [nextPatientId]: "pending" }));
-    }
   }
 
   return (
