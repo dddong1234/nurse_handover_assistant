@@ -10,6 +10,7 @@ docs/PORTFOLIO*.md
 .worktrees/
 node_modules/
 .next/
+next-env.d.ts
 coverage/
 playwright-report/
 test-results/
