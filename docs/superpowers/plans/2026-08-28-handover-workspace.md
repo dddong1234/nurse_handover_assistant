@@ -35,7 +35,7 @@
 **Files:**
 - Modify: `requirements.txt`
 - Create: `package.json`
-- Create: `package-lock.json`
+- Create: `pnpm-lock.yaml`
 - Create: `next.config.ts`
 - Create: `tsconfig.json`
 - Create: `vitest.config.ts`
@@ -44,7 +44,7 @@
 
 **Interfaces:**
 - Produces: Python imports for FastAPI, OpenAI, and API tests.
-- Produces: npm scripts named `dev`, `build`, `start`, `lint`, `test`, `test:watch`, and `test:e2e`.
+- Produces: pnpm scripts named `dev`, `build`, `start`, `lint`, `test`, `test:watch`, and `test:e2e`.
 
 - [ ] **Step 1: Create an isolated `codex/0.5-handover-workspace` worktree after user consent**
 
@@ -63,11 +63,11 @@ Expected: both commands exit 0 before feature code changes.
 
 - [ ] **Step 3: Add and pin the required toolchains**
 
-Resolve supported current releases from the official package registries and commit the resulting lock file. Python runtime dependencies are FastAPI, OpenAI, and Uvicorn; test dependency is HTTPX. Frontend runtime dependencies are Next.js, React, and React DOM; development dependencies are TypeScript, ESLint with Next configuration, Vitest, jsdom, Testing Library, and Playwright.
+Resolve supported current releases from the official package registries and commit the resulting lock file. Python runtime dependencies are FastAPI, OpenAI, and Uvicorn; test dependency is HTTPX. Frontend runtime dependencies are Next.js, React, and React DOM; development dependencies are TypeScript, ESLint with Next configuration, Vitest, jsdom, Testing Library, and Playwright. Use the bundled pnpm `11.19.0` locally and record it in `packageManager`.
 
 - [ ] **Step 4: Verify empty framework entrypoints compile only after Task 3 creates them**
 
-At this step run dependency resolution and version-report commands only. `npm run build` is intentionally deferred to Task 3 because no Next.js entrypoint exists yet.
+At this step run dependency resolution and version-report commands only. `pnpm build` is intentionally deferred to Task 3 because no Next.js entrypoint exists yet.
 
 ---
 
@@ -86,7 +86,7 @@ At this step run dependency resolution and version-report commands only. `npm ru
 
 - [ ] **Step 1: Write failing tests for every comparison type**
 
-Create literal fixtures in `tests/test_handover_service.py` and assert this contract:
+Create literal fixtures in `tests/test_handover_service.py`. Use a vital-only change fixture for the following exact first-item assertion, then use separate fixtures for the other change categories:
 
 ```python
 comparison = build_handover_comparison(previous, current)
@@ -248,6 +248,7 @@ Expected: all commands exit 0; import output contains the API title and no secre
 - Create: `src/lib/demo-workspace-data.ts`
 - Create: `src/lib/demo-adapter.ts`
 - Create: `src/lib/demo-adapter.test.ts`
+- Create: `src/test/setup.ts`
 - Create: `src/components/handover/HandoverWorkspace.tsx`
 
 **Interfaces:**
@@ -257,7 +258,7 @@ Expected: all commands exit 0; import output contains the API title and no secre
 
 - [ ] **Step 1: Confirm the supervisor-provided toolchain**
 
-Run `npm --version`, `npm test -- --run`, and inspect the script names. Do not modify package manifests or add a UI component library or icon package.
+Run `pnpm --version`, `pnpm test -- --run`, and inspect the script names. Do not modify package manifests or add a UI component library or icon package.
 
 - [ ] **Step 2: Write failing adapter contract tests**
 
@@ -265,7 +266,7 @@ Assert that five patients are returned, timestamps are ISO strings, change lists
 
 - [ ] **Step 3: Run the focused frontend test and confirm failure**
 
-Run: `npm test -- src/lib/demo-adapter.test.ts`
+Run: `pnpm test -- src/lib/demo-adapter.test.ts`
 
 Expected: FAIL because the adapter is not implemented.
 
@@ -282,9 +283,9 @@ Define CSS custom properties using the exact colors and typography roles in `doc
 Run:
 
 ```powershell
-npm test
-npm run lint
-npm run build
+pnpm test
+pnpm lint
+pnpm build
 ```
 
 Expected: all commands exit 0.
@@ -324,7 +325,7 @@ the safety notice remains visible
 
 - [ ] **Step 2: Run the component test and confirm failure**
 
-Run: `npm test -- src/components/handover/HandoverWorkspace.test.tsx`
+Run: `pnpm test -- src/components/handover/HandoverWorkspace.test.tsx`
 
 Expected: FAIL because the components do not exist.
 
@@ -345,9 +346,9 @@ At 960–1279px collapse the queue to a compact rail and keep comparison primary
 Run:
 
 ```powershell
-npm test
-npm run lint
-npm run build
+pnpm test
+pnpm lint
+pnpm build
 python scripts/check_harness.py --root .
 ```
 
@@ -381,8 +382,8 @@ Assert successful mapping, invalid response rejection, network-failure fallback,
 Run:
 
 ```powershell
-npm test -- src/lib/handover-api.test.ts
-npm test -- src/components/handover/HandoverWorkspace.test.tsx
+pnpm test -- src/lib/handover-api.test.ts
+pnpm test -- src/components/handover/HandoverWorkspace.test.tsx
 ```
 
 Expected: FAIL because the client and panel are missing.
@@ -400,9 +401,9 @@ Show mode, four sections, evidence links, included/total coverage, manual recomm
 Run:
 
 ```powershell
-npm test
-npm run lint
-npm run build
+pnpm test
+pnpm lint
+pnpm build
 python -m unittest discover -s tests -v
 python scripts/check_harness.py --root .
 ```
@@ -499,9 +500,9 @@ Run:
 ```powershell
 python scripts/check_harness.py --root .
 python -m unittest discover -s tests -v
-npm test
-npm run lint
-npm run build
+pnpm test
+pnpm lint
+pnpm build
 npx playwright test
 ```
 

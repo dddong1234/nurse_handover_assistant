@@ -8,3 +8,8 @@ __pycache__/
 docs/PORTFOLIO*.md
 .env
 .worktrees/
+node_modules/
+.next/
+coverage/
+playwright-report/
+test-results/
