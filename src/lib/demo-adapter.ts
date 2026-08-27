@@ -186,6 +186,16 @@ function validateResponse(value: unknown, index: number): asserts value is Hando
   ) {
     throw new Error(`데모 응답 ${index + 1}의 근거 ID 순서가 comparison과 다릅니다.`);
   }
+
+  const sectionItems = Object.values(value.summary.sections).flat();
+  const unknownSectionEvidenceIds = sectionItems
+    .flatMap((item) => item.evidenceIds)
+    .filter((id) => !changeIds.includes(id));
+  if (unknownSectionEvidenceIds.length > 0) {
+    throw new Error(
+      `데모 응답 ${index + 1}의 SBAR 항목에 알 수 없는 근거 ID가 있습니다.`,
+    );
+  }
 }
 
 export function isHandoverApiResponse(value: unknown): value is HandoverApiResponse {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { buildDemoWorkspaceData } from "./demo-adapter";
+import { DEMO_WORKSPACE_DATA } from "./demo-workspace-data";
 
 describe("buildDemoWorkspaceData", () => {
   it("returns five API-shaped patient responses with ISO comparison timestamps", () => {
@@ -67,5 +68,17 @@ describe("buildDemoWorkspaceData", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(setItemSpy).not.toHaveBeenCalled();
     expect(removeItemSpy).not.toHaveBeenCalled();
+  });
+
+  it("rejects section evidence IDs that are not comparison change IDs", () => {
+    const sectionItem = DEMO_WORKSPACE_DATA[0].summary.sections.background[0];
+    const originalEvidenceIds = [...sectionItem.evidenceIds];
+    sectionItem.evidenceIds = [...originalEvidenceIds, "unknown-evidence-id"];
+
+    try {
+      expect(() => buildDemoWorkspaceData()).toThrow();
+    } finally {
+      sectionItem.evidenceIds = originalEvidenceIds;
+    }
   });
 });

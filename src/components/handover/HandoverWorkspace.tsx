@@ -70,10 +70,40 @@ function changeTypeLabel(change: HandoverChange) {
 }
 
 function statusLabel(comparison: HandoverComparison) {
-  if (comparison.status === "no_previous") return "비교 데이터 없음";
+  if (comparison.status === "no_previous") return "비교 없음";
   if (comparison.status === "no_changes") return "변화 없음";
   if (comparison.status === "partial") return "데이터 부족";
   return "검토 필요";
+}
+
+function queueStatusLabel(comparison: HandoverComparison) {
+  if (comparison.status === "ready") return "미검토";
+  if (comparison.status === "no_changes") return "변화 없음";
+  if (comparison.status === "no_previous") return "비교 없음";
+  return "데이터 부족";
+}
+
+function queueStatusTone(comparison: HandoverComparison) {
+  if (comparison.status === "no_changes") return "status-stable";
+  if (comparison.status === "no_previous") return "status-muted";
+  return "status-watch";
+}
+
+function comparisonCountLabel(comparison: HandoverComparison) {
+  if (comparison.status === "no_previous") return "비교 불가";
+  if (comparison.status === "partial" && comparison.changes.length === 0) return "비교 불가";
+  return `${comparison.changes.length.toString().padStart(2, "0")}건`;
+}
+
+function queueChangeLabel(comparison: HandoverComparison) {
+  if (comparison.status === "no_previous") return "비교 불가";
+  if (comparison.status === "partial" && comparison.changes.length === 0) return "비교 불가";
+  return "건 변화";
+}
+
+function cannotCompare(comparison: HandoverComparison) {
+  return comparison.status === "no_previous" ||
+    (comparison.status === "partial" && comparison.changes.length === 0);
 }
 
 function priorityTone(priority: HandoverChange["reviewPriority"]) {
@@ -128,7 +158,7 @@ function PatientQueue({
 
       <div className="queue-toolbar" aria-label="환자 큐 상태">
         <span><i className="status-dot dot-watch" />미검토 변화</span>
-        <span><i className="status-dot dot-stable" />완료</span>
+        <span><i className="status-dot dot-stable" />변화 없음</span>
       </div>
 
       <div className="queue-list" role="list">
@@ -146,8 +176,8 @@ function PatientQueue({
               >
                 <span className="queue-row-top">
                   <span className="queue-room mono">{comparison.patient.room}호</span>
-                  <span className={`queue-status ${comparison.changes.length ? "status-watch" : "status-stable"}`}>
-                    {comparison.changes.length ? "미검토" : "완료"}
+                  <span className={`queue-status ${queueStatusTone(comparison)}`}>
+                    {queueStatusLabel(comparison)}
                   </span>
                 </span>
                 <span className="queue-patient-name">{comparison.patient.name}</span>
@@ -155,7 +185,9 @@ function PatientQueue({
                 <span className="queue-row-bottom">
                   <span className="queue-id mono">{comparison.patient.id}</span>
                   <span className="queue-change-count">
-                    <strong className="mono">{comparison.changes.length}</strong>건 변화
+                    {cannotCompare(comparison) ? null : (
+                      <strong className="mono">{comparison.changes.length}</strong>
+                    )}{queueChangeLabel(comparison)}
                     {highPriorityCount > 0 ? <em> · 중요 {highPriorityCount}</em> : null}
                   </span>
                 </span>
@@ -291,7 +323,7 @@ function ComparisonPanel({ comparison }: { comparison: HandoverComparison }) {
         <div className="comparison-status">
           <span className={`status-symbol status-${comparison.status}`} aria-hidden="true">{comparison.status === "ready" ? "!" : "·"}</span>
           <span>{statusLabel(comparison)}</span>
-          <strong className="mono">{comparison.changes.length.toString().padStart(2, "0")}건</strong>
+          <strong className="mono">{comparisonCountLabel(comparison)}</strong>
         </div>
       </header>
 
@@ -310,13 +342,19 @@ function ComparisonPanel({ comparison }: { comparison: HandoverComparison }) {
 
       {comparison.status === "no_previous" ? (
         <div className="comparison-empty">
-          <span className="empty-symbol" aria-hidden="true">∅</span>
+          <span className="empty-symbol empty-no-previous" aria-hidden="true">∅</span>
           <h3>비교할 이전 기록이 없습니다.</h3>
           <p>현재 기록 시각 <strong className="mono">{formatTimestamp(comparison.interval.currentRecordedAt)}</strong>을 확인하세요.</p>
         </div>
-      ) : comparison.changes.length === 0 ? (
+      ) : comparison.status === "partial" && comparison.changes.length === 0 ? (
         <div className="comparison-empty">
-          <span className="empty-symbol" aria-hidden="true">✓</span>
+          <span className="empty-symbol empty-partial" aria-hidden="true">!</span>
+          <h3>데이터 부족으로 완전한 비교를 수행하지 못했습니다.</h3>
+          <p>누락된 필드를 확인한 뒤 원본 기록을 다시 검토하세요.</p>
+        </div>
+      ) : comparison.status === "no_changes" ? (
+        <div className="comparison-empty">
+          <span className="empty-symbol empty-no-changes" aria-hidden="true">✓</span>
           <h3>두 기록 사이에서 검출된 변화가 없습니다.</h3>
           <p>비교 기준 시각과 원본 기록을 확인했습니다.</p>
         </div>
@@ -384,13 +422,17 @@ function SummarySection({
         </ul>
       )}
       {section === "recommendation" ? (
-        <textarea
-          className="recommendation-input"
-          placeholder={RECOMMENDATION_PLACEHOLDER}
-          aria-label="간호사가 확인할 후속 항목"
-          rows={3}
-          readOnly
-        />
+        <>
+          <textarea
+            className="recommendation-input"
+            placeholder={RECOMMENDATION_PLACEHOLDER}
+            aria-label="간호사가 확인할 후속 항목"
+            aria-readonly="true"
+            rows={3}
+            readOnly
+          />
+          <p className="control-note recommendation-note">다음 단계에서 입력을 활성화합니다.</p>
+        </>
       ) : null}
     </section>
   );
@@ -420,10 +462,10 @@ function SummaryPanel({
       <div className="summary-integrity" aria-label="근거 포함률">
         <div className="integrity-heading">
           <span>근거 포함률</span>
-          <strong className="mono">{evidenceCount}/{totalChanges}</strong>
+          <strong className="mono">{cannotCompare(comparison) ? "비교 불가" : `${evidenceCount}/${totalChanges}`}</strong>
         </div>
         <div className="integrity-track"><span style={{ width: `${totalChanges ? (evidenceCount / totalChanges) * 100 : 0}%` }} /></div>
-        <p>모든 요약 문장은 검출된 원본 변화 ID에 연결됩니다.</p>
+        <p>검출된 변화 요약은 원본 변화 ID에 연결됩니다.</p>
       </div>
 
       <div className="summary-body">
@@ -447,7 +489,7 @@ function SummaryPanel({
             disabled
           />
           <span className="custom-checkbox" aria-hidden="true">✓</span>
-          <span>원본 기록을 확인했습니다</span>
+          <span>원본 기록을 확인했습니다 <small className="control-note">다음 단계에서 활성화</small></span>
         </label>
         <button
           type="button"
@@ -455,7 +497,7 @@ function SummaryPanel({
           disabled
         >
           <span aria-hidden="true">→</span>
-          검토 완료로 표시
+          검토 완료 · 다음 단계에서 활성화
         </button>
       </div>
       <p className="safety-note">가상 데이터 · 의사결정 보조가 아님</p>
