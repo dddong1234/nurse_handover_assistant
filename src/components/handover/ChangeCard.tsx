@@ -1,9 +1,11 @@
+import { useEffect, useRef } from "react";
 import type { HandoverChange, HandoverChangeValue } from "@/lib/contracts";
 
 import { formatTimestamp } from "./PatientContextHeader";
 
 export type ChangeCardProps = {
   change: HandoverChange;
+  isFocused?: boolean;
 };
 
 const CATEGORY_LABELS: Record<HandoverChange["category"], string> = {
@@ -48,16 +50,26 @@ function changeTypeIcon(change: HandoverChange) {
   return "↔";
 }
 
-export function ChangeCard({ change }: ChangeCardProps) {
+export function ChangeCard({ change, isFocused = false }: ChangeCardProps) {
   const previousValue = formatValue(change.previousValue);
   const currentValue = formatValue(change.currentValue);
+  const cardRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!isFocused) return;
+
+    cardRef.current?.focus();
+  }, [isFocused]);
 
   return (
     <article
-      className={`change-card priority-border-${change.reviewPriority}`}
+      ref={cardRef}
+      className={`change-card priority-border-${change.reviewPriority} ${isFocused ? "is-evidence-focused" : ""}`.trim()}
       id={`evidence-${change.id}`}
       data-testid="change-card"
       data-review-priority={change.reviewPriority}
+      tabIndex={isFocused ? -1 : undefined}
+      aria-current={isFocused ? "true" : undefined}
       aria-labelledby={`change-title-${change.id}`}
     >
       <div className="change-card-header">

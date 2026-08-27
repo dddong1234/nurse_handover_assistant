@@ -6,6 +6,7 @@ export type PatientQueueProps = {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   onSelectPatient: (patientId: string) => void;
+  reviewedPatientIds?: ReadonlySet<string> | readonly string[];
 };
 
 function cannotCompare(comparison: HandoverComparison) {
@@ -22,7 +23,8 @@ function queueStatusLabel(comparison: HandoverComparison) {
   return "데이터 부족";
 }
 
-function queueStatusTone(comparison: HandoverComparison) {
+function queueStatusTone(comparison: HandoverComparison, reviewed: boolean) {
+  if (reviewed) return "status-stable";
   if (comparison.status === "no_changes") return "status-stable";
   if (comparison.status === "no_previous") return "status-muted";
   return "status-watch";
@@ -49,14 +51,46 @@ export function filterPatientResponses(
   });
 }
 
+function isReviewedPatient(
+  reviewedPatientIds: ReadonlySet<string> | readonly string[],
+  patientId: string,
+) {
+  if (Array.isArray(reviewedPatientIds)) {
+    return reviewedPatientIds.includes(patientId);
+  }
+  return (reviewedPatientIds as ReadonlySet<string>).has(patientId);
+}
+
+export function orderPatientResponses(
+  responses: HandoverApiResponse[],
+  reviewedPatientIds: ReadonlySet<string> | readonly string[] = [],
+) {
+  return responses
+    .map((response, index) => {
+      const comparison = response.comparison;
+      const reviewed = isReviewedPatient(reviewedPatientIds, comparison.patient.id);
+      const highPriorityCount = comparison.changes.filter(
+        (change) => change.reviewPriority === "high",
+      ).length;
+      const group = reviewed ? 2 : highPriorityCount > 0 ? 0 : 1;
+      return { response, index, group };
+    })
+    .sort((left, right) => left.group - right.group || left.index - right.index)
+    .map(({ response }) => response);
+}
+
 export function PatientQueue({
   responses,
   selectedPatientId,
   searchTerm,
   onSearchChange,
   onSelectPatient,
+  reviewedPatientIds = [],
 }: PatientQueueProps) {
-  const filteredResponses = filterPatientResponses(responses, searchTerm);
+  const filteredResponses = orderPatientResponses(
+    filterPatientResponses(responses, searchTerm),
+    reviewedPatientIds,
+  );
 
   return (
     <aside className="patient-queue panel" aria-labelledby="patient-queue-title">
@@ -99,6 +133,7 @@ export function PatientQueue({
             ).length;
             const selected = comparison.patient.id === selectedPatientId;
             const { patient } = comparison;
+            const reviewed = isReviewedPatient(reviewedPatientIds, patient.id);
 
             return (
               <div role="listitem" key={patient.id}>
@@ -111,8 +146,8 @@ export function PatientQueue({
                 >
                   <span className="queue-row-top">
                     <span className="queue-room mono">{patient.room}호</span>
-                    <span className={`queue-status ${queueStatusTone(comparison)}`}>
-                      {queueStatusLabel(comparison)}
+                    <span className={`queue-status ${queueStatusTone(comparison, reviewed)}`}>
+                      {reviewed ? "검토 완료" : queueStatusLabel(comparison)}
                     </span>
                   </span>
                   <span className="queue-patient-name">{patient.name}</span>

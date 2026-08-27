@@ -5,6 +5,7 @@ import { formatTimestamp } from "./PatientContextHeader";
 
 export type ComparisonWorkspaceProps = {
   comparison: HandoverComparison;
+  focusedEvidenceId?: string | null;
 };
 
 const PRIORITY_ORDER: HandoverChange["reviewPriority"][] = ["high", "medium", "low"];
@@ -30,7 +31,7 @@ function priorityGroupHelper(priority: HandoverChange["reviewPriority"]) {
   return priority === "high" ? "먼저 확인할 항목" : "원본 근거와 함께 확인";
 }
 
-export function ComparisonWorkspace({ comparison }: ComparisonWorkspaceProps) {
+export function ComparisonWorkspace({ comparison, focusedEvidenceId = null }: ComparisonWorkspaceProps) {
   const orderedChanges = orderChangesByPriority(comparison.changes);
   const groupedChanges = PRIORITY_ORDER.map((priority) => ({
     priority,
@@ -107,7 +108,13 @@ export function ComparisonWorkspace({ comparison }: ComparisonWorkspaceProps) {
                 <span className="group-helper">{priorityGroupHelper(priority)}</span>
               </div>
               <div className="change-list">
-                {changes.map((change) => <ChangeCard change={change} key={change.id} />)}
+                {changes.map((change) => (
+                  <ChangeCard
+                    change={change}
+                    isFocused={focusedEvidenceId === change.id}
+                    key={change.id}
+                  />
+                ))}
               </div>
             </section>
           ))}

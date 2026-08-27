@@ -1,11 +1,19 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { buildDemoWorkspaceData } from "@/lib/demo-adapter";
 import type { HandoverApiResponse, HandoverStatus } from "@/lib/contracts";
 
 import { HandoverWorkspace } from "./HandoverWorkspace";
+
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
 
 function makeStatusResponse(status: HandoverStatus): HandoverApiResponse {
   const [response] = buildDemoWorkspaceData();
@@ -41,7 +49,11 @@ function makeStatusResponse(status: HandoverStatus): HandoverApiResponse {
 }
 
 describe("HandoverWorkspace patient queue and comparison flow", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
 
   it("selects the first valid patient initially", () => {
     render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
@@ -213,5 +225,219 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     render(<HandoverWorkspace data={[]} />);
 
     expect(screen.getByText("가상 데이터 · 의사결정 보조가 아님")).toBeInTheDocument();
+  });
+
+  it("keeps the fixture visible and announces the exact fallback when the compare request fails", async () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
+
+    render(
+      <HandoverWorkspace
+        data={[response]}
+        recordPairs={{
+          P001: {
+            previous: { patient_id: "P001", updated_at: "2026-07-01T21:00:00+09:00" },
+            current: { patient_id: "P001", updated_at: "2026-07-02T07:00:00+09:00" },
+          },
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("서버 요약을 불러오지 못해 검증된 데모 결과를 표시합니다.")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("heading", { name: "홍길동" })).toBeInTheDocument();
+    expect(screen.getAllByRole("article").length).toBeGreaterThan(0);
+  });
+
+  it("replaces only the selected patient's response after a validated API success", async () => {
+    const responses = buildDemoWorkspaceData();
+    const first = responses[0];
+    const second = responses[1];
+    if (!first || !second) throw new Error("데모 응답이 없습니다.");
+    const apiResponse = structuredClone(first);
+    apiResponse.summary.sections.situation[0]!.text = "서버에서 확인한 P001 변화 요약";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue(apiResponse),
+    }));
+
+    const user = userEvent.setup();
+    render(
+      <HandoverWorkspace
+        data={responses}
+        recordPairs={{
+          P001: { previous: { patient_id: "P001" }, current: { patient_id: "P001" } },
+          P002: { previous: { patient_id: "P002" }, current: { patient_id: "P002" } },
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("서버에서 확인한 P001 변화 요약")).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /김영희/ }));
+    expect(within(screen.getByRole("complementary", { name: "인수인계 초안" })).getByText(/김영희\(P002\)/)).toBeInTheDocument();
+    expect(screen.queryByText("서버에서 확인한 P001 변화 요약")).not.toBeInTheDocument();
+  });
+
+  it("toggles evidence inclusion without hiding change cards or summary facts", async () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+    render(<HandoverWorkspace data={[response]} />);
+
+    const cardsBefore = screen.getAllByRole("article").length;
+    const coverageBefore = screen.getByLabelText("근거 포함률").textContent;
+    const toggle = screen.getAllByRole("button", { name: /근거 .*포함됨/ })[0];
+    if (!toggle) throw new Error("근거 토글이 없습니다.");
+    await userEvent.setup().click(toggle);
+
+    expect(screen.getAllByRole("article")).toHaveLength(cardsBefore);
+    expect(screen.getByLabelText("근거 포함률").textContent).not.toBe(coverageBefore);
+    expect(screen.getByText(response.summary.sections.situation[0]!.text)).toBeInTheDocument();
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("focuses and highlights a change card when an evidence link is activated", async () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+    const user = userEvent.setup();
+    render(<HandoverWorkspace data={[response]} />);
+
+    const evidenceId = response.comparison.changes[0]!.id;
+    const evidenceLink = screen.getAllByRole("link", { name: new RegExp(evidenceId.slice(0, 14)) })[0];
+    if (!evidenceLink) throw new Error("근거 링크가 없습니다.");
+    await user.click(evidenceLink);
+
+    const card = document.getElementById(`evidence-${evidenceId}`);
+    expect(card).not.toBeNull();
+    expect(document.activeElement).toBe(card);
+    expect(card).toHaveClass("is-evidence-focused");
+    expect(card).toHaveAttribute("tabindex", "-1");
+  });
+
+  it("keeps manual recommendations isolated per patient", async () => {
+    const user = userEvent.setup();
+    render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
+    const recommendation = screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" });
+
+    await user.type(recommendation, "다음 교대에 확인할 항목");
+    await user.click(screen.getByRole("button", { name: /김영희/ }));
+    expect(screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" })).toHaveValue("");
+    await user.click(screen.getByRole("button", { name: /홍길동/ }));
+    expect(screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" })).toHaveValue("다음 교대에 확인할 항목");
+  });
+
+  it("gates review completion on source confirmation and sorts reviewed patients last", async () => {
+    const user = userEvent.setup();
+    render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
+
+    const checkbox = screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" });
+    const reviewButton = screen.getByRole("button", { name: "검토 완료" });
+    expect(reviewButton).toBeDisabled();
+
+    await user.click(checkbox);
+    expect(reviewButton).toBeEnabled();
+    await user.click(reviewButton);
+
+    expect(screen.getByText("검토 완료", { selector: ".queue-status" })).toBeInTheDocument();
+    const queueItems = within(screen.getByRole("list", { name: "환자 목록" }))
+      .getAllByRole("listitem")
+      .map((item) => item.textContent ?? "");
+    expect(queueItems.at(-1)).toContain("홍길동");
+  });
+
+  it("restores evidence selection, confirmation, and review state when switching patients", async () => {
+    const user = userEvent.setup();
+    render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
+
+    const toggle = screen.getAllByRole("button", { name: /근거 .*포함됨/ })[0];
+    if (!toggle) throw new Error("근거 토글이 없습니다.");
+    await user.click(toggle);
+    await user.click(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" }));
+    await user.click(screen.getByRole("button", { name: "검토 완료" }));
+    await user.click(screen.getByRole("button", { name: /김영희/ }));
+
+    expect(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" })).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: /홍길동/ }));
+    expect(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" })).toBeChecked();
+    expect(screen.getAllByRole("button", { name: /근거 .*제외됨/ }).length).toBeGreaterThan(0);
+  });
+
+  it("locks recommendation and evidence inclusion after review while keeping evidence links navigable", async () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+    const user = userEvent.setup();
+    render(<HandoverWorkspace data={[response]} />);
+
+    const recommendation = screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" });
+    await user.type(recommendation, "다음 교대에 확인할 항목");
+    const toggle = screen.getAllByRole("button", { name: /근거 .*포함됨/ })[0];
+    if (!toggle) throw new Error("근거 토글이 없습니다.");
+    await user.click(toggle);
+    const selectedStateBeforeReview = toggle.getAttribute("aria-pressed");
+
+    await user.click(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" }));
+    await user.click(screen.getByRole("button", { name: "검토 완료" }));
+
+    expect(recommendation).toBeDisabled();
+    expect(toggle).toBeDisabled();
+    expect(recommendation).toHaveValue("다음 교대에 확인할 항목");
+    expect(toggle).toHaveAttribute("aria-pressed", selectedStateBeforeReview);
+
+    fireEvent.change(recommendation, { target: { value: "변경 시도" } });
+    await user.click(toggle);
+    expect(recommendation).toHaveValue("다음 교대에 확인할 항목");
+    expect(toggle).toHaveAttribute("aria-pressed", selectedStateBeforeReview);
+
+    const evidenceId = response.comparison.changes[0]!.id;
+    const evidenceLink = screen.getAllByRole("link", { name: new RegExp(evidenceId.slice(0, 14)) })[0];
+    if (!evidenceLink) throw new Error("근거 링크가 없습니다.");
+    await user.click(evidenceLink);
+    expect(document.getElementById(`evidence-${evidenceId}`)).toHaveClass("is-evidence-focused");
+  });
+
+  it("keeps review completion disabled and announces loading until the API request settles", async () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+    const request = createDeferred<{
+      ok: boolean;
+      status: number;
+      json: () => Promise<unknown>;
+    }>();
+    vi.stubGlobal("fetch", vi.fn().mockReturnValue(request.promise));
+    const user = userEvent.setup();
+
+    render(
+      <HandoverWorkspace
+        data={[response]}
+        recordPairs={{
+          P001: {
+            previous: { patient_id: "P001", updated_at: "2026-07-02T07:00:00+09:00" },
+            current: { patient_id: "P001", updated_at: "2026-07-02T09:00:00+09:00" },
+          },
+        }}
+      />,
+    );
+
+    expect(await screen.findByText("서버 요약을 불러오는 중입니다.")).toBeInTheDocument();
+    const checkbox = screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" });
+    const reviewButton = screen.getByRole("button", { name: "검토 완료" });
+    expect(checkbox).toBeDisabled();
+    expect(reviewButton).toBeDisabled();
+
+    request.resolve({
+      ok: true,
+      status: 200,
+      json: async () => response,
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument();
+    });
+    expect(checkbox).toBeEnabled();
+    await user.click(checkbox);
+    expect(reviewButton).toBeEnabled();
   });
 });
