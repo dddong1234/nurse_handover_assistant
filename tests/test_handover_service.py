@@ -113,6 +113,7 @@ class HandoverComparisonTests(unittest.TestCase):
         current = _record(
             medications=[
                 {"name": "추가약", "route": "SC", "frequency": "HS"},
+                {"name": "추가약2", "route": "PO", "frequency": "Q8H"},
                 {"name": "기존약", "route": "PO", "frequency": "QD"},
                 {"name": "변경약", "route": "IV", "frequency": "BID"},
             ],
@@ -121,27 +122,89 @@ class HandoverComparisonTests(unittest.TestCase):
 
         changes = build_handover_comparison(previous, current)["changes"]
 
-        by_type = {change["changeType"]: change for change in changes}
-        self.assertIsNone(by_type["added"]["previousValue"])
+        medication_changes = [
+            change for change in changes if change["category"] == "medications"
+        ]
+        self.assertEqual(len(medication_changes), 4)
+        by_label = {change["label"]: change for change in medication_changes}
+        self.assertEqual(by_label["중단약"]["id"], "medications-중단약-a8c38b7f45b5-removed")
+        self.assertEqual(by_label["추가약2"]["id"], "medications-추가약2-b9fb21f19138-added")
+        self.assertEqual(by_label["변경약"]["id"], "medications-변경약-e7c2791131b4-modified")
+        self.assertEqual(by_label["추가약"]["id"], "medications-추가약-93b870a256d3-added")
         self.assertEqual(
-            by_type["added"]["currentValue"],
-            {"name": "추가약", "route": "SC", "frequency": "HS"},
-        )
-        self.assertEqual(
-            by_type["removed"]["previousValue"],
+            by_label["중단약"]["previousValue"],
             {"name": "중단약", "route": "IV", "frequency": "BID"},
         )
-        self.assertIsNone(by_type["removed"]["currentValue"])
+        self.assertIsNone(by_label["중단약"]["currentValue"])
+        self.assertIsNone(by_label["추가약2"]["previousValue"])
         self.assertEqual(
-            by_type["modified"]["previousValue"],
+            by_label["추가약2"]["currentValue"],
+            {"name": "추가약2", "route": "PO", "frequency": "Q8H"},
+        )
+        self.assertEqual(
+            by_label["변경약"]["previousValue"],
             {"name": "변경약", "route": "PO", "frequency": "QD"},
         )
         self.assertEqual(
-            by_type["modified"]["currentValue"],
+            by_label["변경약"]["currentValue"],
             {"name": "변경약", "route": "IV", "frequency": "BID"},
         )
-        self.assertTrue(all(change["reviewPriority"] == "high" for change in changes))
-        self.assertTrue(all(change["category"] == "medications" for change in changes))
+        self.assertIsNone(by_label["추가약"]["previousValue"])
+        self.assertEqual(
+            by_label["추가약"]["currentValue"],
+            {"name": "추가약", "route": "SC", "frequency": "HS"},
+        )
+        for change in medication_changes:
+            self.assertEqual(change["reviewPriority"], "high")
+            self.assertEqual(change["category"], "medications")
+            item = change["label"]
+            self.assertEqual(change["evidence"], {
+                "fieldPath": f'medications["{item}"]',
+                "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+                "currentRecordedAt": "2026-07-02T09:00:00+09:00",
+            })
+
+    def test_arbitrary_unicode_items_have_unique_ids_and_encoded_evidence_paths(self):
+        previous = _record(medications=[], diagnosis=["기존 진단"], notes=["기존 메모"])
+        current = _record(
+            medications=[
+                {"name": "A B", "route": "PO", "frequency": "QD"},
+                {"name": "A-B", "route": "PO", "frequency": "QD"},
+            ],
+            diagnosis=["기존 진단", "추가 진단"],
+            notes=["기존 메모", "메모.슬래시/값"],
+            updated_at="2026-07-02T09:00:00+09:00",
+        )
+
+        changes = build_handover_comparison(previous, current)["changes"]
+        medication_changes = [
+            change for change in changes if change["category"] == "medications"
+        ]
+
+        self.assertEqual(
+            [change["id"] for change in medication_changes],
+            [
+                "medications-a-b-77101aaa54e6-added",
+                "medications-a-b-fea4c5ce720c-added",
+            ],
+        )
+        self.assertEqual(len({change["id"] for change in medication_changes}), 2)
+        self.assertEqual(
+            [change["evidence"]["fieldPath"] for change in medication_changes],
+            ['medications["A-B"]', 'medications["A B"]'],
+        )
+        note_changes = [change for change in changes if change["category"] == "notes"]
+        self.assertEqual(len(note_changes), 1)
+        self.assertEqual(note_changes[0]["id"], "notes-메모-슬래시-값-b35173899401-added")
+        self.assertEqual(note_changes[0]["evidence"]["fieldPath"], 'notes["메모.슬래시/값"]')
+        self.assertEqual(
+            [change["evidence"]["previousRecordedAt"] for change in changes],
+            ["2026-07-02T07:00:00+09:00"] * len(changes),
+        )
+        self.assertEqual(
+            [change["evidence"]["currentRecordedAt"] for change in changes],
+            ["2026-07-02T09:00:00+09:00"] * len(changes),
+        )
 
     def test_diagnosis_additions_and_removals_are_first_class_changes(self):
         previous = _record(diagnosis=["유지 진단", "삭제 진단"])
@@ -157,6 +220,19 @@ class HandoverComparisonTests(unittest.TestCase):
         self.assertEqual({change["currentValue"] for change in changes}, {None, "추가 진단"})
         self.assertTrue(all(change["category"] == "diagnosis" for change in changes))
         self.assertTrue(all(change["reviewPriority"] == "high" for change in changes))
+        by_type = {change["changeType"]: change for change in changes}
+        self.assertEqual(by_type["added"]["id"], "diagnosis-추가-진단-61e7083d07c0-added")
+        self.assertEqual(by_type["removed"]["id"], "diagnosis-삭제-진단-2db7ae149f9d-removed")
+        self.assertEqual(by_type["added"]["evidence"], {
+            "fieldPath": 'diagnosis["추가 진단"]',
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00",
+        })
+        self.assertEqual(by_type["removed"]["evidence"], {
+            "fieldPath": 'diagnosis["삭제 진단"]',
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00",
+        })
 
     def test_note_additions_and_removals_are_low_priority_changes(self):
         previous = _record(notes=["유지 메모", "삭제 메모"])
@@ -172,6 +248,19 @@ class HandoverComparisonTests(unittest.TestCase):
         self.assertEqual({change["currentValue"] for change in changes}, {None, "추가 메모"})
         self.assertTrue(all(change["category"] == "notes" for change in changes))
         self.assertTrue(all(change["reviewPriority"] == "low" for change in changes))
+        by_type = {change["changeType"]: change for change in changes}
+        self.assertEqual(by_type["added"]["id"], "notes-추가-메모-21e92115633d-added")
+        self.assertEqual(by_type["removed"]["id"], "notes-삭제-메모-30d354f47cb9-removed")
+        self.assertEqual(by_type["added"]["evidence"], {
+            "fieldPath": 'notes["추가 메모"]',
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00",
+        })
+        self.assertEqual(by_type["removed"]["evidence"], {
+            "fieldPath": 'notes["삭제 메모"]',
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00",
+        })
 
     def test_changes_are_ordered_by_priority_then_category_and_id(self):
         previous = _record(

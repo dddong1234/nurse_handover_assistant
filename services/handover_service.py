@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from typing import Any
 
@@ -72,6 +74,17 @@ def _slug(value: Any) -> str:
     text = str(value).strip().lower()
     text = re.sub(r"[^0-9a-z가-힣]+", "-", text)
     return text.strip("-") or "item"
+
+
+def _item_id(category: str, value: Any, change_type: str) -> str:
+    readable = _slug(value)
+    fingerprint = hashlib.sha256(str(value).encode("utf-8")).hexdigest()[:12]
+    return f"{category}-{readable}-{fingerprint}-{change_type}"
+
+
+def _item_field_path(field: str, value: Any) -> str:
+    encoded_value = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    return f"{field}[{encoded_value}]"
 
 
 def _numeric_delta(previous: Any, current: Any) -> Any:
@@ -189,7 +202,7 @@ def _compare_medications_structured(
 
         changes.append(
             _change(
-                change_id=f"medications-{_slug(name)}-{change_type}",
+                change_id=_item_id("medications", name, change_type),
                 category="medications",
                 change_type=change_type,
                 priority="high",
@@ -197,7 +210,7 @@ def _compare_medications_structured(
                 previous_value=previous_value if previous_exists else None,
                 current_value=current_value if current_exists else None,
                 delta=None,
-                field_path=f"medications.{name}",
+                field_path=_item_field_path("medications", name),
                 previous_recorded_at=previous_recorded_at,
                 current_recorded_at=current_recorded_at,
             )
@@ -229,7 +242,7 @@ def _compare_list_structured(
         change_type = "added" if current_exists else "removed"
         changes.append(
             _change(
-                change_id=f"{category}-{_slug(item)}-{change_type}",
+                change_id=_item_id(category, item, change_type),
                 category=category,
                 change_type=change_type,
                 priority=priority,
@@ -237,7 +250,7 @@ def _compare_list_structured(
                 previous_value=item if previous_exists else None,
                 current_value=item if current_exists else None,
                 delta=None,
-                field_path=field,
+                field_path=_item_field_path(field, item),
                 previous_recorded_at=previous_recorded_at,
                 current_recorded_at=current_recorded_at,
             )
