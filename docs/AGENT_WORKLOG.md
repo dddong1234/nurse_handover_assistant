@@ -21,7 +21,7 @@
 | 2026-08-28 | 구조화된 차이 비교 엔진 | core-logic (Luna Max) | 1.2.0 | PASSED | `services/handover_service.py`, `tests/test_handover_service.py` | 독립 review·2회 수정 검증 완료; supervisor focused 11/11·full 17/17·harness 통과; P001–P005 모두 ready·근거 ID 유일 | 2 | legacy 정렬 호환, collision-safe ID, JSON evidence path 확인 |
 | 2026-08-28 | 결정론적 SBAR 계약 및 무상태 FastAPI | core-logic (Luna Max) | 1.2.0 | PASSED | `services/handover_service.py`, `api/index.py`, `api/__init__.py`, `tests/test_handover_api.py` | 독립 review·1회 수정 완료; supervisor focused 19/19·full 25/25·harness·P001–P005 API 근거 완전성·전체 fixture 불변 통과 | 1 | `no_previous`/`no_changes` 구분, 임상 조언 없는 Recommendation, 무상태 API 확인; partial 전용 문구 테스트는 후속 Minor |
 | 2026-08-28 | Next.js 작업공간 셸 및 typed demo adapter | frontend (Luna Max) | 1.2.0 | PASSED | `src/app/`, `src/lib/`, `src/test/`, `src/components/handover/HandoverWorkspace.tsx` | supervisor Vitest 3/3·lint·build·Python 25/25·harness 통과; 독립 재검토 Critical/Important 0건; CSS 산술상 960–1279px 수평 넘침 해소 | 1 | Task 3; 의미 색상·상태 문구·watch 대비·section evidence 검증 수정 완료. 축약 문구와 비활성 검색 placeholder 대비는 Task 4 Minor 후속 |
-| 2026-08-28 | 환자 큐 상호작용 및 Shift Seam 비교 화면 | frontend (Luna Max) | 1.2.0 | IN_PROGRESS | `src/components/handover/`, `src/app/globals.css` | TDD 사용자 흐름·반응형·접근성 검증 예정 | 0 | Task 4; 환자 선택·이름/ID/병실 검색·컴포넌트 분리. review/recommendation/API 상태는 Task 5로 제외 |
+| 2026-08-28 | 환자 큐 상호작용 및 Shift Seam 비교 화면 | frontend (Luna Max) | 1.2.0 | REVISION | `src/components/handover/`, `src/app/globals.css` | supervisor frontend 12/12·lint·build·Python 25/25·harness 통과; 독립 review에서 review-state 암시와 완료 문구 Important 2건 발견 | 1 | Task 4; 같은 subagent가 상태 문구·검색 accessible name·empty safety·테스트 범위 수정 중 |
 
 ## 마일스톤 게이트
 
