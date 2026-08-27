@@ -18,6 +18,7 @@
 | 2026-08-27 | WikiDocs 구성요소 기반 저장소 하네스 도입 | supervisor | 1.1.0 | PASSED | 지시 문서, 아키텍처 센서, 테스트·CI, 지식 저장소, 드리프트 검사 | 하네스 검사 통과, 단위 테스트 6/6 통과, 50환자 비교 벤치마크 실행 성공, `git diff --check` 오류 없음 | 0 | Codex 번들 Python 사용; 구현 에이전트 미투입 |
 | 2026-08-27 | Vercel 배포 목표 반영 | supervisor | 1.2.0 | PASSED | 배포 ADR, 환경 관례, 무상태·보안 제약, 버전 `0.3.0-dev.2` | 공식 Vercel 문서 검토, 하네스 검사 통과, 단위 테스트 6/6 통과, placeholder 및 diff 오류 없음 | 0 | 애플리케이션 스택 전환 코드는 미구현 |
 | 2026-08-28 | Figma Make 분석 및 비교·요약 중심 재설계 | supervisor | 1.2.0 | PASSED | Figma 토큰/컨텍스트 분석, 제품·화면 명세, 7단계 구현 계획 | Make 루트 컨텍스트와 실제 미리보기 확인, 명세·계획 placeholder 검사, `git diff --check` 오류 없음 | 0 | 기존 4탭 구성은 제외; 일반 성인병동 교대 인수인계를 기준 가정으로 채택; 제품 코드는 미변경 |
+| 2026-08-28 | 구조화된 차이 비교 엔진 | core-logic (Luna Max) | 1.2.0 | IN_PROGRESS | `services/handover_service.py`, `tests/test_handover_service.py` | subagent TDD 후 supervisor 검증 예정 | 0 | Task 1; 기존 Streamlit 문자열 API 호환 유지 |
 
 ## 마일스톤 게이트
 
