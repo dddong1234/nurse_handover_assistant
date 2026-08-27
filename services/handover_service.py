@@ -362,11 +362,6 @@ def build_handover_comparison(
 _SUMMARY_RECOMMENDATION = "간호사가 확인할 후속 항목을 입력하세요."
 _SUMMARY_BACKGROUND_CATEGORIES = {"diagnosis", "medications"}
 _SUMMARY_ASSESSMENT_CATEGORIES = {"vitals", "notes"}
-_SUMMARY_CHANGE_ACTIONS = {
-    "added": "추가",
-    "removed": "삭제",
-    "modified": "변경",
-}
 
 
 def _summary_value(value: Any) -> str:
@@ -436,7 +431,20 @@ def _summary_situation_text(comparison: dict[str, Any], change_count: int) -> st
         interval = {}
     previous_recorded_at = interval.get("previousRecordedAt") or "이전 기록 없음"
     current_recorded_at = interval.get("currentRecordedAt") or "현재 기록 시각 없음"
+    status = comparison.get("status")
+    if status == "no_previous":
+        return (
+            f"{patient_text}, {room_text}, 현재 기록 시각 {current_recorded_at} 기준으로 "
+            "이전 기록을 사용할 수 없어 비교를 수행하지 않았습니다."
+        )
+
     interval_text = f"{previous_recorded_at} -> {current_recorded_at}"
+    if status == "no_changes":
+        return (
+            f"{patient_text}, {room_text}, {interval_text} 두 기록을 비교한 결과 "
+            "총 0건의 변화가 확인되었습니다."
+        )
+
     return (
         f"{patient_text}, {room_text}, {interval_text} 사이에 "
         f"총 {change_count}건의 변화가 확인되었습니다."

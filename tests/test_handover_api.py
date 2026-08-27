@@ -97,6 +97,11 @@ class DeterministicSummaryTests(unittest.TestCase):
         summary = _summary_or_fail(self, comparison)
 
         changes_by_id = {change["id"]: change for change in comparison["changes"]}
+        all_change_ids = [change["id"] for change in comparison["changes"]]
+        self.assertEqual(
+            summary["sections"]["situation"][0]["evidenceIds"],
+            all_change_ids,
+        )
         for section_name in ("situation", "background", "assessment", "recommendation"):
             for item in summary["sections"][section_name]:
                 self.assertEqual(set(item), {"text", "evidenceIds"})
@@ -106,6 +111,24 @@ class DeterministicSummaryTests(unittest.TestCase):
                     set(item["evidenceIds"]).issubset(changes_by_id)
                     or item["evidenceIds"] == []
                 )
+
+        for section_name in ("background", "assessment"):
+            self.assertTrue(summary["sections"][section_name])
+            self.assertTrue(
+                all(
+                    item["evidenceIds"]
+                    for item in summary["sections"][section_name]
+                )
+            )
+        self.assertEqual(
+            [
+                item
+                for section_name in ("situation", "background", "assessment", "recommendation")
+                for item in summary["sections"][section_name]
+                if not item["evidenceIds"]
+            ],
+            summary["sections"]["recommendation"],
+        )
 
         background_ids = {
             evidence_id
@@ -132,6 +155,37 @@ class DeterministicSummaryTests(unittest.TestCase):
                 for evidence_id in assessment_ids
             )
         )
+
+    def test_no_previous_situation_explains_missing_baseline_without_zero_change_claim(self):
+        comparison = handover_service.build_handover_comparison(
+            None, deepcopy(CURRENT_RECORD)
+        )
+
+        summary = _summary_or_fail(self, comparison)
+        situation_text = summary["sections"]["situation"][0]["text"]
+
+        self.assertIn("가상 환자", situation_text)
+        self.assertIn("101호", situation_text)
+        self.assertIn("2026-08-28T09:00:00+09:00", situation_text)
+        self.assertIn("이전 기록을 사용할 수 없어 비교를 수행하지 않았습니다.", situation_text)
+        for forbidden in ("총 0건", "변화 없음", "변화가 없습니다", "안정"):
+            self.assertNotIn(forbidden, situation_text)
+        self.assertEqual(summary["sections"]["situation"][0]["evidenceIds"], [])
+
+    def test_no_changes_situation_states_two_timestamp_comparison_and_zero_changes(self):
+        comparison = handover_service.build_handover_comparison(
+            deepcopy(CURRENT_RECORD), deepcopy(CURRENT_RECORD)
+        )
+
+        summary = _summary_or_fail(self, comparison)
+        situation_text = summary["sections"]["situation"][0]["text"]
+
+        self.assertIn("가상 환자", situation_text)
+        self.assertIn("101호", situation_text)
+        self.assertIn("2026-08-28T09:00:00+09:00 -> 2026-08-28T09:00:00+09:00", situation_text)
+        self.assertIn("두 기록을 비교한 결과 총 0건의 변화가 확인되었습니다.", situation_text)
+        self.assertNotIn("이전 기록을 사용할 수 없어 비교를 수행하지 않았습니다.", situation_text)
+        self.assertEqual(summary["sections"]["situation"][0]["evidenceIds"], [])
 
 
 class HandoverApiTests(unittest.TestCase):
@@ -166,8 +220,8 @@ class HandoverApiTests(unittest.TestCase):
 
     def test_compare_endpoint_does_not_mutate_fixture_files(self):
         client = _client_or_fail(self)
-        fixture_path = Path(__file__).parents[1] / "data" / "patients" / "P001.json"
-        fixture_before = fixture_path.read_bytes()
+        fixture_paths = sorted((Path(__file__).parents[1] / "data").rglob("*.json"))
+        fixture_before = {fixture_path: fixture_path.read_bytes() for fixture_path in fixture_paths}
 
         response = client.post(
             "/api/handover/compare",
@@ -175,7 +229,10 @@ class HandoverApiTests(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(fixture_path.read_bytes(), fixture_before)
+        self.assertEqual(
+            {fixture_path: fixture_path.read_bytes() for fixture_path in fixture_paths},
+            fixture_before,
+        )
 
 
 if __name__ == "__main__":
