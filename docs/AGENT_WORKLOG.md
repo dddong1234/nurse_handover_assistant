@@ -20,7 +20,7 @@
 | 2026-08-28 | Figma Make 분석 및 비교·요약 중심 재설계 | supervisor | 1.2.0 | PASSED | Figma 토큰/컨텍스트 분석, 제품·화면 명세, 7단계 구현 계획 | Make 루트 컨텍스트와 실제 미리보기 확인, 명세·계획 placeholder 검사, `git diff --check` 오류 없음 | 0 | 기존 4탭 구성은 제외; 일반 성인병동 교대 인수인계를 기준 가정으로 채택; 제품 코드는 미변경 |
 | 2026-08-28 | 구조화된 차이 비교 엔진 | core-logic (Luna Max) | 1.2.0 | PASSED | `services/handover_service.py`, `tests/test_handover_service.py` | 독립 review·2회 수정 검증 완료; supervisor focused 11/11·full 17/17·harness 통과; P001–P005 모두 ready·근거 ID 유일 | 2 | legacy 정렬 호환, collision-safe ID, JSON evidence path 확인 |
 | 2026-08-28 | 결정론적 SBAR 계약 및 무상태 FastAPI | core-logic (Luna Max) | 1.2.0 | PASSED | `services/handover_service.py`, `api/index.py`, `api/__init__.py`, `tests/test_handover_api.py` | 독립 review·1회 수정 완료; supervisor focused 19/19·full 25/25·harness·P001–P005 API 근거 완전성·전체 fixture 불변 통과 | 1 | `no_previous`/`no_changes` 구분, 임상 조언 없는 Recommendation, 무상태 API 확인; partial 전용 문구 테스트는 후속 Minor |
-| 2026-08-28 | Next.js 작업공간 셸 및 typed demo adapter | frontend (Luna Max) | 1.2.0 | IN_PROGRESS | `src/app/`, `src/lib/`, `src/test/`, `src/components/handover/HandoverWorkspace.tsx` | subagent TDD 후 독립 review·supervisor 화면 검증 예정 | 0 | Task 3; Figma 토큰·환자 컨텍스트만 채택, 3열 Shift Seam 구성 |
+| 2026-08-28 | Next.js 작업공간 셸 및 typed demo adapter | frontend (Luna Max) | 1.2.0 | REVIEW | `src/app/`, `src/lib/`, `src/test/`, `src/components/handover/HandoverWorkspace.tsx` | test·lint·build·25 Python tests·harness 통과; 독립 review와 960–1024px 화면 검증에서 의미 색상·상태 문구·가로 넘침 문제 발견 | 1 | Task 3; 같은 subagent가 Critical 1·Important 3 수정 중 |
 
 ## 마일스톤 게이트
 
