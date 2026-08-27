@@ -67,14 +67,14 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
   it("filters the queue live by patient name, patient ID, and room, with a useful no-results state", async () => {
     const user = userEvent.setup();
     render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
-    const search = screen.getByRole("searchbox", { name: "환자 이름, ID, 병실 검색" });
+    const search = screen.getByRole("searchbox", { name: "환자 검색" });
 
     await user.type(search, "김영희");
     expect(screen.getByRole("button", { name: /김영희/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /홍길동/ })).not.toBeInTheDocument();
 
     await user.clear(search);
-    await user.type(search, "P003");
+    await user.type(search, "p003");
     expect(screen.getByRole("button", { name: /박민수/ })).toBeInTheDocument();
 
     await user.clear(search);
@@ -105,6 +105,61 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
       "검토 우선순위 보통",
       "검토 우선순위 낮음",
     ]);
+  });
+
+  it("selects another patient with the keyboard", async () => {
+    const user = userEvent.setup();
+    render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
+
+    const patient = screen.getByRole("button", { name: /김영희/ });
+    patient.focus();
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByRole("heading", { name: "김영희" })).toBeInTheDocument();
+    expect(patient).toHaveAttribute("aria-current", "true");
+  });
+
+  it("keeps patient context, changes, and deterministic summary aligned after selection", async () => {
+    const user = userEvent.setup();
+    render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
+
+    await user.click(screen.getByRole("button", { name: /김영희/ }));
+
+    const context = screen.getByRole("region", { name: "환자 컨텍스트" });
+    expect(within(context).getByText("302호")).toBeInTheDocument();
+    expect(within(context).getByText("P002")).toBeInTheDocument();
+    expect(within(context).getByText("07/02 06:00")).toBeInTheDocument();
+    expect(within(context).getByText("07/02 09:10")).toBeInTheDocument();
+
+    const comparison = screen.getByRole("region", { name: "변화 검토" });
+    expect(within(comparison).getByRole("heading", { name: "아세틸시스테인" })).toBeInTheDocument();
+    expect(document.getElementById("evidence-medications-아세틸시스테인-1363b9db6619-added")).not.toBeNull();
+
+    const summary = screen.getByRole("complementary", { name: "인수인계 초안" });
+    expect(within(summary).getByText(/김영희\(P002\)/)).toBeInTheDocument();
+  });
+
+  it("exposes category and operation labels on each change card", () => {
+    render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
+
+    const medicationCard = document.getElementById("evidence-medications-타세놀정-500mg-3abed59ec690-added");
+    expect(medicationCard).not.toBeNull();
+    expect(medicationCard).toHaveTextContent("투약");
+    expect(medicationCard).toHaveTextContent("추가");
+  });
+
+  it("uses the visible search label as the accessible name", () => {
+    render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
+
+    expect(screen.getByRole("searchbox", { name: "환자 검색" })).toBeInTheDocument();
+  });
+
+  it("does not present a ready comparison as a reviewed state", () => {
+    render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
+
+    expect(screen.getAllByText("변화 검출").length).toBeGreaterThan(0);
+    expect(screen.queryByText("미검토", { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText("미검토 변화", { exact: true })).not.toBeInTheDocument();
   });
 
   it("shows both values, field path, timestamps, and evidence ID for every change", () => {
@@ -141,11 +196,22 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     render(<HandoverWorkspace data={[makeStatusResponse(status)]} />);
 
     expect(screen.getByRole("heading", { name: message })).toBeInTheDocument();
+
+    if (status === "no_changes") {
+      expect(screen.getByText("비교 기준 시각과 원본 기록을 확인하세요.")).toBeInTheDocument();
+      expect(screen.queryByText("비교 기준 시각과 원본 기록을 확인했습니다.")).not.toBeInTheDocument();
+    }
   });
 
   it("keeps the safety notice visible while reviewing the workspace", () => {
     render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
 
     expect(screen.getAllByText("가상 데이터 · 의사결정 보조가 아님").length).toBeGreaterThan(0);
+  });
+
+  it("keeps the safety notice visible when comparison data is empty", () => {
+    render(<HandoverWorkspace data={[]} />);
+
+    expect(screen.getByText("가상 데이터 · 의사결정 보조가 아님")).toBeInTheDocument();
   });
 });

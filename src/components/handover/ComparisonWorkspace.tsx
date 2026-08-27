@@ -90,7 +90,7 @@ export function ComparisonWorkspace({ comparison }: ComparisonWorkspaceProps) {
         <div className="comparison-empty">
           <span className="empty-symbol empty-no-changes" aria-hidden="true">✓</span>
           <h3>두 기록 사이에서 검출된 변화가 없습니다.</h3>
-          <p>비교 기준 시각과 원본 기록을 확인했습니다.</p>
+          <p>비교 기준 시각과 원본 기록을 확인하세요.</p>
         </div>
       ) : (
         <div className="change-groups">

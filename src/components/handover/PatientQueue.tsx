@@ -16,7 +16,7 @@ function cannotCompare(comparison: HandoverComparison) {
 }
 
 function queueStatusLabel(comparison: HandoverComparison) {
-  if (comparison.status === "ready") return "미검토";
+  if (comparison.status === "ready") return "변화 검출";
   if (comparison.status === "no_changes") return "변화 없음";
   if (comparison.status === "no_previous") return "비교 데이터 없음";
   return "데이터 부족";
@@ -76,14 +76,13 @@ export function PatientQueue({
           type="search"
           value={searchTerm}
           placeholder="이름 · 환자 ID · 병실"
-          aria-label="환자 이름, ID, 병실 검색"
           onChange={(event) => onSearchChange(event.target.value)}
         />
         <kbd className="search-shortcut" aria-hidden="true">/</kbd>
       </label>
 
       <div className="queue-toolbar" aria-label="환자 큐 상태">
-        <span><i className="status-dot dot-watch" aria-hidden="true" />미검토 변화</span>
+        <span><i className="status-dot dot-watch" aria-hidden="true" />변화 검출</span>
         <span><i className="status-dot dot-stable" aria-hidden="true" />변화 없음</span>
       </div>
 

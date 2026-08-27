@@ -175,6 +175,7 @@ export function HandoverWorkspace({ data }: HandoverWorkspaceProps) {
       <main className="workspace-empty" aria-labelledby="workspace-empty-title">
         <h1 id="workspace-empty-title">환자 비교 데이터가 없습니다.</h1>
         <p>읽기 전용 데모 응답을 확인할 수 없습니다.</p>
+        <p className="safety-note">가상 데이터 · 의사결정 보조가 아님</p>
       </main>
     );
   }
