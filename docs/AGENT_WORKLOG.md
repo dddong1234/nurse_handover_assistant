@@ -19,7 +19,7 @@
 | 2026-08-27 | Vercel 배포 목표 반영 | supervisor | 1.2.0 | PASSED | 배포 ADR, 환경 관례, 무상태·보안 제약, 버전 `0.3.0-dev.2` | 공식 Vercel 문서 검토, 하네스 검사 통과, 단위 테스트 6/6 통과, placeholder 및 diff 오류 없음 | 0 | 애플리케이션 스택 전환 코드는 미구현 |
 | 2026-08-28 | Figma Make 분석 및 비교·요약 중심 재설계 | supervisor | 1.2.0 | PASSED | Figma 토큰/컨텍스트 분석, 제품·화면 명세, 7단계 구현 계획 | Make 루트 컨텍스트와 실제 미리보기 확인, 명세·계획 placeholder 검사, `git diff --check` 오류 없음 | 0 | 기존 4탭 구성은 제외; 일반 성인병동 교대 인수인계를 기준 가정으로 채택; 제품 코드는 미변경 |
 | 2026-08-28 | 구조화된 차이 비교 엔진 | core-logic (Luna Max) | 1.2.0 | PASSED | `services/handover_service.py`, `tests/test_handover_service.py` | 독립 review·2회 수정 검증 완료; supervisor focused 11/11·full 17/17·harness 통과; P001–P005 모두 ready·근거 ID 유일 | 2 | legacy 정렬 호환, collision-safe ID, JSON evidence path 확인 |
-| 2026-08-28 | 결정론적 SBAR 계약 및 무상태 FastAPI | core-logic (Luna Max) | 1.2.0 | IN_PROGRESS | `services/handover_service.py`, `api/index.py`, `api/__init__.py`, `tests/test_handover_api.py` | subagent TDD 후 독립 review·supervisor 검증 예정 | 0 | Task 2; 임상 조언 생성·저장소 쓰기·UI 변경 금지 |
+| 2026-08-28 | 결정론적 SBAR 계약 및 무상태 FastAPI | core-logic (Luna Max) | 1.2.0 | REVIEW | `services/handover_service.py`, `api/index.py`, `api/__init__.py`, `tests/test_handover_api.py` | 자체 23/23·harness 통과; 독립 review에서 `no_previous`와 `no_changes` 상황 문구 혼동 1건 발견 | 1 | Task 2; 상태별 문구와 회귀 테스트 수정 중 |
 
 ## 마일스톤 게이트
 
