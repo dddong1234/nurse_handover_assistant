@@ -457,7 +457,7 @@ def _legacy_change_sort_key(
     return (
         category_order[category],
         type_order.get(change_type, len(type_order)),
-        change["id"],
+        str(change["label"]),
     )
 
 

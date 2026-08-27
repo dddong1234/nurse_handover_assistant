@@ -375,6 +375,23 @@ class HandoverComparisonTests(unittest.TestCase):
             "변화 없음",
         )
 
+    def test_legacy_projection_sorts_raw_medication_labels_before_hashed_ids(self):
+        previous = _record(medications=[])
+        current = _record(
+            medications=[
+                {"name": "A B", "route": "PO", "frequency": "QD"},
+                {"name": "A-B", "route": "PO", "frequency": "QD"},
+            ]
+        )
+
+        self.assertEqual(
+            detect_changes(previous, current),
+            [
+                "투약 추가: A B (PO, QD)",
+                "투약 추가: A-B (PO, QD)",
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
