@@ -53,14 +53,35 @@ test("P001 exposes a visible before/current pair with traceable evidence", async
   await expect(temperature.getByText(/근거 ID · vitals-body_temperature-modified/)).toBeVisible();
 });
 
-test("an SBAR evidence link visibly selects the matching change", async ({ page }) => {
+test("summary evidence stays collapsed until requested", async ({ page }) => {
+  await page.goto("/");
+
+  const summary = page.getByRole("complementary", { name: "인계 검토" });
+  const situation = summary.getByRole("region", { name: "Situation" });
+  const disclosure = situation.getByRole("button", { name: "근거 9건" });
+  await expect(disclosure).toBeVisible();
+  const evidenceDetails = disclosure.locator("xpath=..");
+  await expect(evidenceDetails).not.toHaveAttribute("open", "");
+  const evidenceLink = evidenceDetails.getByRole("link", { name: /^근거 1/ });
+  await expect(evidenceLink).toBeHidden();
+
+  await disclosure.click();
+
+  await expect(evidenceDetails).toHaveAttribute("open", "");
+  await expect(evidenceLink).toBeVisible();
+});
+
+test("an expanded SBAR evidence link visibly selects the matching change", async ({ page }) => {
   await page.goto("/");
 
   const temperature = temperatureChange(page);
-  const evidenceLink = page
-    .locator('a[title="vitals-body_temperature-modified"][href="#evidence-vitals-body_temperature-modified"]')
-    .first();
+  const summary = page.getByRole("complementary", { name: "인계 검토" });
+  const situation = summary.getByRole("region", { name: "Situation" });
+  const disclosure = situation.getByRole("button", { name: "근거 9건" });
+  await disclosure.click();
+  const evidenceLink = disclosure.locator("xpath=..").locator('a[title="vitals-body_temperature-modified"]');
   await expect(evidenceLink).toBeVisible();
+  await expect(evidenceLink).toHaveText("근거 3");
 
   await evidenceLink.click();
 

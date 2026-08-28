@@ -172,7 +172,7 @@ export const DEMO_WORKSPACE_DATA: HandoverApiResponse[] = [
       sections: {
         situation: [
           {
-            text: "홍길동(P001), 301호, 2026-07-02T07:00:00+09:00 -> 2026-07-02T09:00:00+09:00 사이에 총 9건의 변화가 확인되었습니다.",
+            text: "홍길동(P001) · 301호 · 07/02 07:00 → 09:00 · 변화 9건",
             evidenceIds: [
               "diagnosis-hypertension-97cf39b495a5-added",
               "medications-타세놀정-500mg-3abed59ec690-added",
@@ -395,7 +395,7 @@ export const DEMO_WORKSPACE_DATA: HandoverApiResponse[] = [
       sections: {
         situation: [
           {
-            text: "김영희(P002), 302호, 2026-07-02T06:00:00+09:00 -> 2026-07-02T09:10:00+09:00 사이에 총 8건의 변화가 확인되었습니다.",
+            text: "김영희(P002) · 302호 · 07/02 06:00 → 09:10 · 변화 8건",
             evidenceIds: [
               "medications-아세틸시스테인-1363b9db6619-added",
               "vitals-body_temperature-modified",
@@ -627,7 +627,7 @@ export const DEMO_WORKSPACE_DATA: HandoverApiResponse[] = [
       sections: {
         situation: [
           {
-            text: "박민수(P003), 401호, 2026-07-02T06:00:00+09:00 -> 2026-07-02T09:20:00+09:00 사이에 총 9건의 변화가 확인되었습니다.",
+            text: "박민수(P003) · 401호 · 07/02 06:00 → 09:20 · 변화 9건",
             evidenceIds: [
               "diagnosis-atrial-fibrillation-09417dacb727-added",
               "medications-디곡신-0-125mg-7f4b9374bd0b-added",
@@ -846,7 +846,7 @@ export const DEMO_WORKSPACE_DATA: HandoverApiResponse[] = [
       sections: {
         situation: [
           {
-            text: "최수진(P004), 205호, 2026-07-02T06:00:00+09:00 -> 2026-07-02T08:40:00+09:00 사이에 총 8건의 변화가 확인되었습니다.",
+            text: "최수진(P004) · 205호 · 07/02 06:00 → 08:40 · 변화 8건",
             evidenceIds: [
               "vitals-body_temperature-modified",
               "vitals-diastolic-modified",
@@ -1013,7 +1013,7 @@ export const DEMO_WORKSPACE_DATA: HandoverApiResponse[] = [
       sections: {
         situation: [
           {
-            text: "이정호(P005), 503호, 2026-07-02T07:00:00+09:00 -> 2026-07-02T09:30:00+09:00 사이에 총 5건의 변화가 확인되었습니다.",
+            text: "이정호(P005) · 503호 · 07/02 07:00 → 09:30 · 변화 5건",
             evidenceIds: [
               "vitals-body_temperature-modified",
               "vitals-diastolic-modified",

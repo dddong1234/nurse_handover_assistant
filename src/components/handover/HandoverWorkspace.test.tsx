@@ -95,6 +95,13 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(screen.getByRole("complementary", { name: "인계 검토" })).toBeInTheDocument();
   });
 
+  it("uses compact clinical Situation text in the checked-in fixture", () => {
+    render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
+
+    expect(screen.getByText("홍길동(P001) · 301호 · 07/02 07:00 → 09:00 · 변화 9건", { exact: true })).toBeInTheDocument();
+    expect(screen.queryByText(/2026-07-02T07:00:00\+09:00/)).not.toBeInTheDocument();
+  });
+
   it("hydrates the summary panel without a mismatch when evidence links repeat", async () => {
     const [response] = buildDemoWorkspaceData();
     if (!response) throw new Error("데모 응답이 없습니다.");
@@ -489,7 +496,10 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
 
     const cardsBefore = screen.getAllByRole("article").length;
     const coverageBefore = screen.getByLabelText("근거 포함률").textContent;
-    const toggle = screen.getAllByRole("button", { name: /근거 .*포함됨/ })[0];
+    const summary = screen.getByRole("complementary", { name: "인계 검토" });
+    const disclosure = within(summary).getByRole("button", { name: "근거 9건" });
+    await userEvent.setup().click(disclosure);
+    const toggle = within(summary).getAllByRole("button", { name: /근거 .*포함됨/ })[0];
     if (!toggle) throw new Error("근거 토글이 없습니다.");
     await userEvent.setup().click(toggle);
 
@@ -499,6 +509,33 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(toggle).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("keeps summary evidence collapsed behind a labelled native disclosure", async () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+    const user = userEvent.setup();
+    const evidenceId = response.comparison.changes[0]!.id;
+
+    render(<HandoverWorkspace data={[response]} />);
+
+    const summary = screen.getByRole("complementary", { name: "인계 검토" });
+    const situationElement = within(summary).getByText(response.summary.sections.situation[0]!.text).closest(".summary-item");
+    if (!(situationElement instanceof HTMLElement)) throw new Error("Situation 요약 항목이 없습니다.");
+    const situation = situationElement;
+    const disclosure = within(situation).getByRole("button", { name: "근거 9건" });
+    const details = disclosure.closest("details");
+    if (!(details instanceof HTMLDetailsElement)) throw new Error("근거 disclosure가 없습니다.");
+
+    expect(details.open).toBe(false);
+    expect(within(summary).queryByText(evidenceId)).not.toBeInTheDocument();
+    expect(within(details).getByRole("link", { name: /근거 1/ })).toBeInTheDocument();
+
+    await user.click(disclosure);
+
+    expect(details.open).toBe(true);
+    expect(within(situation).getByRole("link", { name: /근거 1/ })).toBeVisible();
+    expect(within(situation).getByRole("button", { name: new RegExp(evidenceId) })).toBeVisible();
+  });
+
   it("focuses and highlights a change card when an evidence link is activated", async () => {
     const [response] = buildDemoWorkspaceData();
     if (!response) throw new Error("데모 응답이 없습니다.");
@@ -506,7 +543,13 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     render(<HandoverWorkspace data={[response]} />);
 
     const evidenceId = response.comparison.changes[0]!.id;
-    const evidenceLink = screen.getAllByRole("link", { name: new RegExp(evidenceId.slice(0, 14)) })[0];
+    const summary = screen.getByRole("complementary", { name: "인계 검토" });
+    const situation = within(summary).getByRole("region", { name: "Situation" });
+    const disclosure = within(situation).getByRole("button", { name: "근거 9건" });
+    await user.click(disclosure);
+    const details = disclosure.closest("details");
+    if (!(details instanceof HTMLDetailsElement)) throw new Error("근거 disclosure가 없습니다.");
+    const evidenceLink = within(details).getByRole("link", { name: /^근거 1/ });
     if (!evidenceLink) throw new Error("근거 링크가 없습니다.");
     await user.click(evidenceLink);
 
@@ -524,7 +567,12 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     render(<HandoverWorkspace data={[response]} />);
 
     const evidenceId = response.comparison.changes[0]!.id;
-    const evidenceLink = screen.getAllByRole("link", { name: new RegExp(evidenceId.slice(0, 14)) })[0];
+    const summary = screen.getByRole("complementary", { name: "인계 검토" });
+    const situation = within(summary).getByRole("region", { name: "Situation" });
+    await user.click(within(situation).getByRole("button", { name: "근거 9건" }));
+    const summaryEvidenceDetails = within(situation).getByRole("button", { name: "근거 9건" }).closest("details");
+    if (!(summaryEvidenceDetails instanceof HTMLDetailsElement)) throw new Error("근거 disclosure가 없습니다.");
+    const evidenceLink = within(summaryEvidenceDetails).getByRole("link", { name: /^근거 1/ });
     if (!evidenceLink) throw new Error("근거 링크가 없습니다.");
     const card = document.getElementById(`evidence-${evidenceId}`);
     if (!card) throw new Error("근거 변화 카드가 없습니다.");
@@ -576,7 +624,10 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     const user = userEvent.setup();
     render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
 
-    const toggle = screen.getAllByRole("button", { name: /근거 .*포함됨/ })[0];
+    const summary = screen.getByRole("complementary", { name: "인계 검토" });
+    const situation = within(summary).getByRole("region", { name: "Situation" });
+    await user.click(within(situation).getByRole("button", { name: "근거 9건" }));
+    const toggle = within(situation).getAllByRole("button", { name: /근거 .*포함됨/ })[0];
     if (!toggle) throw new Error("근거 토글이 없습니다.");
     await user.click(toggle);
     await user.click(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" }));
@@ -586,7 +637,10 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" })).not.toBeChecked();
     await user.click(screen.getByRole("button", { name: /홍길동/ }));
     expect(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" })).toBeChecked();
-    expect(screen.getAllByRole("button", { name: /근거 .*제외됨/ }).length).toBeGreaterThan(0);
+    const restoredSummary = screen.getByRole("complementary", { name: "인계 검토" });
+    const restoredSituation = within(restoredSummary).getByRole("region", { name: "Situation" });
+    await user.click(within(restoredSituation).getByRole("button", { name: "근거 9건" }));
+    expect(within(restoredSituation).getAllByRole("button", { name: /근거 .*제외됨/ }).length).toBeGreaterThan(0);
   });
 
   it("locks recommendation and evidence inclusion after review while keeping evidence links navigable", async () => {
@@ -597,7 +651,10 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
 
     const recommendation = screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" });
     await user.type(recommendation, "다음 교대에 확인할 항목");
-    const toggle = screen.getAllByRole("button", { name: /근거 .*포함됨/ })[0];
+    const summary = screen.getByRole("complementary", { name: "인계 검토" });
+    const situation = within(summary).getByRole("region", { name: "Situation" });
+    await user.click(within(situation).getByRole("button", { name: "근거 9건" }));
+    const toggle = within(situation).getAllByRole("button", { name: /근거 .*포함됨/ })[0];
     if (!toggle) throw new Error("근거 토글이 없습니다.");
     await user.click(toggle);
     const selectedStateBeforeReview = toggle.getAttribute("aria-pressed");
@@ -616,7 +673,9 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(toggle).toHaveAttribute("aria-pressed", selectedStateBeforeReview);
 
     const evidenceId = response.comparison.changes[0]!.id;
-    const evidenceLink = screen.getAllByRole("link", { name: new RegExp(evidenceId.slice(0, 14)) })[0];
+    const details = within(situation).getByRole("button", { name: "근거 9건" }).closest("details");
+    if (!(details instanceof HTMLDetailsElement)) throw new Error("근거 disclosure가 없습니다.");
+    const evidenceLink = within(details).getByRole("link", { name: /^근거 1/ });
     if (!evidenceLink) throw new Error("근거 링크가 없습니다.");
     await user.click(evidenceLink);
     expect(document.getElementById(`evidence-${evidenceId}`)).toHaveClass("is-evidence-focused");
@@ -771,7 +830,10 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
 
     rerender(<HandoverWorkspace data={[response]} recordPairs={{ P001: changedPair }} />);
     const recommendation = screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" });
-    const toggle = screen.getAllByRole("button", { name: /근거 .*포함됨/ })[0];
+    const summary = screen.getByRole("complementary", { name: "인계 검토" });
+    const situation = within(summary).getByRole("region", { name: "Situation" });
+    await userEvent.setup().click(within(situation).getByRole("button", { name: "근거 9건" }));
+    const toggle = within(situation).getAllByRole("button", { name: /근거 .*포함됨/ })[0];
     if (!toggle) throw new Error("근거 토글이 없습니다.");
     expect(screen.getByText("서버 요약을 불러오는 중입니다.")).toBeInTheDocument();
     expect(recommendation).toBeDisabled();

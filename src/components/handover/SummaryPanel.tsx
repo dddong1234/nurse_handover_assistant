@@ -109,6 +109,7 @@ function EvidenceLinks({
       {evidenceIds.map((evidenceId, evidenceIndex) => {
         const included = selectedEvidenceIds.has(evidenceId);
         const showToggle = showToggleByIndex[evidenceIndex] ?? false;
+        const evidenceLabel = `근거 ${evidenceIndex + 1}`;
 
         return (
           <span className={`evidence-reference ${included ? "is-included" : "is-excluded"}`} key={`${evidenceId}-${evidenceIndex}`}>
@@ -126,6 +127,7 @@ function EvidenceLinks({
             ) : null}
             <a
               className={`evidence-link mono ${included ? "is-included" : "is-excluded"}`}
+              aria-label={`${evidenceLabel} · 원본 ID ${evidenceId}`}
               href={`#evidence-${evidenceId}`}
               title={evidenceId}
               onClick={(event) => {
@@ -133,12 +135,44 @@ function EvidenceLinks({
                 onEvidenceActivate(evidenceId);
               }}
             >
-              근거 {evidenceId.slice(0, 14)}…
+              {evidenceLabel}
             </a>
           </span>
         );
       })}
     </span>
+  );
+}
+
+function EvidenceDisclosure({
+  evidenceIds,
+  showToggleByIndex,
+  selectedEvidenceIds,
+  onToggleEvidence,
+  onEvidenceActivate,
+  controlsDisabled,
+}: {
+  evidenceIds: string[];
+  showToggleByIndex: readonly boolean[];
+  selectedEvidenceIds: Set<string>;
+  onToggleEvidence: (evidenceId: string) => void;
+  onEvidenceActivate: (evidenceId: string) => void;
+  controlsDisabled: boolean;
+}) {
+  if (evidenceIds.length === 0) return null;
+
+  return (
+    <details className="summary-evidence-disclosure">
+      <summary role="button">{`근거 ${evidenceIds.length}건`}</summary>
+      <EvidenceLinks
+        evidenceIds={evidenceIds}
+        showToggleByIndex={showToggleByIndex}
+        selectedEvidenceIds={selectedEvidenceIds}
+        onToggleEvidence={onToggleEvidence}
+        onEvidenceActivate={onEvidenceActivate}
+        controlsDisabled={controlsDisabled}
+      />
+    </details>
   );
 }
 
@@ -193,7 +227,7 @@ function SummarySection({
                   <span className="summary-bullet" aria-hidden="true">□</span>
                   <div className="summary-item-copy">
                     <p>{item.text}</p>
-                    <EvidenceLinks
+                    <EvidenceDisclosure
                       evidenceIds={item.evidenceIds}
                       showToggleByIndex={evidenceTogglePlan[index] ?? []}
                       selectedEvidenceIds={selectedEvidenceIds}
@@ -216,7 +250,7 @@ function SummarySection({
               <span className="summary-bullet" aria-hidden="true">•</span>
               <div className="summary-item-copy">
                 <p>{item.text}</p>
-                <EvidenceLinks
+                <EvidenceDisclosure
                   evidenceIds={item.evidenceIds}
                   showToggleByIndex={evidenceTogglePlan[index] ?? []}
                   selectedEvidenceIds={selectedEvidenceIds}
