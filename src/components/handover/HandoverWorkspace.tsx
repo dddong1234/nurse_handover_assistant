@@ -30,6 +30,7 @@ type PatientReviewSession = {
   sourceConfirmed: boolean;
   reviewed: boolean;
   focusedEvidenceId: string | null;
+  focusRequestId: number;
 };
 
 type PatientReviewSessions = Record<string, PatientReviewSession>;
@@ -46,6 +47,7 @@ function createReviewSession(response: HandoverApiResponse): PatientReviewSessio
     sourceConfirmed: false,
     reviewed: false,
     focusedEvidenceId: null,
+    focusRequestId: 0,
   };
 }
 
@@ -231,7 +233,11 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   }
 
   function handleEvidenceActivate(evidenceId: string) {
-    updateSession({ ...session, focusedEvidenceId: evidenceId });
+    updateSession({
+      ...session,
+      focusedEvidenceId: evidenceId,
+      focusRequestId: session.focusRequestId + 1,
+    });
   }
 
   function handleSelectPatient(nextPatientId: string) {
@@ -268,6 +274,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
           <ComparisonWorkspace
             comparison={selectedResponse.comparison}
             focusedEvidenceId={session.focusedEvidenceId}
+            focusRequestId={session.focusRequestId}
           />
         </main>
         <SummaryPanel

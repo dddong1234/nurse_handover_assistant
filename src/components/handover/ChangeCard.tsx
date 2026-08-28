@@ -6,6 +6,7 @@ import { formatTimestamp } from "./PatientContextHeader";
 export type ChangeCardProps = {
   change: HandoverChange;
   isFocused?: boolean;
+  focusRequestId?: number;
 };
 
 const CATEGORY_LABELS: Record<HandoverChange["category"], string> = {
@@ -50,7 +51,7 @@ function changeTypeIcon(change: HandoverChange) {
   return "↔";
 }
 
-export function ChangeCard({ change, isFocused = false }: ChangeCardProps) {
+export function ChangeCard({ change, isFocused = false, focusRequestId = 0 }: ChangeCardProps) {
   const previousValue = formatValue(change.previousValue);
   const currentValue = formatValue(change.currentValue);
   const cardRef = useRef<HTMLElement>(null);
@@ -59,7 +60,7 @@ export function ChangeCard({ change, isFocused = false }: ChangeCardProps) {
     if (!isFocused) return;
 
     cardRef.current?.focus();
-  }, [isFocused]);
+  }, [isFocused, focusRequestId]);
 
   return (
     <article

@@ -560,6 +560,33 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(card).toHaveAttribute("tabindex", "-1");
   });
 
+  it("refocuses the same change card when its evidence link is activated again after focus moves away", async () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+    const user = userEvent.setup();
+    render(<HandoverWorkspace data={[response]} />);
+
+    const evidenceId = response.comparison.changes[0]!.id;
+    const summary = screen.getByRole("complementary", { name: "인계 검토" });
+    const situation = within(summary).getByRole("region", { name: "Situation" });
+    await user.click(within(situation).getByRole("button", { name: "근거 9건" }));
+    const summaryEvidenceDetails = within(situation).getByRole("button", { name: "근거 9건" }).closest("details");
+    if (!(summaryEvidenceDetails instanceof HTMLDetailsElement)) throw new Error("근거 disclosure가 없습니다.");
+    const card = document.getElementById(`evidence-${evidenceId}`);
+    if (!card) throw new Error("근거 변화 카드가 없습니다.");
+
+    await user.click(within(summaryEvidenceDetails).getByRole("link", { name: /^근거 1/ }));
+    await waitFor(() => expect(document.activeElement).toBe(card));
+
+    await user.click(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" }));
+    expect(document.activeElement).not.toBe(card);
+    expect(card).toHaveClass("is-evidence-focused");
+
+    await user.click(within(summaryEvidenceDetails).getByRole("link", { name: /^근거 1/ }));
+    await waitFor(() => expect(document.activeElement).toBe(card));
+    expect(card).toHaveClass("is-evidence-focused");
+  });
+
   it("opens the matching evidence details when a summary evidence link is activated", async () => {
     const [response] = buildDemoWorkspaceData();
     if (!response) throw new Error("데모 응답이 없습니다.");

@@ -87,6 +87,16 @@ test("an expanded SBAR evidence link visibly selects the matching change", async
 
   await expect(temperature).toHaveAttribute("aria-current", "true");
   await expect(temperature.locator("details.evidence-details")).toHaveAttribute("open", "");
+  await expect(temperature).toBeFocused();
+
+  const sourceConfirmation = page.getByRole("checkbox", { name: "원본 기록을 확인했습니다" });
+  await sourceConfirmation.click();
+  await expect(sourceConfirmation).toBeFocused();
+
+  await evidenceLink.click();
+
+  await expect(temperature).toHaveAttribute("aria-current", "true");
+  await expect(temperature).toBeFocused();
 });
 
 test("a failed comparison is not reviewed until source confirmation, then review locks the workspace", async ({ page }) => {
