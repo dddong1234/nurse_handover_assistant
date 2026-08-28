@@ -73,62 +73,7 @@ _INSTRUCTIONS = (
     "verbatim. Return only the requested JSON object."
 )
 
-# These markers are not facts. If the model adds them, it is making a clinical
-# judgment, recommendation, or action request rather than rewording evidence.
-_UNSUPPORTED_CLAUSE_MARKERS = (
-    "안정",
-    "악화",
-    "호전",
-    "위험",
-    "정상",
-    "비정상",
-    "심각",
-    "중증",
-    "즉시",
-    "의사",
-    "의료진",
-    "보고",
-    "권고",
-    "권장",
-    "추천",
-    "추가 검사",
-    "검사 필요",
-    "필요",
-    "처치",
-    "치료",
-    "관찰",
-    "주의",
-    "해야",
-    "계획",
-    "의심",
-    "가능성",
-    "예상",
-    "stable",
-    "unstable",
-    "worsening",
-    "improving",
-    "normal",
-    "abnormal",
-    "urgent",
-    "immediately",
-    "doctor",
-    "clinician",
-    "report",
-    "recommend",
-    "should",
-    "needs",
-    "risk",
-    "severe",
-)
-_CHANGE_TYPE_MARKERS = {
-    "added": ("추가", "신규", "새로", "added", "new"),
-    "removed": ("삭제", "제거", "중단", "removed", "discontinued", "stopped"),
-    "modified": ("변경", "변화", "수정", "조정", "modified", "changed"),
-}
 _NUMBER_PATTERN = re.compile(r"(?<![\w])[-+]?\d+(?:[.,]\d+)?")
-_SENTENCE_BOUNDARY_PATTERN = re.compile(
-    r"[!?。！？]+|\n+|(?<!\d)\.(?!\d)|(?<=\d)\.(?=\s|$)"
-)
 
 
 def _fallback_summary(
@@ -258,21 +203,6 @@ def _required_facts(change: dict[str, Any]) -> list[str]:
     return facts
 
 
-def _category_markers(change: dict[str, Any]) -> tuple[str, ...]:
-    category = change.get("category")
-    marker_map = {
-        "diagnosis": ("진단", "diagnosis"),
-        "medications": ("투약", "약", "medication", "medications"),
-        "vitals": ("활력징후", "vital", "vitals"),
-        "notes": ("메모", "note", "notes"),
-    }
-    markers = list(marker_map.get(category, ()))
-    label = change.get("label")
-    if isinstance(label, str) and label:
-        markers.insert(0, label)
-    return tuple(dict.fromkeys(markers))
-
-
 def _value_facts(value: Any) -> list[str]:
     if value is None or isinstance(value, bool):
         return []
@@ -355,8 +285,103 @@ def _no_evidence_text_counts(deterministic_summary: Any) -> Counter[str]:
     return counts
 
 
-def _split_sentences_decimal_safe(text: str) -> list[str]:
-    return [part.strip() for part in _SENTENCE_BOUNDARY_PATTERN.split(text) if part.strip()]
+def _terminal_pattern() -> str:
+    return r"\s*[.!?。！？]?\s*"
+
+
+def _safe_change_patterns(change: dict[str, Any]) -> tuple[str, ...]:
+    """Return the finite sentence templates allowed for one change."""
+
+    category = change.get("category")
+    change_type = change.get("changeType")
+    facts = _required_facts(change)
+    if not facts:
+        return ()
+
+    value = re.escape(facts[0])
+    terminal = _terminal_pattern()
+    if category == "diagnosis":
+        if change_type == "added":
+            return (
+                rf"(?:새로운|새|신규)\s+진단(?:으로|이|은|는|[:：])?\s*{value}"
+                rf"(?:가|이|은|는|을)?\s*(?:추가|등록|확인)"
+                rf"(?:되었습니다|됐습니다|되었어요|됨|되었다)?{terminal}",
+                rf"{value}\s*진단(?:이|은|는|으로)?\s*(?:추가|등록|확인)"
+                rf"(?:되었습니다|됐습니다|되었어요|됨|되었다)?{terminal}",
+                rf"진단\s*(?:추가|신규)\s*[:：]?\s*{value}{terminal}",
+            )
+        if change_type == "removed":
+            return (
+                rf"(?:기존\s+)?진단(?:이|은|는|을|[:：])?\s*{value}"
+                rf"(?:가|이|은|는|을)?\s*(?:삭제|제거|해제)"
+                rf"(?:되었습니다|됐습니다|되었어요|됨|되었다)?{terminal}",
+                rf"{value}\s*진단(?:이|은|는|으로)?\s*(?:삭제|제거|해제)"
+                rf"(?:되었습니다|됐습니다|되었어요|됨|되었다)?{terminal}",
+                rf"진단\s*(?:삭제|제거)\s*[:：]?\s*{value}{terminal}",
+            )
+    elif category == "vitals" and change_type == "modified" and len(facts) >= 2:
+        label = re.escape(str(change.get("label", "활력징후")))
+        previous = re.escape(facts[0])
+        current = re.escape(facts[1])
+        unit = r"\s*(?:°C|℃|도|mmHg|%|bpm)?"
+        connector = r"\s*(?:에서|부터|->|→|=>)\s*"
+        action = r"(?:변경|변화|조정|수정|changed|modified)"
+        ending = r"(?:되었습니다|됐습니다|되었음|됨|되었다)?"
+        return (
+            rf"{label}\s*(?:은|는|이|가)?\s*{previous}{unit}{connector}"
+            rf"{current}{unit}\s*(?:로|으로)?\s*{action}{ending}{terminal}",
+            rf"{label}\s*(?:은|는|이|가)?\s*{action}\s*[:：]?\s*"
+            rf"{previous}\s*(?:->|→|=>|에서|부터)\s*{current}{unit}{terminal}",
+        )
+    elif category == "notes":
+        note = value
+        if change_type == "added":
+            return (
+                rf"(?:새로운|새|신규)?\s*(?:간호\s*)?메모(?:로|이|은|는|[:：])?\s*{note}"
+                rf"(?:가|이|은|는|을)?\s*(?:추가|등록|기록)"
+                rf"(?:되었습니다|됐습니다|되었어요|됨|되었다)?{terminal}",
+                rf"{note}\s*(?:간호\s*)?메모(?:가|이|은|는)?\s*(?:추가|등록|기록)"
+                rf"(?:되었습니다|됐습니다|되었어요|됨|되었다)?{terminal}",
+                rf"(?:메모|note)\s*(?:추가|신규)\s*[:：]?\s*{note}{terminal}",
+            )
+        if change_type == "removed":
+            return (
+                rf"(?:기존\s*)?(?:간호\s*)?메모(?:로|이|은|는|[:：])?\s*{note}"
+                rf"(?:가|이|은|는|을)?\s*(?:삭제|제거)"
+                rf"(?:되었습니다|됐습니다|되었어요|됨|되었다)?{terminal}",
+                rf"{note}\s*(?:간호\s*)?메모(?:가|이|은|는)?\s*(?:삭제|제거)"
+                rf"(?:되었습니다|됐습니다|되었어요|됨|되었다)?{terminal}",
+                rf"(?:메모|note)\s*(?:삭제|제거)\s*[:：]?\s*{note}{terminal}",
+            )
+    elif category == "medications" and len(facts) >= 3:
+        name, route, frequency = (re.escape(fact) for fact in facts[:3])
+        medication = r"(?:투약|약|medication|medications)"
+        separator = r"\s*(?:[,/()\[\]:：])?\s*"
+        if change_type == "added":
+            action = r"(?:추가|신규|새로)"
+            return (
+                rf"{medication}\s*{action}\s*[:：]?\s*{name}{separator}{route}"
+                rf"\s*[,/]\s*{frequency}\s*(?:\)|\])?{terminal}",
+                rf"{name}{separator}{route}\s*[,/]\s*{frequency}\s*"
+                rf"(?:투약|약)\s*(?:이|은|는)?\s*{action}{terminal}",
+            )
+        if change_type == "removed":
+            action = r"(?:삭제|제거|중단)"
+            return (
+                rf"{medication}\s*{action}\s*[:：]?\s*{name}{separator}{route}"
+                rf"\s*[,/]\s*{frequency}\s*(?:\)|\])?{terminal}",
+                rf"{name}{separator}{route}\s*[,/]\s*{frequency}\s*"
+                rf"(?:투약|약)\s*(?:이|은|는)?\s*{action}{terminal}",
+            )
+    return ()
+
+
+def _matches_safe_change_sentence(text: str, change: dict[str, Any]) -> bool:
+    candidate = text.strip()
+    return any(
+        re.fullmatch(pattern, candidate, flags=re.IGNORECASE) is not None
+        for pattern in _safe_change_patterns(change)
+    )
 
 
 def _validate_text(
@@ -369,6 +394,9 @@ def _validate_text(
     # situation text that does not repeat every change value.
     if (text, tuple(evidence_ids)) in trusted_pairs:
         return
+
+    if len(evidence_ids) != 1:
+        raise ValueError("reworded items must cite one evidence ID")
 
     allowed_numbers = _numbers_for_evidence(evidence_ids, changes_by_id)
     observed_numbers = set(_NUMBER_PATTERN.findall(text))
@@ -383,42 +411,11 @@ def _validate_text(
     if evidence_ids and required_facts and not all(fact in text for fact in required_facts):
         raise ValueError("summary omits an evidence value")
 
-    for evidence_id in evidence_ids:
-        change = changes_by_id[evidence_id]
-        change_type = change.get("changeType")
-        category_markers = _category_markers(change)
-        if category_markers and not any(
-            marker in text if not marker.isascii() else marker in text.lower()
-            for marker in category_markers
-        ):
-            raise ValueError("summary changes deterministic change category")
-        markers = _CHANGE_TYPE_MARKERS.get(change_type, ())
-        if markers and not any(
-            marker in text
-            if not marker.isascii()
-            else marker in text.lower()
-            for marker in markers
-        ):
-            raise ValueError("summary changes deterministic change meaning")
-        if not _modified_values_are_ordered(text, change):
-            raise ValueError("summary reverses deterministic change values")
-
-    sentences = _split_sentences_decimal_safe(text)
-    if evidence_ids and required_facts:
-        for sentence in sentences:
-            if not sentence:
-                continue
-            if not any(fact in sentence for fact in required_facts):
-                raise ValueError("summary contains an unsupported statement")
-
-    lowered_text = text.lower()
-    for marker in _UNSUPPORTED_CLAUSE_MARKERS:
-        marker_present = marker in text if not marker.isascii() else marker in lowered_text
-        if marker_present and not any(
-            marker in fact if not marker.isascii() else marker in fact.lower()
-            for fact in required_facts
-        ):
-            raise ValueError("summary contains a clinical inference")
+    change = changes_by_id[evidence_ids[0]]
+    if not _modified_values_are_ordered(text, change):
+        raise ValueError("summary reverses deterministic change values")
+    if not _matches_safe_change_sentence(text, change):
+        raise ValueError("summary does not match an approved change sentence")
 
 
 def _comparison_changes(comparison: Any) -> tuple[list[str], dict[str, dict[str, Any]]]:

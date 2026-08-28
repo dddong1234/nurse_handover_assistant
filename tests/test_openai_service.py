@@ -303,6 +303,71 @@ class OpenAIServiceTests(unittest.TestCase):
 
         self.assertEqual(result, _expected_fallback(deterministic))
 
+    def test_negated_added_diagnosis_with_trailing_cancel_falls_back(self):
+        previous = deepcopy(PREVIOUS_RECORD)
+        previous["diagnosis"] = []
+        comparison = handover_service.build_handover_comparison(previous, deepcopy(CURRENT_RECORD))
+        deterministic = handover_service.build_deterministic_summary(comparison)
+        added_diagnosis_id = next(
+            change["id"]
+            for change in comparison["changes"]
+            if change["category"] == "diagnosis" and change["changeType"] == "added"
+        )
+        output = _valid_ai_output(deterministic)
+        diagnosis_item = _item_for_evidence(output, added_diagnosis_id)
+        diagnosis_item["text"] = "진단 추가 취소: sample change"
+        client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+        result = rewrite_handover_summary(comparison, deterministic, client)
+
+        self.assertEqual(result, _expected_fallback(deterministic))
+
+    def test_negated_added_diagnosis_with_reversed_clause_falls_back(self):
+        previous = deepcopy(PREVIOUS_RECORD)
+        previous["diagnosis"] = []
+        comparison = handover_service.build_handover_comparison(previous, deepcopy(CURRENT_RECORD))
+        deterministic = handover_service.build_deterministic_summary(comparison)
+        added_diagnosis_id = next(
+            change["id"]
+            for change in comparison["changes"]
+            if change["category"] == "diagnosis" and change["changeType"] == "added"
+        )
+        output = _valid_ai_output(deterministic)
+        diagnosis_item = _item_for_evidence(output, added_diagnosis_id)
+        diagnosis_item["text"] = "sample change 진단은 추가가 아니라 삭제되었습니다."
+        client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+        result = rewrite_handover_summary(comparison, deterministic, client)
+
+        self.assertEqual(result, _expected_fallback(deterministic))
+
+    def test_safe_reworded_added_diagnosis_sentence_is_accepted(self):
+        previous = deepcopy(PREVIOUS_RECORD)
+        previous["diagnosis"] = []
+        comparison = handover_service.build_handover_comparison(previous, deepcopy(CURRENT_RECORD))
+        deterministic = handover_service.build_deterministic_summary(comparison)
+        added_diagnosis_id = next(
+            change["id"]
+            for change in comparison["changes"]
+            if change["category"] == "diagnosis" and change["changeType"] == "added"
+        )
+        output = _valid_ai_output(deterministic)
+        diagnosis_item = _item_for_evidence(output, added_diagnosis_id)
+        diagnosis_item["text"] = "새로운 진단으로 sample change가 확인되었습니다."
+        client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+        result = rewrite_handover_summary(comparison, deterministic, client)
+
+        self.assertEqual(result["mode"], "ai")
+        self.assertEqual(
+            result["sections"]["background"][0]["text"],
+            "새로운 진단으로 sample change가 확인되었습니다.",
+        )
+        self.assertEqual(
+            result["sections"]["background"][0]["evidenceIds"],
+            [added_diagnosis_id],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
