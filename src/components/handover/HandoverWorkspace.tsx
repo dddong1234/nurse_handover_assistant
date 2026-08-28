@@ -67,10 +67,6 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const requestVersion = useRef(0);
 
   useEffect(() => {
-    apiStateRef.current = apiStateByPatient;
-  }, [apiStateByPatient]);
-
-  useEffect(() => {
     sessionsRef.current = sessions;
   }, [sessions]);
 

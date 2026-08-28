@@ -4,6 +4,33 @@
 
 ## [Unreleased]
 
+## [0.5.0-dev.0] - 2026-08-28
+
+### Added
+
+- Next.js 기반 3영역 간호 인수인계 작업공간과 반응형 390·1024·1440px 레이아웃
+- 이전·현재 값, 우선순위, 원본 필드와 evidence ID를 포함하는 구조화 비교 화면
+- 근거 연결 SBAR, 근거 focus, 간호사 직접 Recommendation, 원본 확인 후 검토 잠금
+- 서버 전용 OpenAI Responses API 문장화와 엄격한 deterministic fallback
+- P001 핵심 시연 흐름과 fallback·검토·반응형을 검증하는 Playwright E2E
+
+### Changed
+
+- README와 CI를 Next.js + FastAPI + Vercel Preview 목표 구조로 갱신
+- Vitest 범위를 `src/**/*.test.{ts,tsx}`로 고정해 Playwright 명세와 테스트 실행기를 분리
+- 요청 cleanup 뒤 stale pending 상태가 복원되던 ref 동기화를 제거
+
+### Verification
+
+- Python unittest 45/45, frontend Vitest 45/45, Playwright 7/7 통과
+- ESLint, Next production build, Python compile, harness, `git diff --check` 통과
+- 1440px·390px 브라우저 시각 검증과 수평 overflow 0 확인
+
+### Known limits
+
+- Vercel 프로젝트 연결과 실제 Preview의 `/`, `/api/health`, `/api/handover/compare` 검증 전이므로 최종 `0.5.0`은 미확정
+- OpenAI live smoke는 provider의 `credit_balance_exhausted`로 deterministic fallback만 검증됨
+
 ## [0.3.0-dev.2] - 2026-08-27
 
 ### Added

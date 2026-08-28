@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { act } from "react";
+import { StrictMode, act } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -353,6 +353,56 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     });
     expect(screen.getByRole("heading", { name: "홍길동" })).toBeInTheDocument();
     expect(screen.getAllByRole("article").length).toBeGreaterThan(0);
+  });
+
+  it("settles a rejected compare after StrictMode replays an unchanged pair", async () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+    const data = [response];
+    const pair = {
+      previous: { patient_id: "P001", updated_at: "2026-07-01T21:00:00+09:00" },
+      current: { patient_id: "P001", updated_at: "2026-07-02T07:00:00+09:00" },
+    };
+    const requests: Array<ReturnType<typeof createDeferred<{
+      ok: boolean;
+      status: number;
+      json: () => Promise<unknown>;
+    }>>> = [];
+    const fetchMock = vi.fn().mockImplementation(() => {
+      const request = createDeferred<{
+        ok: boolean;
+        status: number;
+        json: () => Promise<unknown>;
+      }>();
+      requests.push(request);
+      return request.promise;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { rerender } = render(
+      <StrictMode>
+        <HandoverWorkspace data={data} recordPairs={{ P001: pair }} />
+      </StrictMode>,
+    );
+    await screen.findByText("서버 요약을 불러오는 중입니다.");
+    rerender(
+      <StrictMode>
+        <HandoverWorkspace data={data} recordPairs={{ P001: pair }} />
+      </StrictMode>,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    requests.forEach((request) => {
+      request.resolve({
+        ok: false,
+        status: 503,
+        json: async () => ({ detail: "provider unavailable" }),
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("서버 요약을 불러오지 못해 검증된 데모 결과를 표시합니다.")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" })).toBeEnabled();
   });
 
   it("replaces only the selected patient's response after a validated API success", async () => {
