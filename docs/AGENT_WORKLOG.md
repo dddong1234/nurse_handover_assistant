@@ -25,10 +25,11 @@
 | 2026-08-28 | 근거 연결 SBAR 패널 및 compare API 클라이언트 | frontend (Luna Max) | 1.2.0 | PASSED | `src/components/handover/`, `src/lib/handover-api.ts`, `src/lib/demo-records.ts`, `src/app/page.tsx`, `src/app/globals.css` | supervisor frontend 40/40·lint·build·Python 25/25·harness·P001–P005 API smoke 통과; 독립 최종 review Critical/Important 0건 | 2 | Task 5; reviewed snapshot·fixture fallback·pair-aware pending 상태 머신, 근거 focus/포함률, 수기 Recommendation, session-only review 완료. 직렬화·비정상 status·ordering test는 비차단 Minor |
 | 2026-08-28 | 레퍼런스 기반 비교 중심 시각 위계 개선 | frontend (Luna Max) | 1.2.0 | PASSED | `src/components/handover/`, `src/app/globals.css`, 제품 명세·작업 계획 | supervisor Vitest 44/44·lint·build·Python 25/25·harness 통과; 새 브라우저 첫 로드 오류 0건, 1280·1024·390px 수평 넘침 없음, 근거 링크→변화 상세 focus/open 확인; 독립 review Critical/Important/Minor 0건 | 1 | Task 5A; hydration 비결정성 제거 및 1024px 요약 띠 줄바꿈 보정 완료; 데이터 계약·API·임상 의미는 변경하지 않음 |
 | 2026-08-28 | 서버 전용 OpenAI 문장화 및 결정론적 fallback | core-logic (Luna Max) | 1.2.0 | PASSED | `services/openai_service.py`, `api/index.py`, 관련 오프라인 테스트 | 독립 review 2회 수정 후 clean; supervisor focused 28/28·Python 45/45·frontend 44/44·lint·build·py_compile·harness 통과 | 2 | P001 실 API는 `429 credit_balance_exhausted`; HTTP 200 deterministic fallback·근거 9/9·사용 토큰/비용 0 확인. 성공 AI 문장화는 크레딧 확보 후 재검증 필요 |
-| 2026-08-28 | E2E·반응형 시각 QA 및 Vercel 준비 게이트 | frontend (Luna Max) + supervisor | 1.2.0 | BLOCKED | `e2e/`, Playwright/Vitest 설정, UI 요청 상태, CI·README·`0.5.0-dev.0` | 독립 review Critical/Important 0; Python 45/45·frontend 45/45·E2E 7/7·lint·build·py_compile·harness·diff check 통과; 1440·390px overflow 0 | 1 | stale pending 수정 완료. 실제 Vercel 프로젝트 연결과 Preview의 `/`·`/api/health`·`/api/handover/compare` 검증에 사용자 승인 필요; Production은 별도 승인 |
+| 2026-08-28 | E2E·반응형 시각 QA 및 Vercel 준비 게이트 | frontend (Luna Max) + supervisor | 1.2.0 | PASSED | `e2e/`, Playwright/Vitest 설정, UI 요청 상태, CI·README·`0.5.0` | 독립 review Critical/Important 0; 최종 Python 60/60·frontend 51/51·로컬/Production E2E 각 9/9·lint·build·harness 통과; 1440·1024·390px overflow 0 | 2 | 첫 Production의 API 404를 명시적 `/api/:path*` rewrite와 회귀 테스트로 수정. Preview 검증 후 사용자 승인으로 Production 승격 완료 |
 | 2026-08-28 | 인수인계 Assistant 기획·근거 조사·산출물 패키지 | supervisor | 1.2.0 | PASSED | Notion 리서치 허브, 9쪽 DOCX/Google Docs 기획서, Figma 메인·예외상태 화면 | Google Docs native 변환 및 PDF 9쪽 전 페이지 렌더 검토; DOCX 접근성 0건·표 geometry·제목선 검사 통과; Figma 1440×1024 메인 화면과 상태 보드 screenshot·metadata 검증 | 2 | 두 번째 Notion의 AI 차팅 코파일럿은 병렬 별도 모듈로만 기록. 시간·금액은 외부 근거, MVP 목표, 병동 시나리오 가정을 분리하고 직접 현금절감이 아닌 기회가치로 표기 |
 | 2026-08-28 | 임상형 약물 요약·AI 우선 요청·작업 화면 카피 정리 | core-logic + frontend (Luna Max), supervisor | 1.2.0 | PASSED | 약물 SBAR 표현, OpenAI 검증 문법, API 요청 모드, 요약 출처·경고 표시, demo fixture, 헤더·빈 상태·요약 패널, E2E | 핵심 로직 독립 재검토 Critical/Important 0; 화면 독립 검토 Critical/Important/Minor 0; supervisor Python 55/55·Vitest 48/48·E2E 8/8·lint·build·harness·1440/390 시각 QA 통과 | 1 | 실 `.env` 호출은 HTTP 200·근거 9/9를 유지한 `AI_FALLBACK_USED`; provider 크레딧 확보 전까지 성공 AI 문장화는 외부 미검증. 범위 고지는 UI가 아닌 README·제품 문서에 유지 |
 | 2026-08-28 | 교대 시간·SBAR 근거 레일 임상형 정리 | core-logic + frontend (Luna Max), supervisor | 1.2.0 | PASSED | compact Situation 시간, 접이식 근거 트레이, 반복 근거 선택 포커스, demo·단위·E2E 회귀 테스트 | 핵심 로직·화면 독립 재검토 Critical/Important 0; supervisor Python 59/59·Vitest 51/51·E2E 9/9·lint·build·harness 통과; 1440/1024/390 시각·overflow 확인 | 1 | 전체 근거 ID는 접근성 이름·툴팁·원문 카드에 유지. provider 호출 없이 deterministic 경로만 검증; 근거 순번의 섹션별 재시작과 추가 keyboard/multi-item 자동화는 비차단 후속 |
+| 2026-08-28 | Vercel Preview·Production 배포 | supervisor | 1.2.0 | PASSED | Vercel 프로젝트 연결, API catch-all rewrite, Preview/Production smoke, `0.5.0` 문서·버전 | Preview·Production `/`·`/api/health` 200; 가상 기록 compare `ready`·변화 1·근거 1; Production Playwright 9/9; 공개 화면 clientWidth=scrollWidth=1265 | 1 | 공개 주소 `https://nurse-handover-assistant.vercel.app`; OpenAI 키는 Vercel에 등록하지 않아 규칙 요약 fallback으로 동작 |
 
 ## 마일스톤 게이트
 
@@ -36,7 +37,7 @@
 |---|---:|---|---|
 | 현재 MVP 기준선 검증 | `0.3.0` | PLANNED | 기존 기능 실행, 핵심 흐름 smoke test, 알려진 한계 기록 |
 | 구조화된 차이 비교 | `0.4.0` | PLANNED | 단위 테스트, 누락·오탐 사례 검증, UI 계약 고정 |
-| Figma 기반 UI 통합 | `0.5.0` | PLANNED | MCP 설계 대조, 주요 화면 시각 검증, 상태별 UI 확인 |
+| Figma 기반 UI 통합 | `0.5.0` | PASSED | MCP 설계 대조, 주요 화면 시각 검증, 상태별 UI 확인 |
 | 근거 제한 AI 요약 | `0.6.0` | PLANNED | 오프라인 fallback, API 통합 테스트, 환각·누락 평가 |
 | 포트폴리오 안정판 | `1.0.0` | PLANNED | 전체 시연 시나리오, 회귀 테스트, 문서·영상 준비 |
 

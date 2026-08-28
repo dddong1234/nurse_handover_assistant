@@ -508,11 +508,11 @@ npx playwright test
 
 Expected: all commands exit 0.
 
-- [ ] **Step 6: Validate Vercel Preview before production**
+- [x] **Step 6: Validate Vercel Preview before production**
 
 Verify `/`, `/api/health`, and `/api/handover/compare`; verify deterministic mode with no key and AI fallback behavior. Production deployment is a separate user-approved action.
 
-- [ ] **Step 7: Update version and durable documentation**
+- [x] **Step 7: Update version and durable documentation**
 
 After all gates pass, set `VERSION` to `0.5.0`, add the release to `CHANGELOG.md`, and record commands, results, screenshots, known limits, and any supervisor rulings in `docs/AGENT_WORKLOG.md`.
 

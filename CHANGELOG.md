@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-28
+
+### Added
+
+- 공개 포트폴리오 앱을 `https://nurse-handover-assistant.vercel.app`에 배포
+- `/api/:path*` 요청을 단일 FastAPI Function으로 전달하는 명시적 Vercel rewrite와 배포 계약 테스트 추가
+
 ### Changed
 
 - 약물 변화 SBAR를 직렬화된 JSON 대신 `약명 · 경로 · 빈도` 임상형 표현으로 변경
@@ -15,8 +22,9 @@
 
 ### Verification
 
-- Python unittest 59/59, frontend Vitest 51/51, Playwright 9/9 통과
-- ESLint, Next production build, harness 통과; 1440×900·1024×768·390×844 브라우저 시각·수평 overflow 검증 완료
+- Python unittest 60/60, frontend Vitest 51/51, 로컬·Production Playwright 각각 9/9 통과
+- ESLint, Next production build, harness 통과; Production 1440×900·1024×768·390×844 브라우저 시각·수평 overflow 검증 완료
+- Vercel Preview와 Production에서 `/` 200, `/api/health` 200, `/api/handover/compare`의 `ready`·변화 1건·근거 1건 deterministic 응답 확인
 - `.env` 실 API smoke는 HTTP 200과 근거 9/9를 유지한 `AI_FALLBACK_USED`를 확인
 
 ### Known limits

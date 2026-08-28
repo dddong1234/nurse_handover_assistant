@@ -2,6 +2,8 @@
 
 가상 환자의 이전·현재 기록을 비교해 변화와 근거를 연결하고, 간호사가 SBAR 초안을 검토하도록 돕는 포트폴리오 프로토타입입니다.
 
+공개 데모: [nurse-handover-assistant.vercel.app](https://nurse-handover-assistant.vercel.app)
+
 핵심은 세 가지입니다.
 
 - deterministic 비교 엔진이 활력징후·투약·진단·간호 메모의 변화를 검출합니다.
@@ -29,7 +31,7 @@
 - API: FastAPI, Python 3.12
 - AI: OpenAI Responses API, Structured Outputs, deterministic fallback
 - Test: Vitest, Testing Library, Playwright, Python unittest
-- Deploy target: Vercel Preview → 승인 후 Production
+- Deploy: Vercel Preview 검증 후 Production (`0.5.0`)
 
 ## 로컬 실행
 
@@ -46,7 +48,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-표시된 로컬 URL을 브라우저에서 엽니다. Next 개발 서버만 실행하면 Python Function route는 404가 되며, UI는 이를 감지해 검증된 demo fallback을 표시합니다. 프런트엔드와 Python Function을 같은 origin에서 확인하는 최종 통합 환경은 Vercel Preview입니다.
+표시된 로컬 URL을 브라우저에서 엽니다. Next 개발 서버만 실행하면 Python Function route는 404가 되며, UI는 이를 감지해 검증된 demo fallback을 표시합니다. 프런트엔드와 Python Function을 같은 origin에서 확인하는 통합 환경은 Vercel Preview와 Production입니다.
 
 ### 3. Python API 단독 실행
 
