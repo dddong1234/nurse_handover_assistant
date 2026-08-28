@@ -7,6 +7,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { buildDemoWorkspaceData } from "@/lib/demo-adapter";
 import type { HandoverApiResponse, HandoverStatus } from "@/lib/contracts";
+import { demoRecordPairs } from "@/lib/demo-records";
+import { persistRecordDraft, RECORD_DRAFTS_STORAGE_KEY } from "@/lib/record-drafts";
 
 import { HandoverWorkspace } from "./HandoverWorkspace";
 import { SummaryPanel } from "./SummaryPanel";
@@ -55,6 +57,7 @@ function makeStatusResponse(status: HandoverStatus): HandoverApiResponse {
 describe("HandoverWorkspace patient queue and comparison flow", () => {
   afterEach(() => {
     cleanup();
+    window.sessionStorage.clear();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -185,6 +188,76 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
       consoleError.mockRestore();
       container.remove();
     }
+  });
+
+  it("hydrates a persisted full-record draft before rendering or requesting a comparison", async () => {
+    const responses = buildDemoWorkspaceData();
+    const response = responses[0];
+    const pair = demoRecordPairs.P001;
+    if (!response || !pair) throw new Error("P001 데모 응답이 없습니다.");
+    const draft = structuredClone(pair.current);
+    draft.vitals.body_temperature = 39.1;
+    persistRecordDraft(window.sessionStorage, draft);
+
+    const draftResponse = structuredClone(response);
+    draftResponse.summary.sections.situation[0]!.text = "저장된 초안 비교 결과";
+    const requestBodies: Array<{ current: { vitals: Record<string, number> } }> = [];
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((_input, init) => {
+      const body = JSON.parse((init as RequestInit).body as string) as { current: { vitals: Record<string, number> } };
+      requestBodies.push(body);
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => draftResponse,
+      });
+    }));
+
+    render(<HandoverWorkspace data={responses} recordPairs={{ P001: pair }} />);
+
+    expect(screen.getByRole("heading", { name: "환자 기록을 불러오는 중입니다." })).toBeInTheDocument();
+    expect(screen.queryByText(response.summary.sections.situation[0]!.text, { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText("저장된 초안 비교 결과")).not.toBeInTheDocument();
+
+    await waitFor(() => expect(screen.getByText("저장된 초안 비교 결과")).toBeInTheDocument());
+    expect(requestBodies.some(({ current }) => current.vitals.body_temperature === 38.2)).toBe(false);
+    expect(requestBodies.some(({ current }) => current.vitals.body_temperature === 39.1)).toBe(true);
+  });
+
+  it("ignores a persisted draft whose patient identity does not match the bundled record", async () => {
+    const responses = buildDemoWorkspaceData();
+    const response = responses[0];
+    const pair = demoRecordPairs.P001;
+    if (!response || !pair) throw new Error("P001 데모 응답이 없습니다.");
+    const mismatchedDraft = structuredClone(pair.current);
+    mismatchedDraft.name = "김영희";
+    mismatchedDraft.vitals.body_temperature = 39.1;
+    persistRecordDraft(window.sessionStorage, mismatchedDraft);
+
+    const requestBodies: Array<{ current: { vitals: Record<string, number> } }> = [];
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((_input, init) => {
+      const body = JSON.parse((init as RequestInit).body as string) as {
+        current: { vitals: Record<string, number> };
+      };
+      requestBodies.push(body);
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => response,
+      });
+    }));
+
+    render(<HandoverWorkspace data={responses} recordPairs={{ P001: pair }} />);
+
+    await waitFor(() => expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument());
+    expect(requestBodies).toHaveLength(1);
+    expect(requestBodies[0]?.current.vitals.body_temperature).toBe(38.2);
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "원본 기록" }));
+    const dialog = screen.getByRole("dialog", { name: /홍길동/ });
+    await user.click(within(dialog).getByRole("tab", { name: /현재 기록/ }));
+    expect(within(dialog).getByRole("textbox", { name: "이름" })).toHaveValue("홍길동");
+    expect(within(dialog).getByRole("spinbutton", { name: "체온" })).toHaveValue(38.2);
   });
 
   it("filters the queue live by patient name, patient ID, and room, with a useful no-results state", async () => {
@@ -920,5 +993,346 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
       expect(screen.getByText("현재 환자 서버 요약")).toBeInTheDocument();
       expect(screen.queryByText("늦게 도착한 이전 환자 요약")).not.toBeInTheDocument();
     });
+  });
+
+  it("ignores a stale automatic comparison after a newer manual comparison starts", async () => {
+    const responses = buildDemoWorkspaceData();
+    const initialResponse = responses[0];
+    const pair = demoRecordPairs.P001;
+    if (!initialResponse || !pair) throw new Error("P001 데모 응답이 없습니다.");
+    const staleResponse = structuredClone(initialResponse);
+    staleResponse.summary.sections.situation[0]!.text = "자동 비교의 늦은 응답";
+    const manualResponse = structuredClone(initialResponse);
+    manualResponse.summary.sections.situation[0]!.text = "수동 비교의 최신 응답";
+    const automaticRequest = createDeferred<{
+      ok: boolean;
+      status: number;
+      json: () => Promise<unknown>;
+    }>();
+    const manualRequest = createDeferred<{
+      ok: boolean;
+      status: number;
+      json: () => Promise<unknown>;
+    }>();
+    const fetchMock = vi.fn()
+      .mockReturnValueOnce(automaticRequest.promise)
+      .mockReturnValueOnce(manualRequest.promise);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<HandoverWorkspace data={responses} recordPairs={{ P001: pair }} />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "원본 기록" }));
+    const dialog = screen.getByRole("dialog", { name: /홍길동/ });
+    await user.click(within(dialog).getByRole("tab", { name: /현재 기록/ }));
+    await user.click(within(dialog).getByRole("button", { name: "변경사항 비교" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(within(dialog).getByRole("button", { name: "초기화" })).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "비교 중" })).toBeDisabled();
+
+    automaticRequest.resolve({
+      ok: true,
+      status: 200,
+      json: async () => staleResponse,
+    });
+    await act(async () => {
+      await automaticRequest.promise;
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("자동 비교의 늦은 응답")).not.toBeInTheDocument();
+    });
+
+    manualRequest.resolve({
+      ok: true,
+      status: 200,
+      json: async () => manualResponse,
+    });
+    await waitFor(() => expect(screen.getByText("수동 비교의 최신 응답")).toBeInTheDocument());
+  });
+
+  it("unlocks the retained snapshot when a manual comparison fails after invalidating an automatic request", async () => {
+    const responses = buildDemoWorkspaceData();
+    const initialResponse = responses[0];
+    const pair = demoRecordPairs.P001;
+    if (!initialResponse || !pair) throw new Error("P001 데모 응답이 없습니다.");
+    const staleResponse = structuredClone(initialResponse);
+    staleResponse.summary.sections.situation[0]!.text = "무효화된 자동 비교 응답";
+    const retryResponse = structuredClone(initialResponse);
+    retryResponse.summary.sections.situation[0]!.text = "재시도 비교 성공";
+    const automaticRequest = createDeferred<{
+      ok: boolean;
+      status: number;
+      json: () => Promise<unknown>;
+    }>();
+    const retryRequest = createDeferred<{
+      ok: boolean;
+      status: number;
+      json: () => Promise<unknown>;
+    }>();
+    const fetchMock = vi.fn()
+      .mockReturnValueOnce(automaticRequest.promise)
+      .mockRejectedValueOnce(new Error("manual network failure"))
+      .mockReturnValueOnce(retryRequest.promise);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<HandoverWorkspace data={responses} recordPairs={{ P001: pair }} />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "원본 기록" }));
+    const dialog = screen.getByRole("dialog", { name: /홍길동/ });
+    await user.click(within(dialog).getByRole("tab", { name: /현재 기록/ }));
+    await user.click(within(dialog).getByRole("button", { name: "변경사항 비교" }));
+
+    await waitFor(() => {
+      expect(within(dialog).getByText("비교하지 못했습니다. 기록을 확인한 뒤 다시 시도하세요.")).toBeInTheDocument();
+    });
+    expect(within(dialog).getByRole("button", { name: "변경사항 비교" })).toBeEnabled();
+    expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument();
+
+    automaticRequest.resolve({
+      ok: true,
+      status: 200,
+      json: async () => staleResponse,
+    });
+    await act(async () => {
+      await automaticRequest.promise;
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(screen.queryByText("무효화된 자동 비교 응답")).not.toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "변경사항 비교" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    retryRequest.resolve({
+      ok: true,
+      status: 200,
+      json: async () => retryResponse,
+    });
+    await waitFor(() => expect(screen.getByText("재시도 비교 성공")).toBeInTheDocument());
+  });
+
+  it("opens the selected fictional chart and applies a successful edited comparison", async () => {
+    const responses = buildDemoWorkspaceData();
+    const initialResponse = responses[0];
+    const pair = demoRecordPairs.P001;
+    if (!initialResponse || !pair) throw new Error("P001 데모 응답이 없습니다.");
+    const serverResponse = structuredClone(initialResponse);
+    serverResponse.summary.sections.situation[0]!.text = "편집된 체온 39.1 서버 요약";
+    const temperatureChange = serverResponse.comparison.changes.find(
+      (change) => change.evidence.fieldPath === "vitals.body_temperature",
+    );
+    if (!temperatureChange) throw new Error("체온 변화 근거가 없습니다.");
+    temperatureChange.currentValue = 39.1;
+    temperatureChange.delta = 1.2;
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue(initialResponse),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<HandoverWorkspace data={responses} recordPairs={{ P001: pair }} />);
+    await waitFor(() => expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument());
+    fetchMock.mockClear();
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue(serverResponse),
+    });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "원본 기록" }));
+    const dialog = screen.getByRole("dialog", { name: /홍길동/ });
+    await user.click(within(dialog).getByRole("tab", { name: /현재 기록/ }));
+    const temperature = within(dialog).getByRole("spinbutton", { name: "체온" });
+    await user.clear(temperature);
+    await user.type(temperature, "39.1");
+    await user.click(within(dialog).getByRole("button", { name: "변경사항 비교" }));
+
+    await waitFor(() => expect(screen.getByText("편집된 체온 39.1 서버 요약")).toBeInTheDocument());
+    const temperatureCard = document.getElementById("evidence-vitals-body_temperature-modified");
+    if (!temperatureCard) throw new Error("체온 변화 카드가 없습니다.");
+    expect(within(temperatureCard).getByText("39.1", { exact: true })).toBeInTheDocument();
+    expect(screen.getByText("편집된 체온 39.1 서버 요약", { exact: true })).toHaveTextContent("39.1");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const requestBody = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string) as {
+      current: { patient_id: string; vitals: Record<string, number> };
+    };
+    expect(requestBody.current.patient_id).toBe("P001");
+    expect(requestBody.current.vitals.body_temperature).toBe(39.1);
+    expect(screen.queryByRole("dialog", { name: /홍길동/ })).not.toBeInTheDocument();
+
+    const storedDrafts = JSON.parse(window.sessionStorage.getItem(RECORD_DRAFTS_STORAGE_KEY) ?? "{}");
+    expect(storedDrafts.P001.vitals.body_temperature).toBe(39.1);
+    expect(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" })).not.toBeChecked();
+  });
+
+  it("keeps the last verified comparison and open draft when edited comparison fails", async () => {
+    const responses = buildDemoWorkspaceData();
+    const initialResponse = responses[0];
+    const pair = demoRecordPairs.P001;
+    if (!initialResponse || !pair) throw new Error("P001 데모 응답이 없습니다.");
+    const verifiedResponse = structuredClone(initialResponse);
+    verifiedResponse.summary.sections.situation[0]!.text = "마지막 검증 비교 결과";
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue(verifiedResponse),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<HandoverWorkspace data={responses} recordPairs={{ P001: pair }} />);
+    await waitFor(() => expect(screen.getByText("마지막 검증 비교 결과")).toBeInTheDocument());
+    fetchMock.mockClear();
+    fetchMock.mockRejectedValueOnce(new Error("network"));
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "원본 기록" }));
+    const dialog = screen.getByRole("dialog", { name: /홍길동/ });
+    await user.click(within(dialog).getByRole("tab", { name: /현재 기록/ }));
+    const temperature = within(dialog).getByRole("spinbutton", { name: "체온" });
+    await user.clear(temperature);
+    await user.type(temperature, "39.1");
+    await user.click(within(dialog).getByRole("button", { name: "변경사항 비교" }));
+
+    await waitFor(() => expect(within(screen.getByRole("dialog", { name: /홍길동/ })).getByRole("alert")).toHaveTextContent("비교하지 못했습니다. 기록을 확인한 뒤 다시 시도하세요."));
+    expect(screen.getByText("마지막 검증 비교 결과")).toBeInTheDocument();
+    expect(within(screen.getByRole("dialog", { name: /홍길동/ })).getByRole("spinbutton", { name: "체온" })).toHaveValue(39.1);
+    expect(window.sessionStorage.getItem(RECORD_DRAFTS_STORAGE_KEY)).toBeNull();
+  });
+
+  it("restores the bundled patient record and clears its session draft", async () => {
+    const responses = buildDemoWorkspaceData();
+    const initialResponse = responses[0];
+    const pair = demoRecordPairs.P001;
+    if (!initialResponse || !pair) throw new Error("P001 데모 응답이 없습니다.");
+    const seededDraft = structuredClone(pair.current);
+    seededDraft.vitals.body_temperature = 39.1;
+    persistRecordDraft(window.sessionStorage, seededDraft);
+    const resetResponse = structuredClone(initialResponse);
+    resetResponse.summary.sections.situation[0]!.text = "초기화된 번들 비교 결과";
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue(initialResponse),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue(resetResponse),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<HandoverWorkspace data={responses} recordPairs={{ P001: pair }} />);
+    await waitFor(() => expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument());
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "원본 기록" }));
+    const dialog = screen.getByRole("dialog", { name: /홍길동/ });
+    await user.click(within(dialog).getByRole("tab", { name: /현재 기록/ }));
+    expect(within(dialog).getByRole("spinbutton", { name: "체온" })).toHaveValue(39.1);
+    await user.click(within(dialog).getByRole("button", { name: "초기화" }));
+
+    await waitFor(() => expect(within(screen.getByRole("dialog", { name: /홍길동/ })).getByRole("spinbutton", { name: "체온" })).toHaveValue(38.2));
+    const storedDrafts = JSON.parse(window.sessionStorage.getItem(RECORD_DRAFTS_STORAGE_KEY) ?? "{}");
+    expect(storedDrafts.P001).toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const resetRequestBody = JSON.parse(fetchMock.mock.calls[1]![1]!.body as string) as {
+      current: { vitals: Record<string, number> };
+    };
+    expect(resetRequestBody.current.vitals.body_temperature).toBe(38.2);
+    expect(screen.getByText("초기화된 번들 비교 결과")).toBeInTheDocument();
+  });
+
+  it("keeps the applied comparison, reviewed session, and unsaved form when reset comparison fails", async () => {
+    const responses = buildDemoWorkspaceData();
+    const initialResponse = responses[0];
+    const pair = demoRecordPairs.P001;
+    if (!initialResponse || !pair) throw new Error("P001 데모 응답이 없습니다.");
+    const verifiedResponse = structuredClone(initialResponse);
+    verifiedResponse.summary.sections.situation[0]!.text = "초기 검증 결과";
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue(verifiedResponse),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<HandoverWorkspace data={responses} recordPairs={{ P001: pair }} />);
+    await waitFor(() => expect(screen.getByText("초기 검증 결과")).toBeInTheDocument());
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" }));
+    await user.click(screen.getByRole("button", { name: "검토 완료" }));
+    expect(screen.getByText("검토 완료", { selector: ".queue-status" })).toBeInTheDocument();
+
+    fetchMock.mockClear();
+    fetchMock.mockRejectedValueOnce(new Error("reset failure"));
+    await user.click(screen.getByRole("button", { name: "원본 기록" }));
+    const dialog = screen.getByRole("dialog", { name: /홍길동/ });
+    await user.click(within(dialog).getByRole("tab", { name: /현재 기록/ }));
+    const temperature = within(dialog).getByRole("spinbutton", { name: "체온" });
+    await user.clear(temperature);
+    await user.type(temperature, "39.1");
+    await user.click(within(dialog).getByRole("button", { name: "초기화" }));
+
+    await waitFor(() => expect(within(dialog).getByRole("alert")).toHaveTextContent("비교하지 못했습니다. 기록을 확인한 뒤 다시 시도하세요."));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const requestBody = JSON.parse(fetchMock.mock.calls[0]![1]!.body as string) as {
+      current: { vitals: Record<string, number> };
+    };
+    expect(requestBody.current.vitals.body_temperature).toBe(38.2);
+    expect(screen.getByText("초기 검증 결과")).toBeInTheDocument();
+    expect(screen.getByText("검토 완료", { selector: ".queue-status" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("spinbutton", { name: "체온" })).toHaveValue(39.1);
+  });
+
+  it("invalidates a reviewed patient only after an edited comparison succeeds", async () => {
+    const responses = buildDemoWorkspaceData();
+    const initialResponse = responses[0];
+    const pair = demoRecordPairs.P001;
+    if (!initialResponse || !pair) throw new Error("P001 데모 응답이 없습니다.");
+    const successResponse = structuredClone(initialResponse);
+    successResponse.summary.sections.situation[0]!.text = "검토 후 편집 비교 성공";
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue(initialResponse),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={responses} recordPairs={{ P001: pair }} />);
+    await waitFor(() => expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument());
+    await user.click(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" }));
+    await user.click(screen.getByRole("button", { name: "검토 완료" }));
+    expect(screen.getByText("검토 완료", { selector: ".queue-status" })).toBeInTheDocument();
+
+    fetchMock.mockClear();
+    fetchMock.mockRejectedValueOnce(new Error("network"));
+    await user.click(screen.getByRole("button", { name: "원본 기록" }));
+    let dialog = screen.getByRole("dialog", { name: /홍길동/ });
+    await user.click(within(dialog).getByRole("tab", { name: /현재 기록/ }));
+    const temperature = within(dialog).getByRole("spinbutton", { name: "체온" });
+    await user.clear(temperature);
+    await user.type(temperature, "39.1");
+    await user.click(within(dialog).getByRole("button", { name: "변경사항 비교" }));
+    await waitFor(() => expect(within(screen.getByRole("dialog", { name: /홍길동/ })).getByRole("alert")).toBeInTheDocument());
+    expect(screen.getByText("검토 완료", { selector: ".queue-status" })).toBeInTheDocument();
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue(successResponse),
+    });
+    dialog = screen.getByRole("dialog", { name: /홍길동/ });
+    await user.click(within(dialog).getByRole("button", { name: "변경사항 비교" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: /홍길동/ })).not.toBeInTheDocument());
+    expect(screen.queryByText("검토 완료", { selector: ".queue-status" })).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" })).not.toBeChecked();
   });
 });

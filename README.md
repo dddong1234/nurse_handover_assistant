@@ -16,6 +16,8 @@
 
 - Next.js 16 + React 19 기반 3영역 인수인계 작업공간
 - 환자 검색·선택, Shift Seam 이전/현재 비교, 중요도별 변화 검토
+- 환자별 이전·현재 원본 차트 조회와 구조화된 현재 기록 입력
+- 입력 기록의 비교 성공 후 적용, 브라우저 세션 유지와 가상 데이터 초기화
 - 근거 링크에서 대응 변화 카드로 이동·focus
 - SBAR 근거 포함률, 간호사 직접 Recommendation, 원본 확인 후 검토 잠금
 - Python FastAPI `/api/health`, `/api/handover/compare`
@@ -31,7 +33,7 @@
 - API: FastAPI, Python 3.12
 - AI: OpenAI Responses API, Structured Outputs, deterministic fallback
 - Test: Vitest, Testing Library, Playwright, Python unittest
-- Deploy: Vercel Preview 검증 후 Production (`0.5.0`)
+- Deploy: Vercel Preview 검증 후 Production (`0.6.0`)
 
 ## 로컬 실행
 
@@ -87,6 +89,8 @@ pnpm test:e2e
 
 Vercel 환경에서 `OPENAI_API_KEY`는 서버 환경변수로만 등록하며 `NEXT_PUBLIC_` 접두사를 사용하지 않습니다.
 
+원본 차트에서 적용한 기록은 `sessionStorage`에만 보관됩니다. 같은 탭 세션에서는 유지되지만 서버, 다른 브라우저나 다른 기기로 공유되지 않습니다. `변경사항 비교`와 `초기화` 모두 API 비교가 성공한 경우에만 화면 결과와 검토 상태를 교체합니다.
+
 ## 주요 구조
 
 ```text
@@ -100,6 +104,8 @@ tests/                   Python 단위·API 계약 테스트
 e2e/                     Playwright 핵심 시연 흐름
 docs/                    제품 명세·ADR·하네스·작업 기록
 ```
+
+원본 기록 조회·입력의 화면, 데이터와 실패 처리 계약은 `docs/product/record-viewer-editor-spec.md`에 기록합니다.
 
 ## 안전 범위
 

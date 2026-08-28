@@ -2,6 +2,7 @@ import type { HandoverComparison } from "@/lib/contracts";
 
 export type PatientContextHeaderProps = {
   comparison: HandoverComparison;
+  onOpenRecord?: () => void;
 };
 
 export function formatSex(sex: string) {
@@ -17,7 +18,7 @@ export function formatTimestamp(timestamp: string | null) {
   return `${match[2]}/${match[3]} ${match[4]}:${match[5]}`;
 }
 
-export function PatientContextHeader({ comparison }: PatientContextHeaderProps) {
+export function PatientContextHeader({ comparison, onOpenRecord }: PatientContextHeaderProps) {
   const { patient, interval } = comparison;
   const totalChangeCount = comparison.changes.length;
   const highPriorityChangeCount = comparison.changes.filter(
@@ -34,6 +35,11 @@ export function PatientContextHeader({ comparison }: PatientContextHeaderProps) 
             <h2 id="patient-context-title">{patient.name}</h2>
           </div>
           <span className="context-id mono">{patient.id}</span>
+          {onOpenRecord ? (
+            <button type="button" className="record-open-button" onClick={onOpenRecord}>
+              원본 기록
+            </button>
+          ) : null}
         </div>
         <div className="context-facts" aria-label="환자 기본 정보">
           <span className="fact-item"><strong className="mono">{patient.room}호</strong></span>

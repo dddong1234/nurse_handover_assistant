@@ -213,3 +213,7 @@ Python과 TypeScript는 같은 JSON 필드명을 사용하며 API 계약 테스�
 - 처방, 검사, 영상, I/O, 낙상 등 현재 스키마에 없는 임상 데이터
 - 자동 Recommendation 생성과 임상적 악화 판정
 - 다중 사용자 공유와 장기 영속 저장
+
+## 관련 기능 명세
+
+- 가상 원본 차트 조회, 현재 기록 입력, 세션 저장과 재비교 흐름: `docs/product/record-viewer-editor-spec.md`

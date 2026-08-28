@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { buildDemoWorkspaceData } from "../src/lib/demo-adapter";
+
 const FALLBACK_MESSAGE = "서버 요약을 불러오지 못해 검증된 데모 결과를 표시합니다.";
 const RETIRED_SAFETY_NOTICE = ["가상 데이터", "의사결정 보조가 아님"].join(" · ");
 const RETIRED_UTILITY_CONTEXT = ["일반 성인병동", "교대 검토"].join(" · ");
@@ -146,6 +148,62 @@ test("the workspace uses clinician source labels without portfolio chrome or raw
   await expect(page.locator("body")).not.toContainText('{"frequency"');
 });
 
+test("applies an edited P001 temperature through the route-controlled compare workflow", async ({ page }) => {
+  const [baseResponse] = buildDemoWorkspaceData();
+  if (!baseResponse) throw new Error("P001 데모 응답이 없습니다.");
+  const successResponse = structuredClone(baseResponse);
+  successResponse.summary.sections.situation[0]!.text = "편집 비교 성공 · 체온 39.1";
+  const editedTemperatureChange = successResponse.comparison.changes.find(
+    (change) => change.evidence.fieldPath === "vitals.body_temperature",
+  );
+  if (!editedTemperatureChange) throw new Error("체온 변화 근거가 없습니다.");
+  editedTemperatureChange.currentValue = 39.1;
+  editedTemperatureChange.delta = 1.2;
+  const editedRequestBodies: Array<{
+    current: { patient_id: string; vitals: Record<string, unknown> };
+  }> = [];
+
+  await page.route("**/api/handover/compare", async (route) => {
+    const body = JSON.parse(route.request().postData() ?? "{}") as {
+      current?: { patient_id?: string; vitals?: Record<string, unknown> };
+    };
+    const isEditedRequest = body.current?.vitals?.body_temperature === 39.1;
+    if (isEditedRequest) {
+      editedRequestBodies.push({
+        current: {
+          patient_id: body.current?.patient_id ?? "",
+          vitals: body.current?.vitals ?? {},
+        },
+      });
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(isEditedRequest ? successResponse : baseResponse),
+    });
+  });
+
+  await page.goto("/");
+  const openButton = page.getByRole("button", { name: "원본 기록", exact: true });
+  await expect(openButton).toBeVisible();
+  await openButton.click();
+
+  const dialog = page.getByRole("dialog", { name: /홍길동/ });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("tab", { name: /현재 기록/ }).click();
+  await dialog.getByRole("spinbutton", { name: "체온" }).fill("39.1");
+  await dialog.getByRole("button", { name: "변경사항 비교" }).click();
+
+  await expect(page.getByText("편집 비교 성공 · 체온 39.1", { exact: true })).toBeVisible();
+  const temperatureCard = temperatureChange(page);
+  await expect(temperatureCard.getByText("39.1", { exact: true })).toBeVisible();
+  await expect(page.getByText("편집 비교 성공 · 체온 39.1", { exact: true })).toContainText("39.1");
+  await expect(dialog).not.toBeVisible();
+  expect(editedRequestBodies.length).toBeGreaterThanOrEqual(1);
+  expect(editedRequestBodies[0]?.current.patient_id).toBe("P001");
+  expect(editedRequestBodies[0]?.current.vitals.body_temperature).toBe(39.1);
+});
+
 const responsiveViewports = [
   { width: 390, height: 844 },
   { width: 1024, height: 768 },
@@ -194,5 +252,23 @@ for (const viewport of responsiveViewports) {
         }),
       )
       .toBeLessThanOrEqual(1);
+
+    const recordButton = page.getByRole("button", { name: "원본 기록", exact: true });
+    await recordButton.scrollIntoViewIfNeeded();
+    await expect(recordButton).toBeVisible();
+    await recordButton.click();
+    const recordDialog = page.getByRole("dialog", { name: /홍길동/ });
+    await expect(recordDialog).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const rootWidth = document.documentElement.scrollWidth;
+          const bodyWidth = document.body?.scrollWidth ?? 0;
+          return Math.max(rootWidth, bodyWidth) - window.innerWidth;
+        }),
+      )
+      .toBeLessThanOrEqual(1);
+    await recordDialog.getByRole("button", { name: "원본 기록 닫기" }).click();
+    await expect(recordDialog).not.toBeVisible();
   });
 }

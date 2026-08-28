@@ -1618,6 +1618,511 @@ ul {
   font-size: 12px;
 }
 
+.record-open-button {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.record-open-button:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.record-drawer-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  background: color-mix(in srgb, var(--ink) 35%, transparent);
+  animation: record-drawer-fade 150ms ease-out;
+}
+
+.record-drawer {
+  display: grid;
+  width: min(680px, 100vw);
+  max-width: 100vw;
+  height: 100%;
+  min-width: 0;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: -12px 0 30px color-mix(in srgb, var(--ink) 14%, transparent);
+  animation: record-drawer-slide 200ms ease-out;
+}
+
+.record-drawer-header {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px 17px;
+  border-bottom: 1px solid var(--line);
+}
+
+.record-drawer-header > div {
+  min-width: 0;
+}
+
+.record-drawer-header h2 {
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+  font-size: 21px;
+  font-weight: 760;
+  letter-spacing: -0.045em;
+}
+
+.record-drawer-patient {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.record-drawer-close {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.record-drawer-close:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.record-drawer-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 1px solid var(--line);
+}
+
+.record-drawer-tabs button {
+  display: flex;
+  min-width: 0;
+  min-height: 47px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-bottom: 2px solid transparent;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.record-drawer-tabs button:hover,
+.record-drawer-tabs button.is-active {
+  color: var(--primary);
+}
+
+.record-drawer-tabs button.is-active {
+  border-bottom-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.record-drawer-tabs button span {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.record-drawer-scroll {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0 24px 24px;
+  scrollbar-width: thin;
+}
+
+.record-tab-note {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.record-tab-note .mono {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}
+
+.record-tab-note.current .mono {
+  color: var(--primary);
+}
+
+.record-chart-body {
+  min-width: 0;
+}
+
+.record-chart-section {
+  min-width: 0;
+  padding: 20px 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.record-section-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 13px;
+}
+
+.record-section-code {
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}
+
+.record-section-heading h3 {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 760;
+  letter-spacing: -0.025em;
+}
+
+.record-section-rule {
+  height: 1px;
+  flex: 1;
+  background: var(--line);
+}
+
+.record-identity-grid,
+.record-value-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 18px;
+}
+
+.record-value-pair {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.record-value-pair > span,
+.record-readonly-field > span,
+.record-input-field > span,
+.record-edit-field > span,
+.record-time-field > span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.record-value-pair > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.record-value-pair > strong small {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.record-line-list {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.record-line-list li {
+  min-width: 0;
+  padding: 7px 8px;
+  border-left: 2px solid var(--primary);
+  background: var(--primary-soft);
+  color: var(--ink);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.record-empty,
+.record-empty-line {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.record-medication-list {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.record-medication-readonly {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.record-medication-readonly:last-child {
+  border-bottom: 0;
+}
+
+.record-medication-readonly strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+
+.record-medication-readonly span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.record-input-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+
+.record-input-field,
+.record-readonly-field,
+.record-edit-field,
+.record-time-field {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+.record-input-with-unit {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.record-input-with-unit input {
+  min-width: 0;
+  flex: 1;
+}
+
+.record-input-with-unit small {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-family: var(--mono-font);
+  font-size: 9px;
+}
+
+.record-readonly-field input,
+.record-input-field input,
+.record-edit-field input,
+.record-edit-field textarea,
+.record-time-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  outline: 0;
+  background: var(--surface);
+  font-size: 11px;
+}
+
+.record-readonly-field input {
+  background: var(--canvas);
+  color: var(--muted);
+}
+
+.record-edit-field textarea {
+  min-height: 48px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.record-readonly-field input:focus-visible,
+.record-input-field input:focus-visible,
+.record-edit-field input:focus-visible,
+.record-edit-field textarea:focus-visible,
+.record-time-field input:focus-visible {
+  border-color: var(--primary);
+}
+
+.record-readonly-field input:disabled,
+.record-input-field input:disabled,
+.record-edit-field input:disabled,
+.record-edit-field textarea:disabled,
+.record-time-field input:disabled {
+  cursor: not-allowed;
+  background: var(--canvas);
+  color: var(--muted);
+  opacity: 1;
+}
+
+.record-edit-list {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+}
+
+.record-edit-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.record-medication-edit-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.75fr) minmax(0, 0.85fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.record-row-remove,
+.record-row-add,
+.record-reset-button {
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.record-row-add {
+  justify-self: start;
+  margin-top: 2px;
+  border-style: dashed;
+  color: var(--primary);
+}
+
+.record-row-remove:hover,
+.record-row-add:hover,
+.record-reset-button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.record-row-remove:disabled,
+.record-row-add:disabled,
+.record-reset-button:disabled {
+  cursor: not-allowed;
+  border-color: var(--line);
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.record-chart-time {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 0 2px;
+}
+
+.record-chart-time span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.record-chart-time strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.record-time-field {
+  padding: 18px 0 4px;
+}
+
+.record-drawer-error {
+  margin: 0 24px 12px;
+  padding: 10px 11px;
+  border-left: 3px solid var(--critical);
+  background: var(--critical-soft);
+  color: var(--critical);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.record-drawer-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 9px;
+  padding: 13px 24px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.record-compare-button {
+  min-height: 40px;
+  border-radius: 4px;
+  background: var(--primary);
+  color: var(--surface);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.record-compare-button:hover:not(:disabled) {
+  background: var(--primary);
+}
+
+.record-compare-button:disabled {
+  cursor: not-allowed;
+  background: var(--line);
+  color: var(--muted);
+}
+
+@keyframes record-drawer-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes record-drawer-slide {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
 @media (max-width: 1279px) and (min-width: 960px) {
   .utility-bar {
     padding-right: 18px;
@@ -1963,6 +2468,53 @@ ul {
     flex-direction: column;
     gap: 2px;
   }
+
+  .record-open-button {
+    margin-left: 4px;
+    padding: 0 7px;
+  }
+
+  .record-drawer-header {
+    gap: 9px;
+    padding: 16px 14px 13px;
+  }
+
+  .record-drawer-header h2 {
+    font-size: 17px;
+  }
+
+  .record-drawer-scroll {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .record-input-grid,
+  .record-identity-grid,
+  .record-value-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .record-medication-edit-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .record-medication-edit-row .record-edit-field:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .record-medication-edit-row .record-row-remove {
+    justify-self: start;
+  }
+
+  .record-drawer-error {
+    margin-right: 14px;
+    margin-left: 14px;
+  }
+
+  .record-drawer-footer {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1973,5 +2525,10 @@ ul {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+
+  .record-drawer,
+  .record-drawer-backdrop {
+    animation: none;
   }
 }
