@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from collections import Counter
 import json
 import re
 from typing import Any, Literal, TypedDict
@@ -119,8 +120,15 @@ _UNSUPPORTED_CLAUSE_MARKERS = (
     "risk",
     "severe",
 )
+_CHANGE_TYPE_MARKERS = {
+    "added": ("추가", "신규", "새로", "added", "new"),
+    "removed": ("삭제", "제거", "중단", "removed", "discontinued", "stopped"),
+    "modified": ("변경", "변화", "수정", "조정", "modified", "changed"),
+}
 _NUMBER_PATTERN = re.compile(r"(?<![\w])[-+]?\d+(?:[.,]\d+)?")
-_SENTENCE_PATTERN = re.compile(r"[^.!?。！？\n]+(?:[.!?。！？]|$)")
+_SENTENCE_BOUNDARY_PATTERN = re.compile(
+    r"[!?。！？]+|\n+|(?<!\d)\.(?!\d)|(?<=\d)\.(?=\s|$)"
+)
 
 
 def _fallback_summary(
@@ -218,23 +226,22 @@ def _scalar_values(value: Any):
         yield value
 
 
-def _required_facts(change: dict[str, Any]) -> list[str]:
-    category = change.get("category")
+def _change_values(change: dict[str, Any]) -> tuple[Any, ...]:
     previous = change.get("previousValue")
     current = change.get("currentValue")
-    values: list[Any] = []
+    change_type = change.get("changeType")
+    if change_type == "added":
+        return (current,)
+    if change_type == "removed":
+        return (previous,)
+    return (previous, current)
 
-    if category == "medications":
-        # Medication names are protected facts. Route/frequency may be omitted
-        # while rewording, but numeric values anywhere in the change remain
-        # protected by the global number check below.
-        for value in (previous, current):
-            if isinstance(value, dict):
-                values.append(value.get("name"))
-            else:
-                values.append(value)
-    else:
-        values.extend((previous, current))
+
+def _required_facts(change: dict[str, Any]) -> list[str]:
+    # Facts are taken from the side(s) that the deterministic change type
+    # actually references. This prevents a reversed added/removed statement
+    # from passing merely because both values happen to be present elsewhere.
+    values = _change_values(change)
 
     facts: list[str] = []
     for value in values:
@@ -251,12 +258,58 @@ def _required_facts(change: dict[str, Any]) -> list[str]:
     return facts
 
 
-def _all_allowed_numbers(comparison: Any, deterministic_summary: Any) -> set[str]:
+def _category_markers(change: dict[str, Any]) -> tuple[str, ...]:
+    category = change.get("category")
+    marker_map = {
+        "diagnosis": ("진단", "diagnosis"),
+        "medications": ("투약", "약", "medication", "medications"),
+        "vitals": ("활력징후", "vital", "vitals"),
+        "notes": ("메모", "note", "notes"),
+    }
+    markers = list(marker_map.get(category, ()))
+    label = change.get("label")
+    if isinstance(label, str) and label:
+        markers.insert(0, label)
+    return tuple(dict.fromkeys(markers))
+
+
+def _value_facts(value: Any) -> list[str]:
+    if value is None or isinstance(value, bool):
+        return []
+    leaves = _scalar_values(value) if isinstance(value, (dict, list, tuple, set)) else (value,)
+    facts: list[str] = []
+    for leaf in leaves:
+        fact = str(leaf)
+        if fact and fact not in facts:
+            facts.append(fact)
+    return facts
+
+
+def _modified_values_are_ordered(text: str, change: dict[str, Any]) -> bool:
+    if change.get("changeType") != "modified":
+        return True
+    previous_facts = _value_facts(change.get("previousValue"))
+    current_facts = _value_facts(change.get("currentValue"))
+    for previous_fact in previous_facts:
+        for current_fact in current_facts:
+            if previous_fact == current_fact:
+                continue
+            previous_position = text.find(previous_fact)
+            current_position = text.find(current_fact)
+            if previous_position >= 0 and current_position >= 0 and previous_position >= current_position:
+                return False
+    return True
+
+
+def _numbers_for_evidence(
+    evidence_ids: list[str],
+    changes_by_id: dict[str, dict[str, Any]],
+) -> set[str]:
     allowed: set[str] = set()
-    for value in _scalar_values(comparison):
-        allowed.update(_NUMBER_PATTERN.findall(str(value)))
-    for value in _scalar_values(deterministic_summary):
-        allowed.update(_NUMBER_PATTERN.findall(str(value)))
+    for evidence_id in evidence_ids:
+        for value in _change_values(changes_by_id[evidence_id]):
+            for scalar in _scalar_values(value):
+                allowed.update(_NUMBER_PATTERN.findall(str(scalar)))
     return allowed
 
 
@@ -283,11 +336,33 @@ def _deterministic_item_pairs(deterministic_summary: Any) -> set[tuple[str, tupl
     return pairs
 
 
+def _no_evidence_text_counts(deterministic_summary: Any) -> Counter[str]:
+    counts: Counter[str] = Counter()
+    if not isinstance(deterministic_summary, dict):
+        return counts
+    sections = deterministic_summary.get("sections", {})
+    if not isinstance(sections, dict):
+        return counts
+    for section in _SECTIONS:
+        items = sections.get(section, [])
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            if item.get("evidenceIds") == [] and isinstance(item.get("text"), str):
+                counts[item["text"]] += 1
+    return counts
+
+
+def _split_sentences_decimal_safe(text: str) -> list[str]:
+    return [part.strip() for part in _SENTENCE_BOUNDARY_PATTERN.split(text) if part.strip()]
+
+
 def _validate_text(
     text: str,
     evidence_ids: list[str],
     changes_by_id: dict[str, dict[str, Any]],
-    allowed_numbers: set[str],
     trusted_pairs: set[tuple[str, tuple[str, ...]]],
 ) -> None:
     # Exact deterministic items are safe even when they are aggregate
@@ -295,6 +370,7 @@ def _validate_text(
     if (text, tuple(evidence_ids)) in trusted_pairs:
         return
 
+    allowed_numbers = _numbers_for_evidence(evidence_ids, changes_by_id)
     observed_numbers = set(_NUMBER_PATTERN.findall(text))
     if not observed_numbers.issubset(allowed_numbers):
         raise ValueError("summary contains an unsupported number")
@@ -307,7 +383,27 @@ def _validate_text(
     if evidence_ids and required_facts and not all(fact in text for fact in required_facts):
         raise ValueError("summary omits an evidence value")
 
-    sentences = [match.group(0).strip() for match in _SENTENCE_PATTERN.finditer(text)]
+    for evidence_id in evidence_ids:
+        change = changes_by_id[evidence_id]
+        change_type = change.get("changeType")
+        category_markers = _category_markers(change)
+        if category_markers and not any(
+            marker in text if not marker.isascii() else marker in text.lower()
+            for marker in category_markers
+        ):
+            raise ValueError("summary changes deterministic change category")
+        markers = _CHANGE_TYPE_MARKERS.get(change_type, ())
+        if markers and not any(
+            marker in text
+            if not marker.isascii()
+            else marker in text.lower()
+            for marker in markers
+        ):
+            raise ValueError("summary changes deterministic change meaning")
+        if not _modified_values_are_ordered(text, change):
+            raise ValueError("summary reverses deterministic change values")
+
+    sentences = _split_sentences_decimal_safe(text)
     if evidence_ids and required_facts:
         for sentence in sentences:
             if not sentence:
@@ -315,8 +411,13 @@ def _validate_text(
             if not any(fact in sentence for fact in required_facts):
                 raise ValueError("summary contains an unsupported statement")
 
+    lowered_text = text.lower()
     for marker in _UNSUPPORTED_CLAUSE_MARKERS:
-        if marker in text and not any(marker in fact for fact in required_facts):
+        marker_present = marker in text if not marker.isascii() else marker in lowered_text
+        if marker_present and not any(
+            marker in fact if not marker.isascii() else marker in fact.lower()
+            for fact in required_facts
+        ):
             raise ValueError("summary contains a clinical inference")
 
 
@@ -357,9 +458,10 @@ def _validate_ai_summary(
     ordered_ids, changes_by_id = _comparison_changes(comparison)
     valid_ids = set(ordered_ids)
     trusted_pairs = _deterministic_item_pairs(deterministic_summary)
-    allowed_numbers = _all_allowed_numbers(comparison, deterministic_summary)
     normalized_sections: dict[str, list[dict[str, Any]]] = {}
     collected_ids: list[str] = []
+    fact_covered_ids: set[str] = set()
+    no_evidence_counts: Counter[str] = Counter()
 
     for section in _SECTIONS:
         raw_items = sections[section]
@@ -387,19 +489,27 @@ def _validate_ai_summary(
                 # no-previous, or no-change situation text).
                 if (text, tuple()) not in trusted_pairs:
                     raise ValueError("unsupported ungrounded summary item")
+                no_evidence_counts[text] += 1
             _validate_text(
                 text,
                 evidence_ids,
                 changes_by_id,
-                allowed_numbers,
                 trusted_pairs,
             )
+            for evidence_id in evidence_ids:
+                required_facts = _required_facts(changes_by_id[evidence_id])
+                if not required_facts or all(fact in text for fact in required_facts):
+                    fact_covered_ids.add(evidence_id)
             collected_ids.extend(evidence_ids)
             normalized_items.append({"text": text, "evidenceIds": list(evidence_ids)})
         normalized_sections[section] = normalized_items
 
     if set(collected_ids) != valid_ids:
         raise ValueError("structured output omits or adds evidence IDs")
+    if fact_covered_ids != valid_ids:
+        raise ValueError("structured output omits evidence facts")
+    if no_evidence_counts != _no_evidence_text_counts(deterministic_summary):
+        raise ValueError("structured output omits or duplicates deterministic context")
     if "evidenceIds" in payload:
         top_ids = payload["evidenceIds"]
         if not isinstance(top_ids, list) or not all(

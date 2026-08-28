@@ -79,6 +79,24 @@ def _valid_ai_output(deterministic: dict[str, object]) -> dict[str, object]:
     }
 
 
+def _expected_fallback(deterministic: dict[str, object]) -> dict[str, object]:
+    expected = deepcopy(deterministic)
+    expected["warnings"].append("AI_FALLBACK_USED")
+    return expected
+
+
+def _item_for_evidence(summary: dict[str, object], evidence_id: str) -> dict[str, object]:
+    for items in summary["sections"].values():
+        for item in items:
+            if item["evidenceIds"] == [evidence_id]:
+                return item
+    for items in summary["sections"].values():
+        for item in items:
+            if evidence_id in item["evidenceIds"]:
+                return item
+    raise AssertionError(f"missing summary item for {evidence_id}")
+
+
 class OpenAIServiceTests(unittest.TestCase):
     def test_success_sends_only_minimum_fictional_payload_and_returns_ai_summary(self):
         comparison, deterministic = _inputs()
@@ -174,9 +192,116 @@ class OpenAIServiceTests(unittest.TestCase):
 
         result = rewrite_handover_summary(comparison, deterministic, client)
 
-        expected = deepcopy(deterministic)
-        expected["warnings"].append("AI_FALLBACK_USED")
-        self.assertEqual(result, expected)
+        self.assertEqual(result, _expected_fallback(deterministic))
+
+    def test_reversed_added_removed_meaning_falls_back(self):
+        previous = deepcopy(PREVIOUS_RECORD)
+        previous["diagnosis"] = []
+        comparison = handover_service.build_handover_comparison(previous, deepcopy(CURRENT_RECORD))
+        deterministic = handover_service.build_deterministic_summary(comparison)
+        added_diagnosis_id = next(
+            change["id"]
+            for change in comparison["changes"]
+            if change["category"] == "diagnosis" and change["changeType"] == "added"
+        )
+        output = _valid_ai_output(deterministic)
+        diagnosis_item = _item_for_evidence(output, added_diagnosis_id)
+        diagnosis_item["text"] = "진단 삭제: sample change"
+        client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+        result = rewrite_handover_summary(comparison, deterministic, client)
+
+        self.assertEqual(result, _expected_fallback(deterministic))
+
+    def test_number_borrowed_from_unrelated_patient_data_falls_back(self):
+        previous = deepcopy(PREVIOUS_RECORD)
+        current = deepcopy(CURRENT_RECORD)
+        previous["vitals"]["body_temperature"] = 37
+        current["vitals"]["body_temperature"] = 38
+        comparison = handover_service.build_handover_comparison(previous, current)
+        deterministic = handover_service.build_deterministic_summary(comparison)
+        vital_id = next(
+            change["id"]
+            for change in comparison["changes"]
+            if change["category"] == "vitals"
+        )
+        output = _valid_ai_output(deterministic)
+        vital_item = _item_for_evidence(output, vital_id)
+        vital_item["text"] = "체온 변경: 37 -> 38, 심박수 44"
+        client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+        result = rewrite_handover_summary(comparison, deterministic, client)
+
+        self.assertEqual(result, _expected_fallback(deterministic))
+
+    def test_medication_route_and_numeric_frequency_omission_falls_back(self):
+        previous = deepcopy(PREVIOUS_RECORD)
+        current = deepcopy(CURRENT_RECORD)
+        current["medications"] = [
+            {"name": "추가 처방", "route": "IV", "frequency": "Q24H"}
+        ]
+        comparison = handover_service.build_handover_comparison(previous, current)
+        deterministic = handover_service.build_deterministic_summary(comparison)
+        added_medication_id = next(
+            change["id"]
+            for change in comparison["changes"]
+            if change["category"] == "medications" and change["changeType"] == "added"
+        )
+        output = _valid_ai_output(deterministic)
+        medication_item = _item_for_evidence(output, added_medication_id)
+        medication_item["text"] = "투약 추가: 추가 처방"
+        client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+        result = rewrite_handover_summary(comparison, deterministic, client)
+
+        self.assertEqual(result, _expected_fallback(deterministic))
+
+    def test_empty_no_previous_and_no_changes_sections_require_deterministic_context(self):
+        cases = (
+            (None, deepcopy(CURRENT_RECORD)),
+            (deepcopy(CURRENT_RECORD), deepcopy(CURRENT_RECORD)),
+        )
+        for previous, current in cases:
+            with self.subTest(previous_is_none=previous is None):
+                comparison = handover_service.build_handover_comparison(previous, current)
+                deterministic = handover_service.build_deterministic_summary(comparison)
+                output = _valid_ai_output(deterministic)
+                output["sections"]["situation"] = []
+                client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+                result = rewrite_handover_summary(comparison, deterministic, client)
+
+                self.assertEqual(result, _expected_fallback(deterministic))
+
+    def test_reworded_decimal_vital_preserves_meaning_and_evidence(self):
+        comparison, deterministic = _inputs()
+        vital_id = next(
+            change["id"]
+            for change in comparison["changes"]
+            if change["category"] == "vitals"
+        )
+        output = _valid_ai_output(deterministic)
+        vital_item = _item_for_evidence(output, vital_id)
+        vital_item["text"] = "체온이 36.7에서 37.4로 변경되었습니다."
+        client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+        result = rewrite_handover_summary(comparison, deterministic, client)
+
+        self.assertEqual(result["mode"], "ai")
+        self.assertEqual(result["sections"]["assessment"][0]["text"], vital_item["text"])
+        self.assertEqual(result["sections"]["assessment"][0]["evidenceIds"], [vital_id])
+        self.assertEqual(result["warnings"], deterministic["warnings"])
+
+    def test_aggregate_situation_cannot_replace_evidence_specific_change_items(self):
+        comparison, deterministic = _inputs()
+        output = _valid_ai_output(deterministic)
+        output["sections"]["background"] = []
+        output["sections"]["assessment"] = []
+        client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+        result = rewrite_handover_summary(comparison, deterministic, client)
+
+        self.assertEqual(result, _expected_fallback(deterministic))
 
 
 if __name__ == "__main__":
