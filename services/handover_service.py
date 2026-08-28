@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from datetime import datetime
 from typing import Any
 
 
@@ -431,6 +432,50 @@ def _summary_change_text(change: dict[str, Any]) -> str:
     )
 
 
+def _parse_iso_timestamp(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+
+    normalized = value.strip()
+    if normalized.endswith(("Z", "z")):
+        normalized = f"{normalized[:-1]}+00:00"
+    try:
+        return datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+
+
+def _interval_timestamp_display(
+    value: Any,
+    missing_label: str,
+) -> tuple[str, datetime | None]:
+    parsed = _parse_iso_timestamp(value)
+    if parsed is None:
+        if value:
+            return str(value), None
+        return missing_label, None
+    return parsed.strftime("%m/%d %H:%M"), parsed
+
+
+def _format_interval_display(
+    previous_recorded_at: Any,
+    current_recorded_at: Any,
+) -> str:
+    previous_display, previous_timestamp = _interval_timestamp_display(
+        previous_recorded_at, "이전 기록 없음"
+    )
+    current_display, current_timestamp = _interval_timestamp_display(
+        current_recorded_at, "현재 기록 시각 없음"
+    )
+    if (
+        previous_timestamp is not None
+        and current_timestamp is not None
+        and previous_timestamp.date() == current_timestamp.date()
+    ):
+        current_display = current_timestamp.strftime("%H:%M")
+    return f"{previous_display} → {current_display}"
+
+
 def _summary_situation_text(comparison: dict[str, Any], change_count: int) -> str:
     patient = comparison.get("patient", {})
     if not isinstance(patient, dict):
@@ -448,26 +493,24 @@ def _summary_situation_text(comparison: dict[str, Any], change_count: int) -> st
     interval = comparison.get("interval", {})
     if not isinstance(interval, dict):
         interval = {}
-    previous_recorded_at = interval.get("previousRecordedAt") or "이전 기록 없음"
-    current_recorded_at = interval.get("currentRecordedAt") or "현재 기록 시각 없음"
+    previous_recorded_at = interval.get("previousRecordedAt")
+    current_recorded_at = interval.get("currentRecordedAt")
     status = comparison.get("status")
     if status == "no_previous":
         return (
-            f"{patient_text}, {room_text}, 현재 기록 시각 {current_recorded_at} 기준으로 "
-            "이전 기록을 사용할 수 없어 비교를 수행하지 않았습니다."
+            f"{patient_text} · {room_text} · 현재 기록 "
+            f"{_interval_timestamp_display(current_recorded_at, '현재 기록 시각 없음')[0]} · "
+            "이전 기록 없음 · 비교 미수행"
         )
 
-    interval_text = f"{previous_recorded_at} -> {current_recorded_at}"
-    if status == "no_changes":
-        return (
-            f"{patient_text}, {room_text}, {interval_text} 두 기록을 비교한 결과 "
-            "총 0건의 변화가 확인되었습니다."
-        )
-
-    return (
-        f"{patient_text}, {room_text}, {interval_text} 사이에 "
-        f"총 {change_count}건의 변화가 확인되었습니다."
+    interval_text = _format_interval_display(
+        previous_recorded_at,
+        current_recorded_at,
     )
+    if status == "no_changes":
+        return f"{patient_text} · {room_text} · {interval_text} · 변화 없음"
+
+    return f"{patient_text} · {room_text} · {interval_text} · 변화 {change_count}건"
 
 
 def build_deterministic_summary(comparison: dict[str, Any]) -> dict[str, Any]:

@@ -62,6 +62,32 @@ def _record(**overrides):
     return record
 
 
+def _nine_change_records(previous_at="2026-07-02T07:00:00+09:00"):
+    previous = _record(
+        diagnosis=["acute pharyngitis"],
+        notes=["인후통 시작"],
+        updated_at=previous_at,
+    )
+    current = _record(
+        diagnosis=["acute pharyngitis", "hypertension"],
+        vitals={
+            "systolic": 150,
+            "diastolic": 95,
+            "heartrate": 92,
+            "respiratory": 18,
+            "saturation": 97,
+            "body_temperature": 38.2,
+        },
+        medications=[
+            {"name": "이부프로펜 400mg", "route": "PO", "frequency": "TID"},
+            {"name": "타세놀정 500mg", "route": "PO", "frequency": "TID"},
+        ],
+        notes=["인후통 시작", "미열 지속"],
+        updated_at="2026-07-02T09:00:00+09:00",
+    )
+    return previous, current
+
+
 class HandoverComparisonTests(unittest.TestCase):
     def test_vital_change_has_exact_patient_interval_and_evidence_contract(self):
         comparison = build_handover_comparison(
@@ -472,6 +498,70 @@ class HandoverComparisonTests(unittest.TestCase):
             summary["sections"]["background"][0]["text"],
             "투약 추가: 경계 처방 · 0 · False",
         )
+
+    def test_deterministic_summary_compacts_same_day_situation_to_clinical_display(self):
+        previous, current = _nine_change_records()
+
+        comparison = build_handover_comparison(previous, current)
+        summary = build_deterministic_summary(comparison)
+        situation_text = summary["sections"]["situation"][0]["text"]
+
+        self.assertEqual(
+            situation_text,
+            "홍길동(P001) · 301호 · 07/02 07:00 → 09:00 · 변화 9건",
+        )
+        self.assertNotIn("T", situation_text)
+        self.assertNotIn("+09:00", situation_text)
+        self.assertNotIn("사이에 총", situation_text)
+
+    def test_deterministic_summary_keeps_both_dates_for_cross_day_situation(self):
+        previous, current = _nine_change_records("2026-07-01T21:00:00+09:00")
+
+        comparison = build_handover_comparison(previous, current)
+        summary = build_deterministic_summary(comparison)
+        situation_text = summary["sections"]["situation"][0]["text"]
+
+        self.assertEqual(
+            situation_text,
+            "홍길동(P001) · 301호 · 07/01 21:00 → 07/02 09:00 · 변화 9건",
+        )
+        self.assertNotIn("T", situation_text)
+        self.assertNotIn("+09:00", situation_text)
+        self.assertNotIn("사이에 총", situation_text)
+
+    def test_deterministic_summary_preserves_invalid_interval_values_without_raising(self):
+        previous, current = _nine_change_records("not-a-timestamp")
+        previous_before = deepcopy(previous)
+        current_before = deepcopy(current)
+
+        comparison = build_handover_comparison(previous, current)
+        summary = build_deterministic_summary(comparison)
+        situation_text = summary["sections"]["situation"][0]["text"]
+
+        self.assertIn("not-a-timestamp", situation_text)
+        self.assertIn("07/02 09:00", situation_text)
+        self.assertEqual(
+            comparison["interval"],
+            {
+                "previousRecordedAt": "not-a-timestamp",
+                "currentRecordedAt": "2026-07-02T09:00:00+09:00",
+            },
+        )
+        self.assertEqual(previous, previous_before)
+        self.assertEqual(current, current_before)
+
+    def test_deterministic_summary_labels_missing_interval_values_without_raising(self):
+        previous, current = _nine_change_records()
+        previous.pop("updated_at")
+        current.pop("updated_at")
+
+        comparison = build_handover_comparison(previous, current)
+        situation_text = build_deterministic_summary(comparison)["sections"]["situation"][0][
+            "text"
+        ]
+
+        self.assertIn("이전 기록 없음 → 현재 기록 시각 없음", situation_text)
+        self.assertIn("변화 9건", situation_text)
 
     def test_legacy_projection_keeps_korean_prefixes_and_medication_format(self):
         previous = _record(

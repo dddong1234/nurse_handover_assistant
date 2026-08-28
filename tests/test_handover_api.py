@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from copy import deepcopy
 import importlib
 import json
@@ -159,6 +160,13 @@ class DeterministicSummaryTests(unittest.TestCase):
                 for evidence_id in assessment_ids
             )
         )
+        detail_ids = [
+            evidence_id
+            for section_name in ("background", "assessment")
+            for item in summary["sections"][section_name]
+            for evidence_id in item["evidenceIds"]
+        ]
+        self.assertEqual(Counter(detail_ids), Counter(all_change_ids))
 
     def test_no_previous_situation_explains_missing_baseline_without_zero_change_claim(self):
         comparison = handover_service.build_handover_comparison(
@@ -170,8 +178,10 @@ class DeterministicSummaryTests(unittest.TestCase):
 
         self.assertIn("가상 환자", situation_text)
         self.assertIn("101호", situation_text)
-        self.assertIn("2026-08-28T09:00:00+09:00", situation_text)
-        self.assertIn("이전 기록을 사용할 수 없어 비교를 수행하지 않았습니다.", situation_text)
+        self.assertEqual(
+            situation_text,
+            "가상 환자(TEST-001) · 101호 · 현재 기록 08/28 09:00 · 이전 기록 없음 · 비교 미수행",
+        )
         for forbidden in ("총 0건", "변화 없음", "변화가 없습니다", "안정"):
             self.assertNotIn(forbidden, situation_text)
         self.assertEqual(summary["sections"]["situation"][0]["evidenceIds"], [])
@@ -186,9 +196,11 @@ class DeterministicSummaryTests(unittest.TestCase):
 
         self.assertIn("가상 환자", situation_text)
         self.assertIn("101호", situation_text)
-        self.assertIn("2026-08-28T09:00:00+09:00 -> 2026-08-28T09:00:00+09:00", situation_text)
-        self.assertIn("두 기록을 비교한 결과 총 0건의 변화가 확인되었습니다.", situation_text)
-        self.assertNotIn("이전 기록을 사용할 수 없어 비교를 수행하지 않았습니다.", situation_text)
+        self.assertEqual(
+            situation_text,
+            "가상 환자(TEST-001) · 101호 · 08/28 09:00 → 09:00 · 변화 없음",
+        )
+        self.assertNotIn("이전 기록 없음", situation_text)
         self.assertEqual(summary["sections"]["situation"][0]["evidenceIds"], [])
 
 

@@ -578,3 +578,63 @@ Replace serialized medication fixtures with the Task 8 clinical display format. 
 - [x] **Step 4: Run frontend and E2E gates**
 
 Run focused Vitest tests, the full frontend suite, lint, build, and Playwright E2E. Supervisor performs fresh desktop/mobile visual QA before documentation and version bookkeeping.
+
+---
+
+### Task 10: Compact clinical SBAR wording
+
+**Owner:** core-logic Luna Max subagent
+
+**Files:**
+- Modify: `services/handover_service.py`
+- Modify: `tests/test_handover_api.py` and/or `tests/test_handover_service.py`
+- Modify only if validator compatibility requires it: `services/openai_service.py`, `tests/test_openai_service.py`
+
+**Interfaces:**
+- Consumes: the existing deterministic comparison contract and ISO-8601 interval timestamps.
+- Produces: the same SBAR structure and evidence IDs with compact clinical wording; no fact, value, category, priority, or evidence mapping changes.
+
+- [ ] **Step 1: Add failing compact-wording regressions**
+
+Cover a same-day interval and a cross-day interval. Same-day Situation must read `홍길동(P001) · 301호 · 07/02 07:00 → 09:00 · 변화 9건`; cross-day intervals must retain both dates, for example `07/01 21:00 → 07/02 09:00`. Add literal assertions that no raw ISO `T`, timezone suffix, or `사이에 총` boilerplate appears in Situation. Existing `no_previous` and `no_changes` semantics must remain distinguishable.
+
+- [ ] **Step 2: Implement a defensive interval display formatter**
+
+Parse valid ISO-8601 timestamps and compact only the display string. For missing or invalid timestamps, preserve a readable fallback without raising. Do not mutate comparison timestamps or source records.
+
+- [ ] **Step 3: Preserve evidence and AI validation contracts**
+
+Assert every change ID still appears exactly once across evidence-bearing summary items where required, and run the focused service/API/OpenAI tests plus the full Python and harness gates.
+
+---
+
+### Task 11: Evidence tray and clinical summary rail polish
+
+**Owner:** frontend Luna Max subagent
+
+**Files:**
+- Modify: `src/components/handover/SummaryPanel.tsx`
+- Modify: `src/components/handover/HandoverWorkspace.test.tsx`
+- Modify: `src/lib/demo-workspace-data.ts`
+- Modify: `src/app/globals.css`
+- Modify: `e2e/handover-workspace.spec.ts`
+
+**Interfaces:**
+- Consumes: Task 10 compact SBAR text and unchanged evidence IDs.
+- Produces: a quieter default summary rail whose evidence details remain fully reachable and focus the original change.
+
+- [ ] **Step 1: Add failing evidence-presentation regressions**
+
+Assert full evidence IDs are not visible in the default summary rail, each summary item exposes a labelled `근거 1건` or `근거 N건` disclosure, expanding it reveals the linked evidence controls, and activating a link still focuses the matching change. Add E2E coverage for collapsed-by-default evidence and one expand→focus path.
+
+- [ ] **Step 2: Implement the compact evidence tray**
+
+Use native accessible disclosure semantics. Keep individual inclusion toggles and evidence links inside the disclosure, replace visible IDs with short ordinal labels such as `근거 1`, and retain the full ID in accessible names/tooltips. Do not remove traceability or the review-completion gate.
+
+- [ ] **Step 3: Tighten the summary rail hierarchy**
+
+Keep the current Figma-derived tokens and three-region layout. Make section counts, primary statements, and the evidence disclosure the visual order; avoid new decoration, motion, or consumer-dashboard styling. Align checked-in demo Situation text with Task 10.
+
+- [ ] **Step 4: Run frontend and visual gates**
+
+Run focused/full Vitest, ESLint, Next build, and Playwright. Supervisor verifies 1440×900, 1024×768, and 390×844, including no horizontal overflow and a reachable evidence disclosure.
