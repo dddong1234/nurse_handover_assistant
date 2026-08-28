@@ -594,15 +594,15 @@ Run focused Vitest tests, the full frontend suite, lint, build, and Playwright E
 - Consumes: the existing deterministic comparison contract and ISO-8601 interval timestamps.
 - Produces: the same SBAR structure and evidence IDs with compact clinical wording; no fact, value, category, priority, or evidence mapping changes.
 
-- [ ] **Step 1: Add failing compact-wording regressions**
+- [x] **Step 1: Add failing compact-wording regressions**
 
 Cover a same-day interval and a cross-day interval. Same-day Situation must read `홍길동(P001) · 301호 · 07/02 07:00 → 09:00 · 변화 9건`; cross-day intervals must retain both dates, for example `07/01 21:00 → 07/02 09:00`. Add literal assertions that no raw ISO `T`, timezone suffix, or `사이에 총` boilerplate appears in Situation. Existing `no_previous` and `no_changes` semantics must remain distinguishable.
 
-- [ ] **Step 2: Implement a defensive interval display formatter**
+- [x] **Step 2: Implement a defensive interval display formatter**
 
 Parse valid ISO-8601 timestamps and compact only the display string. For missing or invalid timestamps, preserve a readable fallback without raising. Do not mutate comparison timestamps or source records.
 
-- [ ] **Step 3: Preserve evidence and AI validation contracts**
+- [x] **Step 3: Preserve evidence and AI validation contracts**
 
 Assert every change ID still appears exactly once across evidence-bearing summary items where required, and run the focused service/API/OpenAI tests plus the full Python and harness gates.
 
