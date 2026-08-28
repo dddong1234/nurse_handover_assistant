@@ -1,7 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const FALLBACK_MESSAGE = "서버 요약을 불러오지 못해 검증된 데모 결과를 표시합니다.";
-const SAFETY_NOTICE = "가상 데이터 · 의사결정 보조가 아님";
+const RETIRED_SAFETY_NOTICE = ["가상 데이터", "의사결정 보조가 아님"].join(" · ");
+const RETIRED_UTILITY_CONTEXT = ["일반 성인병동", "교대 검토"].join(" · ");
 
 async function forceCompareFailure(page: Page, status = 503) {
   await page.route("**/api/handover/compare", async (route) => {
@@ -99,10 +100,19 @@ test("a provider failure shows the deterministic fallback banner without hiding 
 
   const banner = await expectFallbackBanner(page);
   await expect(banner.getByText("서버 연결", { exact: true })).toBeVisible();
-  await expect(page.getByText("deterministic", { exact: true })).toBeVisible();
+  await expect(page.locator(".source-tag")).toHaveText(/^(AI 요약|규칙 요약)$/);
   await expect(temperatureChange(page)).toBeVisible();
   await expect(page.getByText("37.9", { exact: true })).toBeVisible();
   await expect(page.getByText("38.2", { exact: true })).toBeVisible();
+});
+
+test("the workspace uses clinician source labels without portfolio chrome or raw medication JSON", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.locator(".source-tag")).toHaveText(/^(AI 요약|규칙 요약)$/);
+  await expect(page.getByText(RETIRED_SAFETY_NOTICE, { exact: true })).toHaveCount(0);
+  await expect(page.getByText(RETIRED_UTILITY_CONTEXT, { exact: true })).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText('{"frequency"');
 });
 
 const responsiveViewports = [
@@ -142,11 +152,7 @@ for (const viewport of responsiveViewports) {
     await expect(reviewButton).toBeVisible();
     await expect(reviewButton).toBeDisabled();
 
-    const safetyNotice = page
-      .getByRole("complementary", { name: "인계 검토" })
-      .getByText(SAFETY_NOTICE, { exact: true });
-    await safetyNotice.scrollIntoViewIfNeeded();
-    await expect(safetyNotice).toBeVisible();
+    await expect(page.getByText(RETIRED_SAFETY_NOTICE, { exact: true })).toHaveCount(0);
 
     await expect
       .poll(() =>

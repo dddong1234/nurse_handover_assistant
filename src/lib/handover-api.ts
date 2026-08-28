@@ -68,7 +68,7 @@ export async function comparePatientRecords(
 
   let body: string;
   try {
-    body = JSON.stringify({ previous, current });
+    body = JSON.stringify({ previous, current, summaryMode: "ai" });
   } catch {
     throw new HandoverApiError("REQUEST_SERIALIZATION");
   }

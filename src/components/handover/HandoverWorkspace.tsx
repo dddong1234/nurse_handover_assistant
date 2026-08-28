@@ -178,7 +178,6 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
       <main className="workspace-empty" aria-labelledby="workspace-empty-title">
         <h1 id="workspace-empty-title">환자 비교 데이터가 없습니다.</h1>
         <p>읽기 전용 데모 응답을 확인할 수 없습니다.</p>
-        <p className="safety-note">가상 데이터 · 의사결정 보조가 아님</p>
       </main>
     );
   }
@@ -251,9 +250,6 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
           </div>
         </div>
         <div className="utility-meta">
-          <span className="utility-context">일반 성인병동 · 교대 검토</span>
-          <span className="utility-separator" aria-hidden="true" />
-          <span className="safety-note">가상 데이터 · 의사결정 보조가 아님</span>
           <span className="utility-clock mono">07/02 09:45</span>
         </div>
       </header>

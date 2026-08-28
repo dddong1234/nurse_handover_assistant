@@ -256,6 +256,127 @@ class OpenAIServiceTests(unittest.TestCase):
 
         self.assertEqual(result, _expected_fallback(deterministic))
 
+    def test_safe_reworded_added_medication_with_middle_dots_is_accepted(self):
+        comparison, deterministic = _inputs()
+        added_medication_id = next(
+            change["id"]
+            for change in comparison["changes"]
+            if change["category"] == "medications" and change["changeType"] == "added"
+        )
+        output = _valid_ai_output(deterministic)
+        medication_item = _item_for_evidence(output, added_medication_id)
+        medication_item["text"] = "추가 처방 · IV · BID 투약이 추가되었습니다."
+        client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+        result = rewrite_handover_summary(comparison, deterministic, client)
+
+        self.assertEqual(result["mode"], "ai")
+        self.assertEqual(
+            _item_for_evidence(result, added_medication_id)["text"],
+            "추가 처방 · IV · BID 투약이 추가되었습니다.",
+        )
+
+    def test_safe_reworded_removed_medication_with_middle_dots_is_accepted(self):
+        previous = deepcopy(PREVIOUS_RECORD)
+        current = deepcopy(CURRENT_RECORD)
+        previous["medications"] = [
+            {"name": "중단 처방", "route": "PO", "frequency": "TID"}
+        ]
+        current["medications"] = []
+        comparison = handover_service.build_handover_comparison(previous, current)
+        deterministic = handover_service.build_deterministic_summary(comparison)
+        removed_medication_id = next(
+            change["id"]
+            for change in comparison["changes"]
+            if change["category"] == "medications" and change["changeType"] == "removed"
+        )
+        output = _valid_ai_output(deterministic)
+        medication_item = _item_for_evidence(output, removed_medication_id)
+        medication_item["text"] = "중단 처방 · PO · TID 투약이 중단되었습니다."
+        client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+        result = rewrite_handover_summary(comparison, deterministic, client)
+
+        self.assertEqual(result["mode"], "ai")
+        self.assertEqual(
+            _item_for_evidence(result, removed_medication_id)["text"],
+            "중단 처방 · PO · TID 투약이 중단되었습니다.",
+        )
+
+    def test_safe_reworded_modified_medication_with_middle_dots_is_accepted(self):
+        previous = deepcopy(PREVIOUS_RECORD)
+        current = deepcopy(CURRENT_RECORD)
+        previous["medications"] = [
+            {"name": "변경 처방", "route": "PO", "frequency": "QD"}
+        ]
+        current["medications"] = [
+            {"name": "변경 처방", "route": "IV", "frequency": "BID"}
+        ]
+        comparison = handover_service.build_handover_comparison(previous, current)
+        deterministic = handover_service.build_deterministic_summary(comparison)
+        modified_medication_id = next(
+            change["id"]
+            for change in comparison["changes"]
+            if change["category"] == "medications" and change["changeType"] == "modified"
+        )
+        output = _valid_ai_output(deterministic)
+        medication_item = _item_for_evidence(output, modified_medication_id)
+        medication_item["text"] = (
+            "투약 변경: 변경 처방 · PO · QD → 변경 처방 · IV · BID"
+        )
+        client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+        result = rewrite_handover_summary(comparison, deterministic, client)
+
+        self.assertEqual(result["mode"], "ai")
+        self.assertEqual(
+            _item_for_evidence(result, modified_medication_id)["text"],
+            "투약 변경: 변경 처방 · PO · QD → 변경 처방 · IV · BID",
+        )
+
+    def test_middle_dot_medication_rewording_that_omits_a_fact_falls_back(self):
+        comparison, deterministic = _inputs()
+        added_medication_id = next(
+            change["id"]
+            for change in comparison["changes"]
+            if change["category"] == "medications" and change["changeType"] == "added"
+        )
+        output = _valid_ai_output(deterministic)
+        medication_item = _item_for_evidence(output, added_medication_id)
+        medication_item["text"] = "추가 처방 · IV 투약이 추가되었습니다."
+        client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+        result = rewrite_handover_summary(comparison, deterministic, client)
+
+        self.assertEqual(result, _expected_fallback(deterministic))
+
+    def test_reversed_modified_medication_rewording_falls_back(self):
+        previous = deepcopy(PREVIOUS_RECORD)
+        current = deepcopy(CURRENT_RECORD)
+        previous["medications"] = [
+            {"name": "변경 처방", "route": "PO", "frequency": "QD"}
+        ]
+        current["medications"] = [
+            {"name": "변경 처방", "route": "IV", "frequency": "BID"}
+        ]
+        comparison = handover_service.build_handover_comparison(previous, current)
+        deterministic = handover_service.build_deterministic_summary(comparison)
+        modified_medication_id = next(
+            change["id"]
+            for change in comparison["changes"]
+            if change["category"] == "medications" and change["changeType"] == "modified"
+        )
+        output = _valid_ai_output(deterministic)
+        medication_item = _item_for_evidence(output, modified_medication_id)
+        medication_item["text"] = (
+            "투약 변경: 변경 처방 · IV · BID → 변경 처방 · PO · QD"
+        )
+        client = FakeClient(json.dumps(output, ensure_ascii=False))
+
+        result = rewrite_handover_summary(comparison, deterministic, client)
+
+        self.assertEqual(result, _expected_fallback(deterministic))
+
     def test_empty_no_previous_and_no_changes_sections_require_deterministic_context(self):
         cases = (
             (None, deepcopy(CURRENT_RECORD)),

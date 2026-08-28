@@ -374,6 +374,22 @@ def _summary_value(value: Any) -> str:
     return str(value)
 
 
+def _medication_summary_value(value: Any, fallback_name: str = "") -> str:
+    if not isinstance(value, dict):
+        return _summary_value(value)
+
+    name = value.get("name")
+    if name is None or (isinstance(name, str) and not name):
+        name = fallback_name or "이름 정보 없음"
+    route = value.get("route")
+    if route is None or (isinstance(route, str) and not route):
+        route = "경로 정보 없음"
+    frequency = value.get("frequency")
+    if frequency is None or (isinstance(frequency, str) and not frequency):
+        frequency = "빈도 정보 없음"
+    return f"{name} · {route} · {frequency}"
+
+
 def _summary_change_text(change: dict[str, Any]) -> str:
     category = str(change.get("category", "기타 변화"))
     change_type = str(change.get("changeType", "modified"))
@@ -387,8 +403,8 @@ def _summary_change_text(change: dict[str, Any]) -> str:
         value_for_removed = label or _summary_value(previous_value)
     elif category == "medications":
         subject = "투약"
-        value_for_added = _summary_value(current_value)
-        value_for_removed = _summary_value(previous_value)
+        value_for_added = _medication_summary_value(current_value, label)
+        value_for_removed = _medication_summary_value(previous_value, label)
     elif category == "vitals":
         subject = label or "활력징후"
         value_for_added = _summary_value(current_value)
@@ -405,7 +421,10 @@ def _summary_change_text(change: dict[str, Any]) -> str:
     if change_type == "added":
         return f"{subject} 추가: {value_for_added}"
     if change_type == "removed":
-        return f"{subject} 삭제: {value_for_removed}"
+        removal_action = "중단" if category == "medications" else "삭제"
+        return f"{subject} {removal_action}: {value_for_removed}"
+    if category == "medications":
+        return f"{subject} 변경: {value_for_removed} -> {value_for_added}"
     return (
         f"{subject} 변경: {_summary_value(previous_value)}"
         f" -> {_summary_value(current_value)}"

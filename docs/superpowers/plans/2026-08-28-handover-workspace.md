@@ -15,7 +15,7 @@
 - Harness-Version is exactly `1.2.0`.
 - Figma Make structure must not be copied; only its color, typography, status semantics, and patient-context conventions may be reused.
 - The primary user flow is patient queue → previous/current comparison → evidence-backed SBAR review.
-- All data is fictional; UI must persistently show `가상 데이터 · 의사결정 보조가 아님`.
+- All data is fictional; prototype scope and safety limits stay in README/product documentation rather than persistent clinical-workflow chrome.
 - Deterministic Python logic owns fact detection. OpenAI may only rewrite already-detected facts.
 - Every summary statement must reference one or more deterministic change IDs.
 - `OPENAI_API_KEY` is server-only and must never use a `NEXT_PUBLIC_` prefix.
@@ -491,7 +491,7 @@ Frontend layout/interaction failures return to the frontend implementer. Compari
 
 - [ ] **Step 4: Perform visual QA against this spec, not the Figma composition**
 
-Capture 1440px and 390px screenshots. Verify Shift Seam readability, three-region hierarchy, text labels without color dependence, truncation, overflow, focus visibility, and safety notice persistence.
+Capture 1440px and 390px screenshots. Verify Shift Seam readability, three-region hierarchy, text labels without color dependence, truncation, overflow, focus visibility, and the absence of retired portfolio/disclaimer chrome.
 
 - [ ] **Step 5: Run the complete local gate**
 
@@ -515,3 +515,66 @@ Verify `/`, `/api/health`, and `/api/handover/compare`; verify deterministic mod
 - [ ] **Step 7: Update version and durable documentation**
 
 After all gates pass, set `VERSION` to `0.5.0`, add the release to `CHANGELOG.md`, and record commands, results, screenshots, known limits, and any supervisor rulings in `docs/AGENT_WORKLOG.md`.
+
+---
+
+### Task 8: Human-readable medication summary contract
+
+**Owner:** core-logic Luna Max subagent
+
+**Files:**
+- Modify: `services/handover_service.py`
+- Modify: `tests/test_handover_api.py` and/or `tests/test_handover_service.py`
+- Modify only if compatibility coverage requires it: `tests/test_openai_service.py`
+
+**Interfaces:**
+- Consumes: deterministic medication changes with `name`, `route`, and `frequency`.
+- Produces: clinician-readable SBAR text without serialized JSON while preserving evidence IDs and source values.
+
+- [x] **Step 1: Add failing medication summary regression tests**
+
+Cover added, removed, and modified medication changes. Assert the output includes the medication name, route, and frequency; assert it contains no JSON braces, quoted keys, or serialized object text.
+
+- [x] **Step 2: Implement the smallest medication formatter**
+
+Use a compact clinical display such as `타세놀정 500mg · PO · TID`. Keep deterministic comparison facts and evidence mappings unchanged.
+
+- [x] **Step 3: Verify summary and AI-validation compatibility**
+
+Run focused service/API/OpenAI tests, the full Python suite, and the harness check.
+
+---
+
+### Task 9: AI-first summary presentation and clinician-facing workspace copy
+
+**Owner:** frontend Luna Max subagent
+
+**Files:**
+- Modify: `src/lib/handover-api.ts`
+- Modify: `src/lib/handover-api.test.ts`
+- Modify: `src/lib/demo-workspace-data.ts`
+- Modify: `src/components/handover/SummaryPanel.tsx`
+- Modify: `src/components/handover/HandoverWorkspace.tsx`
+- Modify: `src/components/handover/HandoverWorkspace.test.tsx`
+- Modify: `e2e/handover-workspace.spec.ts`
+- Modify only if layout cleanup requires it: `src/app/globals.css`
+
+**Interfaces:**
+- Consumes: API summary modes `ai | deterministic` and warning codes `AI_KEY_UNAVAILABLE | AI_FALLBACK_USED`.
+- Produces: AI mode requested by default, human-readable source/fallback labels, and no raw JSON or machine warning codes in the workflow UI.
+
+- [x] **Step 1: Add failing request and rendering tests**
+
+Assert the client sends `summaryMode: "ai"`; known warnings render as Korean fallback guidance; raw codes and raw medication JSON do not render; the two retired phrases are absent.
+
+- [x] **Step 2: Implement AI-first request and presentation mapping**
+
+Display `AI 요약` for AI output and `규칙 요약` for deterministic output. Map known fallback warnings to concise clinician-facing Korean copy and never expose raw warning codes.
+
+- [x] **Step 3: Align checked-in demo fallback and remove retired copy**
+
+Replace serialized medication fixtures with the Task 8 clinical display format. Remove `일반 성인병동 · 교대 검토` and `가상 데이터 · 의사결정 보조가 아님` from empty, header, summary, and responsive test paths.
+
+- [x] **Step 4: Run frontend and E2E gates**
+
+Run focused Vitest tests, the full frontend suite, lint, build, and Playwright E2E. Supervisor performs fresh desktop/mobile visual QA before documentation and version bookkeeping.

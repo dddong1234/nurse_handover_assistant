@@ -192,7 +192,7 @@ export const DEMO_WORKSPACE_DATA: HandoverApiResponse[] = [
             evidenceIds: ["diagnosis-hypertension-97cf39b495a5-added"],
           },
           {
-            text: '투약 추가: {"frequency":"TID","name":"타세놀정 500mg","route":"PO"}',
+            text: "투약 추가: 타세놀정 500mg · PO · TID",
             evidenceIds: ["medications-타세놀정-500mg-3abed59ec690-added"],
           },
         ],
@@ -410,7 +410,7 @@ export const DEMO_WORKSPACE_DATA: HandoverApiResponse[] = [
         ],
         background: [
           {
-            text: '투약 추가: {"frequency":"TID","name":"아세틸시스테인","route":"NEB"}',
+            text: "투약 추가: 아세틸시스테인 · NEB · TID",
             evidenceIds: ["medications-아세틸시스테인-1363b9db6619-added"],
           },
         ],
@@ -647,7 +647,7 @@ export const DEMO_WORKSPACE_DATA: HandoverApiResponse[] = [
             evidenceIds: ["diagnosis-atrial-fibrillation-09417dacb727-added"],
           },
           {
-            text: '투약 추가: {"frequency":"QD","name":"디곡신 0.125mg","route":"PO"}',
+            text: "투약 추가: 디곡신 0.125mg · PO · QD",
             evidenceIds: ["medications-디곡신-0-125mg-7f4b9374bd0b-added"],
           },
         ],

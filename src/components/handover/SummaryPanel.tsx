@@ -20,6 +20,24 @@ const SUMMARY_SECTION_KEYS: (keyof HandoverSummary["sections"])[] = [
   "recommendation",
 ];
 
+const SUMMARY_WARNING_MESSAGES: Record<string, string> = {
+  AI_KEY_UNAVAILABLE: "AI 연결 정보가 없어 규칙 요약을 표시합니다.",
+  AI_FALLBACK_USED: "AI 요약을 사용할 수 없어 규칙 요약을 표시합니다.",
+};
+const DEFAULT_SUMMARY_WARNING = "일부 원본 항목을 확인해야 합니다.";
+
+function readableSummaryWarnings(warnings: readonly string[]) {
+  return [
+    ...new Set(
+      warnings.map((warning) =>
+        Object.prototype.hasOwnProperty.call(SUMMARY_WARNING_MESSAGES, warning)
+          ? SUMMARY_WARNING_MESSAGES[warning]
+          : DEFAULT_SUMMARY_WARNING,
+      ),
+    ),
+  ];
+}
+
 type EvidenceTogglePlan = Record<keyof HandoverSummary["sections"], boolean[][]>;
 
 function createEvidenceTogglePlan(summary: HandoverSummary): EvidenceTogglePlan {
@@ -236,6 +254,7 @@ export function SummaryPanel({
   const totalChanges = comparison.changes.length;
   const coverage = totalChanges ? Math.min(100, (evidenceCount / totalChanges) * 100) : 0;
   const evidenceTogglePlan = createEvidenceTogglePlan(summary);
+  const readableWarnings = readableSummaryWarnings(summary.warnings);
 
   return (
     <aside className="summary-panel panel" aria-labelledby="summary-title">
@@ -245,7 +264,7 @@ export function SummaryPanel({
           <h2 id="summary-title">인계 검토</h2>
         </div>
         <span className={`source-tag source-${summary.mode}`}>
-          {summary.mode === "deterministic" ? "deterministic" : "AI 문장화"}
+          {summary.mode === "ai" ? "AI 요약" : "규칙 요약"}
         </span>
       </header>
 
@@ -321,10 +340,10 @@ export function SummaryPanel({
         />
       </div>
 
-      {summary.warnings.length > 0 ? (
+      {readableWarnings.length > 0 ? (
         <div className="summary-warning" role="status">
           <strong>요약 주의</strong>
-          <span>{summary.warnings.join(", ")}</span>
+          <span>{readableWarnings.join(" ")}</span>
         </div>
       ) : null}
 
@@ -349,7 +368,6 @@ export function SummaryPanel({
           {reviewed ? "검토 완료" : "검토 완료"}
         </button>
       </div>
-      <p className="safety-note">가상 데이터 · 의사결정 보조가 아님</p>
     </aside>
   );
 }

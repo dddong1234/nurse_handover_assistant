@@ -4,6 +4,23 @@
 
 ## [Unreleased]
 
+### Changed
+
+- 약물 변화 SBAR를 직렬화된 JSON 대신 `약명 · 경로 · 빈도` 임상형 표현으로 변경
+- 화면 비교 요청이 서버의 근거 제한 AI 문장화를 기본 시도하도록 변경하고, 결과 출처를 `AI 요약`/`규칙 요약`으로 표시
+- AI 키 부재·provider 실패 경고 코드를 사용자용 한국어 대체 안내로 변환
+- 임상 작업 화면에서 병동·교대 맥락 배지와 포트폴리오 면책 문구를 제거하고 범위 고지는 README·제품 문서에 유지
+
+### Verification
+
+- Python unittest 55/55, frontend Vitest 48/48, Playwright 8/8 통과
+- ESLint, Next production build, harness 통과; 1440×900·390×844 브라우저 시각 검증 완료
+- `.env` 실 API smoke는 HTTP 200과 근거 9/9를 유지한 `AI_FALLBACK_USED`를 확인
+
+### Known limits
+
+- OpenAI provider 크레딧 부족으로 성공 AI 문장화는 아직 실 API에서 검증하지 못했으며, 화면은 규칙 요약으로 안전하게 대체된다.
+
 ## [0.5.0-dev.0] - 2026-08-28
 
 ### Added

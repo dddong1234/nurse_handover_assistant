@@ -57,6 +57,7 @@ describe("comparePatientRecords", () => {
     expect(JSON.parse(String(options.body))).toEqual({
       previous: previousRecord,
       current: currentRecord,
+      summaryMode: "ai",
     });
   });
 

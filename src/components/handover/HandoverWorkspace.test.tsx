@@ -319,16 +319,61 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     }
   });
 
-  it("keeps the safety notice visible while reviewing the workspace", () => {
+  it("removes portfolio disclaimer chrome while reviewing the workspace", () => {
     render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
 
-    expect(screen.getAllByText("가상 데이터 · 의사결정 보조가 아님").length).toBeGreaterThan(0);
+    const retiredSafetyNotice = ["가상 데이터", "의사결정 보조가 아님"].join(" · ");
+    const retiredUtilityContext = ["일반 성인병동", "교대 검토"].join(" · ");
+    expect(screen.queryByText(retiredSafetyNotice, { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText(retiredUtilityContext, { exact: true })).not.toBeInTheDocument();
   });
 
-  it("keeps the safety notice visible when comparison data is empty", () => {
+  it("does not add portfolio disclaimer chrome to the empty state", () => {
     render(<HandoverWorkspace data={[]} />);
 
-    expect(screen.getByText("가상 데이터 · 의사결정 보조가 아님")).toBeInTheDocument();
+    const retiredSafetyNotice = ["가상 데이터", "의사결정 보조가 아님"].join(" · ");
+    expect(screen.queryByText(retiredSafetyNotice, { exact: true })).not.toBeInTheDocument();
+  });
+
+  it("shows clinician-facing source labels and maps AI fallback warning codes", async () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+    const aiResponse = structuredClone(response);
+    aiResponse.summary.mode = "ai";
+    aiResponse.summary.warnings = ["AI_FALLBACK_USED"];
+
+    const deterministicResponse = structuredClone(response);
+    deterministicResponse.comparison.patient.id = "P001-RULE";
+    deterministicResponse.summary.warnings = ["AI_KEY_UNAVAILABLE"];
+
+    render(<HandoverWorkspace data={[aiResponse, deterministicResponse]} />);
+
+    expect(screen.getByText("AI 요약", { exact: true })).toBeInTheDocument();
+    expect(screen.getByText("AI 요약을 사용할 수 없어 규칙 요약을 표시합니다.", { exact: true })).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: /P001-RULE/ }));
+    expect(screen.getByText("규칙 요약", { exact: true })).toBeInTheDocument();
+    expect(screen.getByText("AI 연결 정보가 없어 규칙 요약을 표시합니다.", { exact: true })).toBeInTheDocument();
+    expect(screen.queryByText("AI_FALLBACK_USED", { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText("AI_KEY_UNAVAILABLE", { exact: true })).not.toBeInTheDocument();
+  });
+
+  it("keeps unknown summary warnings readable without exposing machine identifiers", () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+    const warningResponse = structuredClone(response);
+    warningResponse.summary.warnings = ["current.medications"];
+
+    render(<HandoverWorkspace data={[warningResponse]} />);
+
+    expect(screen.getByText("일부 원본 항목을 확인해야 합니다.", { exact: true })).toBeInTheDocument();
+    expect(screen.queryByText("current.medications", { exact: true })).not.toBeInTheDocument();
+  });
+
+  it("renders medication summaries in clinician-facing wording instead of raw JSON", () => {
+    render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
+
+    expect(screen.getByText("투약 추가: 타세놀정 500mg · PO · TID", { exact: true })).toBeInTheDocument();
+    expect(screen.queryByText(/\{"frequency"/)).not.toBeInTheDocument();
   });
 
   it("keeps the fixture visible and announces the exact fallback when the compare request fails", async () => {

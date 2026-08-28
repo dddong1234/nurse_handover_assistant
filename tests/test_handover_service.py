@@ -4,6 +4,7 @@ from copy import deepcopy
 import unittest
 
 from services.handover_service import (
+    build_deterministic_summary,
     build_handover_comparison,
     detect_changes,
     generate_handover_text,
@@ -336,6 +337,141 @@ class HandoverComparisonTests(unittest.TestCase):
         self.assertEqual([change["id"] for change in comparison["changes"]], [
             "vitals-body_temperature-modified",
         ])
+
+    def test_deterministic_summary_renders_added_medication_without_serialized_object(self):
+        previous = _record(medications=[])
+        current = _record(
+            medications=[
+                {"name": "타세놀정 500mg", "route": "PO", "frequency": "TID"}
+            ],
+        )
+
+        comparison = build_handover_comparison(previous, current)
+        summary = build_deterministic_summary(comparison)
+
+        self.assertEqual(
+            summary["sections"]["background"],
+            [
+                {
+                    "text": "투약 추가: 타세놀정 500mg · PO · TID",
+                    "evidenceIds": [
+                        "medications-타세놀정-500mg-3abed59ec690-added"
+                    ],
+                }
+            ],
+        )
+        medication_text = summary["sections"]["background"][0]["text"]
+        for forbidden in ("{", "}", '"name"', '"route"', '"frequency"'):
+            self.assertNotIn(forbidden, medication_text)
+
+    def test_deterministic_summary_renders_removed_medication_with_source_facts(self):
+        previous = _record(
+            medications=[
+                {"name": "타세놀정 500mg", "route": "PO", "frequency": "TID"}
+            ],
+        )
+        current = _record(medications=[])
+
+        comparison = build_handover_comparison(previous, current)
+        summary = build_deterministic_summary(comparison)
+
+        self.assertEqual(
+            summary["sections"]["background"],
+            [
+                {
+                    "text": "투약 중단: 타세놀정 500mg · PO · TID",
+                    "evidenceIds": [
+                        "medications-타세놀정-500mg-3abed59ec690-removed"
+                    ],
+                }
+            ],
+        )
+        medication_text = summary["sections"]["background"][0]["text"]
+        for fact in ("타세놀정 500mg", "PO", "TID"):
+            self.assertIn(fact, medication_text)
+        for forbidden in ("{", "}", '"name"', '"route"', '"frequency"'):
+            self.assertNotIn(forbidden, medication_text)
+
+    def test_deterministic_summary_renders_modified_medication_before_and_after(self):
+        previous = _record(
+            medications=[
+                {"name": "타세놀정 500mg", "route": "PO", "frequency": "QD"}
+            ],
+        )
+        current = _record(
+            medications=[
+                {"name": "타세놀정 500mg", "route": "IV", "frequency": "BID"}
+            ],
+        )
+
+        comparison = build_handover_comparison(previous, current)
+        summary = build_deterministic_summary(comparison)
+
+        self.assertEqual(
+            summary["sections"]["background"],
+            [
+                {
+                    "text": (
+                        "투약 변경: 타세놀정 500mg · PO · QD"
+                        " -> 타세놀정 500mg · IV · BID"
+                    ),
+                    "evidenceIds": [
+                        "medications-타세놀정-500mg-3abed59ec690-modified"
+                    ],
+                }
+            ],
+        )
+        medication_text = summary["sections"]["background"][0]["text"]
+        for fact in ("타세놀정 500mg", "PO", "QD", "IV", "BID"):
+            self.assertIn(fact, medication_text)
+        for forbidden in ("{", "}", '"name"', '"route"', '"frequency"'):
+            self.assertNotIn(forbidden, medication_text)
+
+    def test_deterministic_summary_keeps_non_medication_removals_as_deletions(self):
+        previous = _record(diagnosis=["삭제 진단"], notes=["삭제 메모"])
+        current = _record(diagnosis=[], notes=[])
+
+        comparison = build_handover_comparison(previous, current)
+        summary = build_deterministic_summary(comparison)
+
+        self.assertEqual(
+            summary["sections"]["background"],
+            [
+                {
+                    "text": "진단 삭제: 삭제 진단",
+                    "evidenceIds": [
+                        "diagnosis-삭제-진단-2db7ae149f9d-removed"
+                    ],
+                }
+            ],
+        )
+        self.assertEqual(
+            summary["sections"]["assessment"],
+            [
+                {
+                    "text": "간호 메모 삭제: 삭제 메모",
+                    "evidenceIds": [
+                        "notes-삭제-메모-30d354f47cb9-removed"
+                    ],
+                }
+            ],
+        )
+
+    def test_deterministic_summary_preserves_falsey_medication_fields(self):
+        previous = _record(medications=[])
+        current = _record(
+            medications=[
+                {"name": "경계 처방", "route": 0, "frequency": False}
+            ],
+        )
+
+        comparison = build_handover_comparison(previous, current)
+        summary = build_deterministic_summary(comparison)
+
+        self.assertEqual(
+            summary["sections"]["background"][0]["text"],
+            "투약 추가: 경계 처방 · 0 · False",
+        )
 
     def test_legacy_projection_keeps_korean_prefixes_and_medication_format(self):
         previous = _record(

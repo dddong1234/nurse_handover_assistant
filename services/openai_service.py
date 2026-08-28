@@ -220,6 +220,35 @@ def _modified_values_are_ordered(text: str, change: dict[str, Any]) -> bool:
         return True
     previous_facts = _value_facts(change.get("previousValue"))
     current_facts = _value_facts(change.get("currentValue"))
+    if change.get("category") == "medications":
+        connectors = ("->", "→", "=>")
+        connector_position = -1
+        connector_length = 0
+        for connector in connectors:
+            position = text.find(connector)
+            if position >= 0 and (
+                connector_position < 0 or position < connector_position
+            ):
+                connector_position = position
+                connector_length = len(connector)
+        if connector_position < 0:
+            return False
+
+        previous_position = 0
+        for fact in previous_facts:
+            fact_position = text.find(str(fact), previous_position, connector_position)
+            if fact_position < 0:
+                return False
+            previous_position = fact_position + len(str(fact))
+
+        current_position = connector_position + connector_length
+        for fact in current_facts:
+            fact_position = text.find(str(fact), current_position)
+            if fact_position < 0:
+                return False
+            current_position = fact_position + len(str(fact))
+        return True
+
     for previous_fact in previous_facts:
         for current_fact in current_facts:
             if previous_fact == current_fact:
@@ -353,25 +382,66 @@ def _safe_change_patterns(change: dict[str, Any]) -> tuple[str, ...]:
                 rf"(?:되었습니다|됐습니다|되었어요|됨|되었다)?{terminal}",
                 rf"(?:메모|note)\s*(?:삭제|제거)\s*[:：]?\s*{note}{terminal}",
             )
-    elif category == "medications" and len(facts) >= 3:
-        name, route, frequency = (re.escape(fact) for fact in facts[:3])
+    elif category == "medications":
         medication = r"(?:투약|약|medication|medications)"
-        separator = r"\s*(?:[,/()\[\]:：])?\s*"
+        separator = r"\s*(?:[,/()\[\]:：·])?\s*"
+        value_separator = r"\s*(?:[,/·])\s*"
         if change_type == "added":
+            medication_facts = _value_facts(change.get("currentValue"))
+            if len(medication_facts) < 3:
+                return ()
+            name, route, frequency = (
+                re.escape(fact) for fact in medication_facts[:3]
+            )
             action = r"(?:추가|신규|새로)"
+            ending = r"(?:되었습니다|됐습니다|되었어요|됨|되었다)?"
             return (
                 rf"{medication}\s*{action}\s*[:：]?\s*{name}{separator}{route}"
-                rf"\s*[,/]\s*{frequency}\s*(?:\)|\])?{terminal}",
-                rf"{name}{separator}{route}\s*[,/]\s*{frequency}\s*"
-                rf"(?:투약|약)\s*(?:이|은|는)?\s*{action}{terminal}",
+                rf"{value_separator}{frequency}\s*(?:\)|\])?{ending}{terminal}",
+                rf"{name}{separator}{route}{value_separator}{frequency}\s*"
+                rf"(?:투약|약)\s*(?:이|은|는)?\s*{action}{ending}{terminal}",
             )
         if change_type == "removed":
+            medication_facts = _value_facts(change.get("previousValue"))
+            if len(medication_facts) < 3:
+                return ()
+            name, route, frequency = (
+                re.escape(fact) for fact in medication_facts[:3]
+            )
             action = r"(?:삭제|제거|중단)"
+            ending = r"(?:되었습니다|됐습니다|되었어요|됨|되었다)?"
             return (
                 rf"{medication}\s*{action}\s*[:：]?\s*{name}{separator}{route}"
-                rf"\s*[,/]\s*{frequency}\s*(?:\)|\])?{terminal}",
-                rf"{name}{separator}{route}\s*[,/]\s*{frequency}\s*"
-                rf"(?:투약|약)\s*(?:이|은|는)?\s*{action}{terminal}",
+                rf"{value_separator}{frequency}\s*(?:\)|\])?{ending}{terminal}",
+                rf"{name}{separator}{route}{value_separator}{frequency}\s*"
+                rf"(?:투약|약)\s*(?:이|은|는)?\s*{action}{ending}{terminal}",
+            )
+        if change_type == "modified":
+            previous_facts = _value_facts(change.get("previousValue"))
+            current_facts = _value_facts(change.get("currentValue"))
+            if len(previous_facts) < 3 or len(current_facts) < 3:
+                return ()
+            previous_name, previous_route, previous_frequency = (
+                re.escape(fact) for fact in previous_facts[:3]
+            )
+            current_name, current_route, current_frequency = (
+                re.escape(fact) for fact in current_facts[:3]
+            )
+            connector = r"\s*(?:->|→|=>)\s*"
+            ending = r"(?:되었습니다|됐습니다|되었어요|됨|되었다)?"
+            before = (
+                f"{previous_name}{separator}{previous_route}{value_separator}"
+                f"{previous_frequency}"
+            )
+            after = (
+                f"{current_name}{separator}{current_route}{value_separator}"
+                f"{current_frequency}"
+            )
+            return (
+                rf"{medication}\s*변경\s*[:：]?\s*{before}{connector}{after}"
+                rf"{terminal}",
+                rf"{before}{connector}{after}\s*{medication}\s*변경"
+                rf"{ending}{terminal}",
             )
     return ()
 
