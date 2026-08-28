@@ -25,6 +25,7 @@
 - ESLint, TypeScript no-emit, Next production build, harness, `git diff --check` 통과
 - supervisor 브라우저 검증에서 1440×900·1024×768·390×844 드로어 폭, 수평 overflow 0, 본문 scroll lock, 진입·복귀 focus 확인
 - 독립 최종 리뷰가 찾은 요청 경쟁·세션 검증·테스트 정합 문제와 후속 pending 해제 경로를 네 차례 수정 라운드에서 해소
+- Vercel Production `/`·`/api/health`·가상 P001 비교 smoke와 공개 환경 Playwright 10/10 통과
 
 ### Known limits
 
