@@ -112,7 +112,11 @@ export function ChangeCard({ change, isFocused = false }: ChangeCardProps) {
           {formatDelta(change.delta)}
         </span>
         <span className="evidence-id mono">근거 ID · {change.id}</span>
-        <details className="evidence-details">
+        <details
+          className="evidence-details"
+          id={`evidence-details-${change.id}`}
+          open={isFocused || undefined}
+        >
           <summary>근거 상세</summary>
           <div className="evidence-detail-grid">
             <span>원본 필드</span><strong className="mono">{change.evidence.fieldPath}</strong>

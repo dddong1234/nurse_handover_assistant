@@ -96,7 +96,7 @@ export function PatientQueue({
     <aside className="patient-queue panel" aria-labelledby="patient-queue-title">
       <div className="queue-heading">
         <div>
-          <p className="eyebrow">SHIFT / 07:00–15:00</p>
+          <p className="eyebrow">이번 근무 · 07:00–15:00</p>
           <h2 id="patient-queue-title">환자 큐</h2>
         </div>
         <span className="queue-count mono">{filteredResponses.length.toString().padStart(2, "0")}</span>
@@ -150,9 +150,11 @@ export function PatientQueue({
                       {reviewed ? "검토 완료" : queueStatusLabel(comparison)}
                     </span>
                   </span>
-                  <span className="queue-patient-name">{patient.name}</span>
-                  <span className="queue-diagnosis">
-                    {patient.diagnoses[0] ?? "진단 정보 없음"}
+                  <span className="queue-patient-main">
+                    <span className="queue-patient-name">{patient.name}</span>
+                    <span className="queue-diagnosis">
+                      {patient.diagnoses[0] ?? "진단 정보 없음"}
+                    </span>
                   </span>
                   <span className="queue-row-bottom">
                     <span className="queue-id mono">{patient.id}</span>
@@ -161,8 +163,10 @@ export function PatientQueue({
                         <strong className="mono">{comparison.changes.length}</strong>
                       )}
                       {queueChangeLabel(comparison)}
-                      {highPriorityCount > 0 ? <em> · 중요 {highPriorityCount}</em> : null}
                     </span>
+                    {highPriorityCount > 0 ? (
+                      <span className="queue-priority-count">중요 {highPriorityCount}</span>
+                    ) : null}
                   </span>
                 </button>
               </div>

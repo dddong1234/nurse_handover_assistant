@@ -13,6 +13,35 @@ const SECTION_LABELS: Record<keyof HandoverSummary["sections"], string> = {
   recommendation: "Recommendation",
 };
 
+const SUMMARY_SECTION_KEYS: (keyof HandoverSummary["sections"])[] = [
+  "situation",
+  "background",
+  "assessment",
+  "recommendation",
+];
+
+type EvidenceTogglePlan = Record<keyof HandoverSummary["sections"], boolean[][]>;
+
+function createEvidenceTogglePlan(summary: HandoverSummary): EvidenceTogglePlan {
+  const seenEvidenceIds = new Set<string>();
+  const plan = {} as EvidenceTogglePlan;
+
+  for (const section of SUMMARY_SECTION_KEYS) {
+    const sectionPlan: boolean[][] = [];
+    for (const item of summary.sections[section]) {
+      const itemPlan: boolean[] = [];
+      for (const evidenceId of item.evidenceIds) {
+        itemPlan.push(!seenEvidenceIds.has(evidenceId));
+        seenEvidenceIds.add(evidenceId);
+      }
+      sectionPlan.push(itemPlan);
+    }
+    plan[section] = sectionPlan;
+  }
+
+  return plan;
+}
+
 export type SummaryPanelProps = {
   comparison: HandoverComparison;
   summary: HandoverSummary;
@@ -42,15 +71,15 @@ function uniqueIds(ids: string[]) {
 
 function EvidenceLinks({
   evidenceIds,
+  showToggleByIndex,
   selectedEvidenceIds,
-  renderedToggleIds,
   onToggleEvidence,
   onEvidenceActivate,
   controlsDisabled,
 }: {
   evidenceIds: string[];
+  showToggleByIndex: readonly boolean[];
   selectedEvidenceIds: Set<string>;
-  renderedToggleIds: Set<string>;
   onToggleEvidence: (evidenceId: string) => void;
   onEvidenceActivate: (evidenceId: string) => void;
   controlsDisabled: boolean;
@@ -59,13 +88,12 @@ function EvidenceLinks({
 
   return (
     <span className="evidence-links" aria-label="연결된 근거">
-      {evidenceIds.map((evidenceId) => {
+      {evidenceIds.map((evidenceId, evidenceIndex) => {
         const included = selectedEvidenceIds.has(evidenceId);
-        const showToggle = !renderedToggleIds.has(evidenceId);
-        renderedToggleIds.add(evidenceId);
+        const showToggle = showToggleByIndex[evidenceIndex] ?? false;
 
         return (
-          <span className={`evidence-reference ${included ? "is-included" : "is-excluded"}`} key={evidenceId}>
+          <span className={`evidence-reference ${included ? "is-included" : "is-excluded"}`} key={`${evidenceId}-${evidenceIndex}`}>
             {showToggle ? (
               <button
                 type="button"
@@ -100,7 +128,7 @@ function SummarySection({
   section,
   items,
   selectedEvidenceIds,
-  renderedToggleIds,
+  evidenceTogglePlan,
   onToggleEvidence,
   onEvidenceActivate,
   controlsDisabled,
@@ -110,7 +138,7 @@ function SummarySection({
   section: keyof HandoverSummary["sections"];
   items: HandoverSummaryItem[];
   selectedEvidenceIds: Set<string>;
-  renderedToggleIds: Set<string>;
+  evidenceTogglePlan: readonly boolean[][];
   onToggleEvidence: (evidenceId: string) => void;
   onEvidenceActivate: (evidenceId: string) => void;
   controlsDisabled: boolean;
@@ -149,8 +177,8 @@ function SummarySection({
                     <p>{item.text}</p>
                     <EvidenceLinks
                       evidenceIds={item.evidenceIds}
+                      showToggleByIndex={evidenceTogglePlan[index] ?? []}
                       selectedEvidenceIds={selectedEvidenceIds}
-                      renderedToggleIds={renderedToggleIds}
                       onToggleEvidence={onToggleEvidence}
                       onEvidenceActivate={onEvidenceActivate}
                       controlsDisabled={controlsDisabled}
@@ -172,8 +200,8 @@ function SummarySection({
                 <p>{item.text}</p>
                 <EvidenceLinks
                   evidenceIds={item.evidenceIds}
+                  showToggleByIndex={evidenceTogglePlan[index] ?? []}
                   selectedEvidenceIds={selectedEvidenceIds}
-                  renderedToggleIds={renderedToggleIds}
                   onToggleEvidence={onToggleEvidence}
                   onEvidenceActivate={onEvidenceActivate}
                   controlsDisabled={controlsDisabled}
@@ -207,19 +235,21 @@ export function SummaryPanel({
   const evidenceCount = changeIds.filter((changeId) => selectedEvidence.has(changeId)).length;
   const totalChanges = comparison.changes.length;
   const coverage = totalChanges ? Math.min(100, (evidenceCount / totalChanges) * 100) : 0;
-  const renderedToggleIds = new Set<string>();
+  const evidenceTogglePlan = createEvidenceTogglePlan(summary);
 
   return (
     <aside className="summary-panel panel" aria-labelledby="summary-title">
       <header className="section-header summary-header">
         <div>
-          <p className="eyebrow">HANDOVER DRAFT / SBAR</p>
-          <h2 id="summary-title">인수인계 초안</h2>
+          <p className="eyebrow">인계 검토 · SBAR</p>
+          <h2 id="summary-title">인계 검토</h2>
         </div>
         <span className={`source-tag source-${summary.mode}`}>
           {summary.mode === "deterministic" ? "deterministic" : "AI 문장화"}
         </span>
       </header>
+
+      <p className="summary-rail-intro">근거 범위를 확인하고 SBAR 초안을 검토한 뒤 원본 기록 확인으로 마무리합니다.</p>
 
       {fallbackMessage ? (
         <div className="summary-warning fallback-warning" role="status">
@@ -249,7 +279,7 @@ export function SummaryPanel({
           section="situation"
           items={summary.sections.situation}
           selectedEvidenceIds={selectedEvidence}
-          renderedToggleIds={renderedToggleIds}
+          evidenceTogglePlan={evidenceTogglePlan.situation}
           onToggleEvidence={onToggleEvidence}
           onEvidenceActivate={onEvidenceActivate}
           controlsDisabled={reviewed || apiPending}
@@ -260,7 +290,7 @@ export function SummaryPanel({
           section="background"
           items={summary.sections.background}
           selectedEvidenceIds={selectedEvidence}
-          renderedToggleIds={renderedToggleIds}
+          evidenceTogglePlan={evidenceTogglePlan.background}
           onToggleEvidence={onToggleEvidence}
           onEvidenceActivate={onEvidenceActivate}
           controlsDisabled={reviewed || apiPending}
@@ -271,7 +301,7 @@ export function SummaryPanel({
           section="assessment"
           items={summary.sections.assessment}
           selectedEvidenceIds={selectedEvidence}
-          renderedToggleIds={renderedToggleIds}
+          evidenceTogglePlan={evidenceTogglePlan.assessment}
           onToggleEvidence={onToggleEvidence}
           onEvidenceActivate={onEvidenceActivate}
           controlsDisabled={reviewed || apiPending}
@@ -282,7 +312,7 @@ export function SummaryPanel({
           section="recommendation"
           items={summary.sections.recommendation}
           selectedEvidenceIds={selectedEvidence}
-          renderedToggleIds={renderedToggleIds}
+          evidenceTogglePlan={evidenceTogglePlan.recommendation}
           onToggleEvidence={onToggleEvidence}
           onEvidenceActivate={onEvidenceActivate}
           controlsDisabled={reviewed || apiPending}

@@ -39,10 +39,10 @@ export function ComparisonWorkspace({ comparison, focusedEvidenceId = null }: Co
   })).filter(({ changes }) => changes.length > 0);
 
   return (
-    <section className="comparison-panel panel" aria-labelledby="comparison-title">
+    <section className="comparison-panel panel comparison-primary" aria-labelledby="comparison-title">
       <header className="section-header comparison-header">
         <div>
-          <p className="eyebrow">EVIDENCE REVIEW / RECORD DELTA</p>
+          <p className="eyebrow">두 기록의 변화</p>
           <h2 id="comparison-title">변화 검토</h2>
         </div>
         <div className="comparison-status">

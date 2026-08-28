@@ -19,6 +19,10 @@ export function formatTimestamp(timestamp: string | null) {
 
 export function PatientContextHeader({ comparison }: PatientContextHeaderProps) {
   const { patient, interval } = comparison;
+  const totalChangeCount = comparison.changes.length;
+  const highPriorityChangeCount = comparison.changes.filter(
+    (change) => change.reviewPriority === "high",
+  ).length;
 
   return (
     <section className="patient-context panel" aria-label="환자 컨텍스트">
@@ -26,7 +30,7 @@ export function PatientContextHeader({ comparison }: PatientContextHeaderProps) 
         <div className="context-title-row">
           <span className="context-marker" aria-hidden="true">↗</span>
           <div>
-            <p className="eyebrow">SELECTED PATIENT / 현재 선택</p>
+            <p className="eyebrow">선택 환자 · 현재 선택</p>
             <h2 id="patient-context-title">{patient.name}</h2>
           </div>
           <span className="context-id mono">{patient.id}</span>
@@ -55,20 +59,33 @@ export function PatientContextHeader({ comparison }: PatientContextHeaderProps) 
         </div>
       </div>
 
-      <div className="context-interval">
-        <span className="field-label">비교 기준 시각</span>
-        <div className="interval-values">
-          <span className="interval-point">
-            <span>이전 기록</span>
-            <strong className="mono">{formatTimestamp(interval.previousRecordedAt)}</strong>
-          </span>
-          <span className="interval-arrow" aria-hidden="true">→</span>
-          <span className="interval-point current-point">
-            <span>현재 기록</span>
-            <strong className="mono">{formatTimestamp(interval.currentRecordedAt)}</strong>
+      <section className="shift-summary-strip" aria-labelledby="shift-summary-title" aria-live="polite">
+        <div className="shift-summary-heading">
+          <span className="shift-summary-mark" aria-hidden="true">↗</span>
+          <div>
+            <p className="field-label">교대 변화 요약</p>
+            <h3 id="shift-summary-title">이번 근무 변화</h3>
+          </div>
+        </div>
+        <div className="shift-summary-interval" aria-label="비교 구간">
+          <span className="shift-summary-interval-label">비교 구간</span>
+          <span className="shift-summary-interval-value mono">
+            <span className="shift-summary-point">{formatTimestamp(interval.previousRecordedAt)}</span>
+            <span className="shift-summary-arrow" aria-hidden="true">→</span>
+            <span className="shift-summary-point">{formatTimestamp(interval.currentRecordedAt)}</span>
           </span>
         </div>
-      </div>
+        <div className="shift-summary-stats" aria-label="변화 집계">
+          <span className="shift-summary-stat">
+            <strong className="mono">총 {totalChangeCount}건</strong>
+            <span>전체 변화</span>
+          </span>
+          <span className="shift-summary-stat shift-summary-stat-priority">
+            <strong className="mono">중요 {highPriorityChangeCount}건</strong>
+            <span>먼저 확인</span>
+          </span>
+        </div>
+      </section>
     </section>
   );
 }

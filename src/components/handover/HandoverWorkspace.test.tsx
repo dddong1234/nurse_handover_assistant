@@ -1,11 +1,15 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { act } from "react";
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { buildDemoWorkspaceData } from "@/lib/demo-adapter";
 import type { HandoverApiResponse, HandoverStatus } from "@/lib/contracts";
 
 import { HandoverWorkspace } from "./HandoverWorkspace";
+import { SummaryPanel } from "./SummaryPanel";
 
 function createDeferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -74,6 +78,106 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(within(context).getByText("07/02 06:00")).toBeInTheDocument();
     expect(within(context).getByText("07/02 09:10")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /김영희/ })).toHaveAttribute("aria-current", "true");
+  });
+
+  it("exposes one shift summary with the exact interval, total changes, and high-priority count", () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+
+    render(<HandoverWorkspace data={[response]} />);
+
+    const shiftSummary = screen.getByRole("region", { name: "이번 근무 변화" });
+    expect(within(shiftSummary).getByRole("heading", { name: "이번 근무 변화" })).toBeInTheDocument();
+    expect(shiftSummary).toHaveTextContent("07/02 07:00");
+    expect(shiftSummary).toHaveTextContent("07/02 09:00");
+    expect(shiftSummary).toHaveTextContent("총 9건");
+    expect(shiftSummary).toHaveTextContent("중요 2건");
+    expect(screen.getByRole("complementary", { name: "인계 검토" })).toBeInTheDocument();
+  });
+
+  it("hydrates the summary panel without a mismatch when evidence links repeat", async () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+
+    const evidenceId = response.comparison.changes[0]?.id;
+    if (!evidenceId) throw new Error("데모 근거가 없습니다.");
+    let renderPhase: "server" | "client" = "server";
+    const repeatedEvidenceIds = [evidenceId, evidenceId];
+    Object.defineProperty(repeatedEvidenceIds, "map", {
+      value: function map<T>(
+        this: string[],
+        callback: (value: string, index: number, array: string[]) => T,
+      ) {
+        const indexes = renderPhase === "server" ? [1, 0] : [0, 1];
+        const mapped = new Map(indexes.map((index) => [
+          index,
+          callback(this[index]!, index, this),
+        ]));
+        return [mapped.get(0)!, mapped.get(1)!];
+      },
+    });
+    const summary = {
+      ...response.summary,
+      sections: {
+        ...response.summary.sections,
+        situation: [{ text: "반복 근거 링크", evidenceIds: repeatedEvidenceIds }],
+        background: [],
+        assessment: [],
+        recommendation: [],
+      },
+      evidenceIds: [evidenceId],
+    };
+
+    const panelProps = {
+      comparison: response.comparison,
+      summary,
+      selectedEvidenceIds: [evidenceId],
+      onToggleEvidence: vi.fn(),
+      onEvidenceActivate: vi.fn(),
+      recommendation: "",
+      onRecommendationChange: vi.fn(),
+      sourceConfirmed: false,
+      onSourceConfirmedChange: vi.fn(),
+      reviewed: false,
+      onReviewComplete: vi.fn(),
+    };
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(<SummaryPanel {...panelProps} />);
+    renderPhase = "client";
+    document.body.appendChild(container);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+
+    try {
+      root = hydrateRoot(container, <SummaryPanel {...panelProps} />);
+      await act(async () => undefined);
+
+      expect(consoleError.mock.calls).toEqual([]);
+    } finally {
+      root?.unmount();
+      consoleError.mockRestore();
+      container.remove();
+    }
+  });
+
+  it("hydrates the complete handover workspace without a mismatch", async () => {
+    const data = buildDemoWorkspaceData();
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(<HandoverWorkspace data={data} />);
+    document.body.appendChild(container);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+
+    try {
+      root = hydrateRoot(container, <HandoverWorkspace data={data} />);
+      await act(async () => undefined);
+
+      expect(consoleError.mock.calls).toEqual([]);
+    } finally {
+      root?.unmount();
+      consoleError.mockRestore();
+      container.remove();
+    }
   });
 
   it("filters the queue live by patient name, patient ID, and room, with a useful no-results state", async () => {
@@ -147,7 +251,7 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(within(comparison).getByRole("heading", { name: "아세틸시스테인" })).toBeInTheDocument();
     expect(document.getElementById("evidence-medications-아세틸시스테인-1363b9db6619-added")).not.toBeNull();
 
-    const summary = screen.getByRole("complementary", { name: "인수인계 초안" });
+    const summary = screen.getByRole("complementary", { name: "인계 검토" });
     expect(within(summary).getByText(/김영희\(P002\)/)).toBeInTheDocument();
   });
 
@@ -279,7 +383,7 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
       expect(screen.getByText("서버에서 확인한 P001 변화 요약")).toBeInTheDocument();
     });
     await user.click(screen.getByRole("button", { name: /김영희/ }));
-    expect(within(screen.getByRole("complementary", { name: "인수인계 초안" })).getByText(/김영희\(P002\)/)).toBeInTheDocument();
+    expect(within(screen.getByRole("complementary", { name: "인계 검토" })).getByText(/김영희\(P002\)/)).toBeInTheDocument();
     expect(screen.queryByText("서버에서 확인한 P001 변화 요약")).not.toBeInTheDocument();
   });
 
@@ -316,6 +420,30 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(document.activeElement).toBe(card);
     expect(card).toHaveClass("is-evidence-focused");
     expect(card).toHaveAttribute("tabindex", "-1");
+  });
+
+  it("opens the matching evidence details when a summary evidence link is activated", async () => {
+    const [response] = buildDemoWorkspaceData();
+    if (!response) throw new Error("데모 응답이 없습니다.");
+    const user = userEvent.setup();
+    render(<HandoverWorkspace data={[response]} />);
+
+    const evidenceId = response.comparison.changes[0]!.id;
+    const evidenceLink = screen.getAllByRole("link", { name: new RegExp(evidenceId.slice(0, 14)) })[0];
+    if (!evidenceLink) throw new Error("근거 링크가 없습니다.");
+    const card = document.getElementById(`evidence-${evidenceId}`);
+    if (!card) throw new Error("근거 변화 카드가 없습니다.");
+    const details = card.querySelector("details");
+    if (!(details instanceof HTMLDetailsElement)) throw new Error("근거 상세 disclosure가 없습니다.");
+
+    expect(details.open).toBe(false);
+    await user.click(evidenceLink);
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(card);
+      expect(details.open).toBe(true);
+    });
+    expect(within(card).getByText("근거 상세")).toBeInTheDocument();
   });
 
   it("keeps manual recommendations isolated per patient", async () => {
