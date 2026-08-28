@@ -623,18 +623,18 @@ Assert every change ID still appears exactly once across evidence-bearing summar
 - Consumes: Task 10 compact SBAR text and unchanged evidence IDs.
 - Produces: a quieter default summary rail whose evidence details remain fully reachable and focus the original change.
 
-- [ ] **Step 1: Add failing evidence-presentation regressions**
+- [x] **Step 1: Add failing evidence-presentation regressions**
 
 Assert full evidence IDs are not visible in the default summary rail, each summary item exposes a labelled `근거 1건` or `근거 N건` disclosure, expanding it reveals the linked evidence controls, and activating a link still focuses the matching change. Add E2E coverage for collapsed-by-default evidence and one expand→focus path.
 
-- [ ] **Step 2: Implement the compact evidence tray**
+- [x] **Step 2: Implement the compact evidence tray**
 
 Use native accessible disclosure semantics. Keep individual inclusion toggles and evidence links inside the disclosure, replace visible IDs with short ordinal labels such as `근거 1`, and retain the full ID in accessible names/tooltips. Do not remove traceability or the review-completion gate.
 
-- [ ] **Step 3: Tighten the summary rail hierarchy**
+- [x] **Step 3: Tighten the summary rail hierarchy**
 
 Keep the current Figma-derived tokens and three-region layout. Make section counts, primary statements, and the evidence disclosure the visual order; avoid new decoration, motion, or consumer-dashboard styling. Align checked-in demo Situation text with Task 10.
 
-- [ ] **Step 4: Run frontend and visual gates**
+- [x] **Step 4: Run frontend and visual gates**
 
 Run focused/full Vitest, ESLint, Next build, and Playwright. Supervisor verifies 1440×900, 1024×768, and 390×844, including no horizontal overflow and a reachable evidence disclosure.

@@ -10,11 +10,13 @@
 - 화면 비교 요청이 서버의 근거 제한 AI 문장화를 기본 시도하도록 변경하고, 결과 출처를 `AI 요약`/`규칙 요약`으로 표시
 - AI 키 부재·provider 실패 경고 코드를 사용자용 한국어 대체 안내로 변환
 - 임상 작업 화면에서 병동·교대 맥락 배지와 포트폴리오 면책 문구를 제거하고 범위 고지는 README·제품 문서에 유지
+- Situation의 원시 ISO 구간을 당일 `MM/DD HH:mm → HH:mm`, 날짜 변경 시 양쪽 날짜를 표시하는 임상형 시간으로 축약
+- SBAR 근거 ID를 기본 접힘 상태의 `근거 N건` 영역으로 이동하고, 짧은 순번 링크·전체 접근성 이름·원문 카드 재포커스를 유지
 
 ### Verification
 
-- Python unittest 55/55, frontend Vitest 48/48, Playwright 8/8 통과
-- ESLint, Next production build, harness 통과; 1440×900·390×844 브라우저 시각 검증 완료
+- Python unittest 59/59, frontend Vitest 51/51, Playwright 9/9 통과
+- ESLint, Next production build, harness 통과; 1440×900·1024×768·390×844 브라우저 시각·수평 overflow 검증 완료
 - `.env` 실 API smoke는 HTTP 200과 근거 9/9를 유지한 `AI_FALLBACK_USED`를 확인
 
 ### Known limits
