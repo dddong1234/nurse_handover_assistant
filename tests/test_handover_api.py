@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from copy import deepcopy
 import importlib
+import json
+import os
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 import unittest
 
 from fastapi.testclient import TestClient
@@ -215,6 +219,95 @@ class HandoverApiTests(unittest.TestCase):
         client = _client_or_fail(self)
 
         response = client.post("/api/handover/compare", json={"previous": None})
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_compare_endpoint_ai_mode_without_key_returns_deterministic_fallback(self):
+        client = _client_or_fail(self)
+
+        with patch.dict(os.environ, {"OPENAI_API_KEY": ""}):
+            response = client.post(
+                "/api/handover/compare",
+                json={
+                    "previous": PREVIOUS_RECORD,
+                    "current": CURRENT_RECORD,
+                    "summaryMode": "ai",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        summary = response.json()["summary"]
+        self.assertEqual(summary["mode"], "deterministic")
+        self.assertIn("AI_KEY_UNAVAILABLE", summary["warnings"])
+
+    def test_compare_endpoint_ai_mode_uses_server_key_and_returns_reworded_summary(self):
+        client = _client_or_fail(self)
+        comparison = _build_comparison()
+        deterministic = _summary_or_fail(self, comparison)
+        ai_output = {
+            "sections": deepcopy(deterministic["sections"]),
+        }
+        fake_client = SimpleNamespace(
+            responses=SimpleNamespace(
+                create=lambda **kwargs: SimpleNamespace(
+                    output_text=json.dumps(ai_output, ensure_ascii=False)
+                )
+            )
+        )
+
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "unit-test-secret"}):
+            with patch("api.index._create_openai_client", return_value=fake_client) as make_client:
+                response = client.post(
+                    "/api/handover/compare",
+                    json={
+                        "previous": PREVIOUS_RECORD,
+                        "current": CURRENT_RECORD,
+                        "summaryMode": "ai",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["summary"]["mode"], "ai")
+        self.assertNotIn("AI_FALLBACK_USED", response.json()["summary"]["warnings"])
+        make_client.assert_called_once_with("unit-test-secret")
+
+    def test_compare_endpoint_ai_mode_provider_failure_returns_deterministic_fallback(self):
+        client = _client_or_fail(self)
+        failing_client = SimpleNamespace(
+            responses=SimpleNamespace(
+                create=lambda **kwargs: (_ for _ in ()).throw(
+                    TimeoutError("offline fake timeout")
+                )
+            )
+        )
+
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "unit-test-secret"}):
+            with patch("api.index._create_openai_client", return_value=failing_client):
+                response = client.post(
+                    "/api/handover/compare",
+                    json={
+                        "previous": PREVIOUS_RECORD,
+                        "current": CURRENT_RECORD,
+                        "summaryMode": "ai",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        summary = response.json()["summary"]
+        self.assertEqual(summary["mode"], "deterministic")
+        self.assertIn("AI_FALLBACK_USED", summary["warnings"])
+
+    def test_compare_endpoint_rejects_unsupported_summary_mode(self):
+        client = _client_or_fail(self)
+
+        response = client.post(
+            "/api/handover/compare",
+            json={
+                "previous": PREVIOUS_RECORD,
+                "current": CURRENT_RECORD,
+                "summaryMode": "unsupported",
+            },
+        )
 
         self.assertEqual(response.status_code, 422)
 
