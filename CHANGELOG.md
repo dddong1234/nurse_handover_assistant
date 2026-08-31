@@ -27,6 +27,8 @@
 - 감독 브라우저에서 1440×900·1024×768·960×768·390×844 시각 검증, 콘솔 오류 0건 확인
 - 960px에서 중앙/context scrollWidth=clientWidth, 변화 통계 레일 침범 0건, 두 비교 시각 각각 64/64px 확인
 - 기능·시각 작업별 독립 Luna Max 리뷰와 수정 라운드 재검토에서 Critical/Important 0건 확인
+- PR #2 checks 통과 후 `main` 병합; Vercel Preview `/api/health` `ok`, 가상 P001 비교 `ready`·변화 9·근거 9 확인
+- Production `https://nurse-handover-assistant.vercel.app` 루트 200·health `ok`·P001 `ready`/9/9, 공개 Playwright 19/19 및 1440·960·390 수평 overflow 0 확인
 
 ### Known limits
 
