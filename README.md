@@ -14,9 +14,9 @@
 
 ## 현재 구현
 
-- Next.js 16 + React 19 기반 3영역 인수인계 작업공간
+- Next.js 16 + React 19 기반 통합 임상 워크벤치: 전역 헤더, 담당 환자 레일, 중앙 작업 모듈, 인계 검토 레일
 - 환자 검색·선택, Shift Seam 이전/현재 비교, 중요도별 변화 검토
-- 환자별 이전·현재 원본 차트 조회와 구조화된 현재 기록 입력
+- `인수인계 비교`·`원본 기록` 중앙 탭, 환자별 이전·현재 원본 차트 조회와 구조화된 현재 기록 입력
 - 입력 기록의 비교 성공 후 적용, 브라우저 세션 유지와 가상 데이터 초기화
 - 근거 링크에서 대응 변화 카드로 이동·focus
 - SBAR 근거 포함률, 간호사 직접 Recommendation, 원본 확인 후 검토 잠금
@@ -33,7 +33,7 @@
 - API: FastAPI, Python 3.12
 - AI: OpenAI Responses API, Structured Outputs, deterministic fallback
 - Test: Vitest, Testing Library, Playwright, Python unittest
-- Deploy: Vercel Preview 검증 후 Production (`0.6.0`)
+- Deploy: Vercel Preview 검증 후 Production (`0.7.0`)
 
 ## 로컬 실행
 
@@ -89,7 +89,7 @@ pnpm test:e2e
 
 Vercel 환경에서 `OPENAI_API_KEY`는 서버 환경변수로만 등록하며 `NEXT_PUBLIC_` 접두사를 사용하지 않습니다.
 
-원본 차트에서 적용한 기록은 `sessionStorage`에만 보관됩니다. 같은 탭 세션에서는 유지되지만 서버, 다른 브라우저나 다른 기기로 공유되지 않습니다. `변경사항 비교`와 `초기화` 모두 API 비교가 성공한 경우에만 화면 결과와 검토 상태를 교체합니다.
+원본 기록 모듈에서 적용한 기록은 `sessionStorage`에만 보관됩니다. 같은 탭 세션에서는 유지되지만 서버, 다른 브라우저나 다른 기기로 공유되지 않습니다. `변경사항 비교`와 `초기화` 모두 API 비교가 성공한 경우에만 화면 결과와 검토 상태를 교체하며, 실패하면 원본 기록 탭과 입력값을 유지합니다.
 
 ## 주요 구조
 
