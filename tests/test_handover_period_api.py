@@ -5,12 +5,17 @@ import importlib
 import json
 import os
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 import unittest
 
 from fastapi.testclient import TestClient
 
 from services import handover_service
+from services.handover_period_service import (
+    build_deterministic_period_summary,
+    build_handover_period_comparison,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,6 +31,24 @@ def load_timeline(patient_id: str) -> dict:
 def _client() -> TestClient:
     api_module = importlib.import_module("api.index")
     return TestClient(api_module.app)
+
+
+class _FakeResponses:
+    def __init__(self, output: object = None, error: BaseException | None = None):
+        self.output = output
+        self.error = error
+        self.kwargs: dict[str, object] | None = None
+
+    def create(self, **kwargs):
+        self.kwargs = kwargs
+        if self.error is not None:
+            raise self.error
+        return SimpleNamespace(output_text=self.output)
+
+
+class _FakeClient:
+    def __init__(self, output: object = None, error: BaseException | None = None):
+        self.responses = _FakeResponses(output, error)
 
 
 class HandoverPeriodApiTests(unittest.TestCase):
@@ -200,6 +223,96 @@ class HandoverPeriodApiTests(unittest.TestCase):
         self.assertEqual(response.json(), {"comparison": expected_comparison, "summary": expected_summary})
         self.assertNotIn("patient", response.json())
         self.assertNotIn("period", response.json())
+
+    def test_period_compare_ai_without_key_returns_http_success_deterministic_fallback(self):
+        timeline = load_timeline("P001")
+        client = _client()
+
+        with patch.dict(os.environ, {"OPENAI_API_KEY": ""}, clear=False):
+            with patch("api.index._create_openai_client") as create_client:
+                response = client.post(
+                    "/api/handover/period-compare",
+                    json={
+                        "reviewStartAt": timeline["defaultReturnStartAt"],
+                        "records": timeline["snapshots"],
+                        "coverageGaps": timeline["coverageGaps"],
+                        "summaryMode": "ai",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        summary = response.json()["summary"]
+        self.assertEqual(summary["mode"], "deterministic")
+        self.assertIn("AI_KEY_UNAVAILABLE", summary["warnings"])
+        create_client.assert_not_called()
+
+    def test_period_compare_ai_server_key_wires_client_and_preserves_payload_secrecy(self):
+        timeline = load_timeline("P001")
+        comparison = build_handover_period_comparison(
+            timeline["snapshots"],
+            timeline["defaultReturnStartAt"],
+            timeline["coverageGaps"],
+        )
+        deterministic = build_deterministic_period_summary(comparison)
+        ai_output = {
+            "sections": deepcopy(deterministic["sections"]),
+            "evidenceIds": deepcopy(deterministic["evidenceIds"]),
+            "warnings": deepcopy(deterministic["warnings"]),
+        }
+        fake_client = _FakeClient(json.dumps(ai_output, ensure_ascii=False))
+        secret = "period-api-server-secret"
+        client = _client()
+
+        with patch.dict(os.environ, {"OPENAI_API_KEY": secret}, clear=False):
+            with patch("api.index._create_openai_client", return_value=fake_client) as create_client:
+                response = client.post(
+                    "/api/handover/period-compare",
+                    json={
+                        "reviewStartAt": timeline["defaultReturnStartAt"],
+                        "records": timeline["snapshots"],
+                        "coverageGaps": timeline["coverageGaps"],
+                        "summaryMode": "ai",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["summary"]["mode"], "ai")
+        create_client.assert_called_once_with(secret)
+        self.assertIsNotNone(fake_client.responses.kwargs)
+        provider_payload = json.loads(fake_client.responses.kwargs["input"])
+        self.assertNotIn("records", provider_payload)
+        self.assertNotIn(secret, json.dumps(provider_payload, ensure_ascii=False))
+        self.assertNotIn(secret, response.text)
+
+    def test_period_compare_ai_provider_or_client_failure_returns_http_success_fallback(self):
+        timeline = load_timeline("P001")
+        request = {
+            "reviewStartAt": timeline["defaultReturnStartAt"],
+            "records": timeline["snapshots"],
+            "coverageGaps": timeline["coverageGaps"],
+            "summaryMode": "ai",
+        }
+        client = _client()
+
+        with self.subTest(failure="provider"):
+            failing_client = _FakeClient(error=TimeoutError("offline fake timeout"))
+            with patch.dict(os.environ, {"OPENAI_API_KEY": "provider-test-secret"}, clear=False):
+                with patch("api.index._create_openai_client", return_value=failing_client):
+                    response = client.post("/api/handover/period-compare", json=request)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["summary"]["mode"], "deterministic")
+            self.assertIn("AI_FALLBACK_USED", response.json()["summary"]["warnings"])
+
+        with self.subTest(failure="client"):
+            with patch.dict(os.environ, {"OPENAI_API_KEY": "client-test-secret"}, clear=False):
+                with patch(
+                    "api.index._create_openai_client",
+                    side_effect=RuntimeError("client unavailable"),
+                ):
+                    response = client.post("/api/handover/period-compare", json=request)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["summary"]["mode"], "deterministic")
+            self.assertIn("AI_FALLBACK_USED", response.json()["summary"]["warnings"])
 
 
 if __name__ == "__main__":

@@ -68,6 +68,26 @@ def _item_for_evidence(summary: dict, evidence_id: str) -> dict:
     raise AssertionError(f"missing summary item for {evidence_id}")
 
 
+def _single_modified_medication_inputs() -> tuple[dict, dict]:
+    with (ROOT / "data" / "timelines" / "P001.json").open(encoding="utf-8") as handle:
+        timeline = json.load(handle)
+    first = deepcopy(timeline["snapshots"][0])
+    current = deepcopy(first)
+    first["medications"] = [
+        {"name": "전환 약", "route": "PO", "frequency": "BID"}
+    ]
+    current["medications"] = [
+        {"name": "전환 약", "route": "IV", "frequency": "BID"}
+    ]
+    current["updated_at"] = "2026-06-29T23:00:00+09:00"
+    comparison = build_handover_period_comparison(
+        [first, current],
+        first["updated_at"],
+        [],
+    )
+    return comparison, build_deterministic_period_summary(comparison)
+
+
 class OpenAIPeriodServiceTests(unittest.TestCase):
     def test_valid_structured_wording_preserves_evidence_and_uses_minimum_payload(self):
         comparison, deterministic = _inputs()
@@ -240,6 +260,80 @@ class OpenAIPeriodServiceTests(unittest.TestCase):
             if item["evidenceIds"] == [event_id]
         )
         item["text"] = f"hypertension 진단 추가 현재 반영 low"
+        result = rewrite_handover_period_summary(
+            comparison,
+            deterministic,
+            FakeClient(json.dumps(output, ensure_ascii=False)),
+        )
+
+        self.assertEqual(result, _expected_fallback(deterministic))
+
+    def test_unsupported_added_clinical_prose_returns_deterministic_fallback(self):
+        comparison, deterministic = _inputs()
+        output = _valid_ai_output(deterministic)
+        item = output["sections"]["background"][0]
+        item["text"] = "진단 hypertension 추가 · 현재 반영 · 환자는 식사를 잘함"
+
+        result = rewrite_handover_period_summary(
+            comparison,
+            deterministic,
+            FakeClient(json.dumps(output, ensure_ascii=False)),
+        )
+
+        self.assertEqual(result, _expected_fallback(deterministic))
+
+    def test_medication_route_change_with_token_boundary_returns_deterministic_fallback(self):
+        comparison, deterministic = _inputs()
+        output = _valid_ai_output(deterministic)
+        event = next(
+            event
+            for event in comparison["events"]
+            if event["change"]["category"] == "medications"
+            and event["change"]["changeType"] == "added"
+        )
+        item = next(
+            item
+            for item in output["sections"]["background"]
+            if item["evidenceIds"] == [event["id"]]
+        )
+        item["text"] = "투약 추가: 타세놀정 500mg · APO · TID · 현재 반영"
+
+        result = rewrite_handover_period_summary(
+            comparison,
+            deterministic,
+            FakeClient(json.dumps(output, ensure_ascii=False)),
+        )
+
+        self.assertEqual(result, _expected_fallback(deterministic))
+
+    def test_reversed_medication_transition_returns_deterministic_fallback(self):
+        comparison, deterministic = _single_modified_medication_inputs()
+        output = _valid_ai_output(deterministic)
+        event = comparison["events"][0]
+        item = next(
+            item
+            for item in output["sections"]["background"]
+            if item["evidenceIds"] == [event["id"]]
+        )
+        item["text"] = (
+            "투약 변경: 전환 약 · IV · BID -> 전환 약 · PO · BID · 현재 반영"
+        )
+
+        result = rewrite_handover_period_summary(
+            comparison,
+            deterministic,
+            FakeClient(json.dumps(output, ensure_ascii=False)),
+        )
+
+        self.assertEqual(result, _expected_fallback(deterministic))
+
+    def test_cross_item_evidence_duplication_returns_deterministic_fallback(self):
+        comparison, deterministic = _inputs()
+        output = _valid_ai_output(deterministic)
+        output["sections"]["background"].append(
+            deepcopy(output["sections"]["background"][0])
+        )
+
         result = rewrite_handover_period_summary(
             comparison,
             deterministic,

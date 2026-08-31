@@ -35,6 +35,100 @@ _FORBIDDEN_INTERPRETATIONS = (
 )
 _NUMBER_PATTERN = re.compile(r"(?<![\w])[-+]?\d+(?:[.,]\d+)?")
 _PRIORITY_VALUE_PATTERN = re.compile(r"(?<![\w])(?:high|medium|low)(?![\w])", re.IGNORECASE)
+_WORD_PATTERN = re.compile(r"[A-Za-z0-9_]+|[가-힣]+")
+_FACT_BOUNDARY_PREFIX = r"(?<![A-Za-z0-9_])"
+_FACT_BOUNDARY_SUFFIX = r"(?![A-Za-z0-9_])"
+_SAFE_WORDS = {
+    "added",
+    "addition",
+    "assessment",
+    "background",
+    "changed",
+    "change",
+    "current",
+    "diagnosis",
+    "from",
+    "is",
+    "medication",
+    "medications",
+    "modified",
+    "new",
+    "note",
+    "notes",
+    "period_only",
+    "record_event",
+    "removed",
+    "to",
+    "trend",
+    "가",
+    "간호",
+    "격리",
+    "기록",
+    "까지",
+    "는",
+    "및",
+    "메모",
+    "변경",
+    "변화",
+    "부",
+    "부터",
+    "사건",
+    "새",
+    "새로",
+    "새로운",
+    "수치",
+    "으로",
+    "은",
+    "을",
+    "의",
+    "이",
+    "인",
+    "에서",
+    "추가",
+    "확인",
+    "현재",
+    "활력징후",
+    "삭제",
+    "제거",
+    "해제",
+    "중단",
+    "중",
+    "종료",
+    "추세",
+    "진단",
+    "투약",
+    "약",
+    "되",
+    "됨",
+    "됐",
+    "되었",
+    "습니다",
+    "어요",
+    "다",
+    "로",
+    "를",
+    "반영",
+    "아니",
+    "또는",
+}
+_SAFE_WORD_STEMS = (
+    "추가",
+    "등록",
+    "확인",
+    "삭제",
+    "제거",
+    "해제",
+    "중단",
+    "변경",
+    "변화",
+    "조정",
+    "수정",
+    "되었",
+    "됐",
+    "되",
+    "기록",
+    "반영",
+)
 
 
 class HandoverPeriodSummaryItem(TypedDict):
@@ -311,6 +405,28 @@ def _summary_detail_ids(summary: Any) -> set[str]:
     return result
 
 
+def _summary_detail_counts(summary: Any) -> Counter[str]:
+    counts: Counter[str] = Counter()
+    if not isinstance(summary, dict):
+        return counts
+    sections = summary.get("sections", {})
+    if not isinstance(sections, dict):
+        return counts
+    for section in ("background", "assessment"):
+        items = sections.get(section, [])
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            evidence_ids = item.get("evidenceIds")
+            if isinstance(evidence_ids, list) and all(
+                isinstance(event_id, str) for event_id in evidence_ids
+            ):
+                counts.update(evidence_ids)
+    return counts
+
+
 def _summary_context_pairs(summary: Any) -> set[tuple[str, ...]]:
     """Return the evidence-ID tuples belonging to deterministic context items."""
 
@@ -332,6 +448,28 @@ def _summary_context_pairs(summary: Any) -> set[tuple[str, ...]]:
         ):
             pairs.add(tuple(evidence_ids))
     return pairs
+
+
+def _summary_context_counts(summary: Any) -> Counter[tuple[str, ...]]:
+    counts: Counter[tuple[str, ...]] = Counter()
+    if not isinstance(summary, dict):
+        return counts
+    sections = summary.get("sections", {})
+    if not isinstance(sections, dict):
+        return counts
+    items = sections.get("situation", [])
+    if not isinstance(items, list):
+        return counts
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        evidence_ids = item.get("evidenceIds")
+        if isinstance(evidence_ids, list) and all(
+            isinstance(event_id, str) for event_id in evidence_ids
+        ):
+            if evidence_ids:
+                counts[tuple(evidence_ids)] += 1
+    return counts
 
 
 def _numbers_in(values: Any) -> set[str]:
@@ -370,15 +508,94 @@ def _contains_any(text: str, markers: tuple[str, ...]) -> bool:
     return any(marker.casefold() in lowered for marker in markers)
 
 
+def _fact_pattern(fact: str) -> str:
+    return f"{_FACT_BOUNDARY_PREFIX}{re.escape(fact)}{_FACT_BOUNDARY_SUFFIX}"
+
+
+def _find_fact(text: str, fact: str, start: int = 0) -> re.Match[str] | None:
+    if not fact:
+        return None
+    return re.search(_fact_pattern(fact), text[start:], flags=re.IGNORECASE)
+
+
+def _contains_fact(text: str, fact: str) -> bool:
+    return _find_fact(text, fact) is not None
+
+
+def _ordered_facts(text: str, facts: list[str], start: int = 0) -> int | None:
+    position = start
+    for fact in facts:
+        match = _find_fact(text, fact, position)
+        if match is None:
+            return None
+        position += match.start() + len(match.group(0))
+    return position
+
+
+def _strip_facts(text: str, facts: list[str]) -> str:
+    remaining = text
+    for fact in sorted(set(facts), key=len, reverse=True):
+        if fact:
+            remaining = re.sub(
+                _fact_pattern(fact),
+                " ",
+                remaining,
+                flags=re.IGNORECASE,
+            )
+    return remaining
+
+
 def _contains_forbidden_outside_facts(text: str, facts: list[str]) -> bool:
     """Treat words inside source facts as data, not as added interpretation."""
 
-    remaining = text
-    for fact in sorted(facts, key=len, reverse=True):
-        if fact:
-            remaining = remaining.replace(fact, "")
+    remaining = _strip_facts(text, facts)
     lowered = remaining.casefold()
     return any(term.casefold() in lowered for term in _FORBIDDEN_INTERPRETATIONS)
+
+
+def _safe_wording_remainder(text: str, event: dict[str, Any]) -> str:
+    change = event.get("change", {})
+    if not isinstance(change, dict):
+        return text
+    facts = _required_facts(event)
+    label = str(change.get("label", ""))
+    remainder = _strip_facts(text, facts + [label])
+    category = str(change.get("category", ""))
+    category_words = {
+        "diagnosis": ("진단", "diagnosis"),
+        "medications": ("투약", "약", "medication", "medications"),
+        "vitals": ("활력징후", "수치", "vital", "vitals"),
+        "notes": ("간호", "메모", "기록", "note", "notes"),
+    }.get(category, ())
+    removable = list(category_words)
+    removable.extend(_classification_markers(str(event.get("classification", ""))))
+    change_type = str(change.get("changeType", ""))
+    removable.extend(
+        {
+            "added": ("추가", "등록", "확인", "신규", "새", "새로", "added", "addition", "new"),
+            "removed": ("삭제", "제거", "해제", "중단", "removed"),
+            "modified": ("변경", "변화", "조정", "수정", "changed", "change", "modified"),
+        }.get(change_type, ())
+    )
+    for word in sorted(set(removable), key=len, reverse=True):
+        remainder = re.sub(
+            _fact_pattern(word),
+            " ",
+            remainder,
+            flags=re.IGNORECASE,
+        )
+    return remainder
+
+
+def _validate_safe_wording(text: str, event: dict[str, Any]) -> None:
+    remainder = _safe_wording_remainder(text, event)
+    for token in _WORD_PATTERN.findall(remainder):
+        lowered = token.casefold()
+        if lowered in {word.casefold() for word in _SAFE_WORDS}:
+            continue
+        if any(lowered.startswith(stem.casefold()) for stem in _SAFE_WORD_STEMS):
+            continue
+        raise ValueError("summary contains unsupported clinical prose")
 
 
 def _validate_change_text(text: str, event: dict[str, Any]) -> None:
@@ -388,17 +605,15 @@ def _validate_change_text(text: str, event: dict[str, Any]) -> None:
     category = str(change.get("category", ""))
     change_type = str(change.get("changeType", ""))
     label = str(change.get("label", ""))
-    if not label or label not in text:
+    if not label or not _contains_fact(text, label):
         raise ValueError("summary omits the changed field label")
     facts = _required_facts(event)
-    if not facts or not all(fact in text for fact in facts):
+    if not facts or not all(_contains_fact(text, fact) for fact in facts):
         raise ValueError("summary omits a source value")
     if _contains_forbidden_outside_facts(text, facts):
         raise ValueError("summary contains an unsupported clinical interpretation")
     if _PRIORITY_VALUE_PATTERN.search(text):
-        remaining = text
-        for fact in sorted(facts, key=len, reverse=True):
-            remaining = remaining.replace(fact, "")
+        remaining = _strip_facts(text, facts + [label])
         if _PRIORITY_VALUE_PATTERN.search(remaining):
             raise ValueError("summary changes the event priority")
 
@@ -407,13 +622,17 @@ def _validate_change_text(text: str, event: dict[str, Any]) -> None:
         raise ValueError("summary contains an unsupported number")
     if not _contains_any(text, _classification_markers(str(event.get("classification", "")))):
         raise ValueError("summary changes the event classification")
+    classification_remainder = _strip_facts(text, facts + [label])
     for classification, markers in (
         ("current", _classification_markers("current")),
         ("period_only", _classification_markers("period_only")),
         ("trend", _classification_markers("trend")),
         ("record_event", _classification_markers("record_event")),
     ):
-        if classification != str(event.get("classification", "")) and _contains_any(text, markers):
+        if classification != str(event.get("classification", "")) and _contains_any(
+            classification_remainder,
+            markers,
+        ):
             raise ValueError("summary contains a conflicting event classification")
 
     if change_type == "added":
@@ -435,15 +654,35 @@ def _validate_change_text(text: str, event: dict[str, Any]) -> None:
     if not _contains_any(text, tuple(actions)):
         raise ValueError("summary changes the event action")
 
+    if category == "medications" and change_type == "modified":
+        previous_facts = _value_facts(change.get("previousValue"))
+        current_facts = _value_facts(change.get("currentValue"))
+        if not previous_facts or not current_facts:
+            raise ValueError("summary references an invalid medication change")
+        connector_match = re.search(r"(?:->|→|=>)", text)
+        if connector_match is not None:
+            if _ordered_facts(text[: connector_match.start()], previous_facts) is None:
+                raise ValueError("summary reverses medication values")
+            if _ordered_facts(
+                text[connector_match.end() :],
+                current_facts,
+            ) is None:
+                raise ValueError("summary reverses medication values")
+        else:
+            previous_end = _ordered_facts(text, previous_facts)
+            if previous_end is None or _ordered_facts(text, current_facts, previous_end) is None:
+                raise ValueError("summary reverses medication values")
+
     if category == "vitals" and change_type == "modified":
         previous_facts = _value_facts(change.get("previousValue"))
         current_facts = _value_facts(change.get("currentValue"))
         if not previous_facts or not current_facts:
             raise ValueError("summary references an invalid vital change")
-        previous_position = text.find(previous_facts[0])
-        current_position = text.find(current_facts[0], previous_position + len(previous_facts[0]))
-        if previous_position < 0 or current_position < 0 or previous_position >= current_position:
+        previous_end = _ordered_facts(text, previous_facts)
+        if previous_end is None or _ordered_facts(text, current_facts, previous_end) is None:
             raise ValueError("summary reverses vital values")
+
+    _validate_safe_wording(text, event)
 
 
 def _period_context_values(comparison: Any) -> tuple[list[str], set[str]]:
@@ -516,9 +755,12 @@ def _validate_ai_summary(
     valid_ids = set(ordered_ids)
     trusted_pairs = _summary_pairs(deterministic_summary)
     context_pairs = _summary_context_pairs(deterministic_summary)
+    expected_detail_counts = _summary_detail_counts(deterministic_summary)
+    expected_context_counts = _summary_context_counts(deterministic_summary)
     normalized_sections: dict[str, list[dict[str, Any]]] = {}
     collected_ids: list[str] = []
-    detail_ids: set[str] = set()
+    detail_counts: Counter[str] = Counter()
+    context_counts: Counter[tuple[str, ...]] = Counter()
     no_evidence_counts: Counter[str] = Counter()
 
     for section in _SECTIONS:
@@ -556,15 +798,20 @@ def _validate_ai_summary(
                     _validate_change_text(text, event)
             if evidence_ids:
                 collected_ids.extend(evidence_ids)
-                if set(evidence_ids) != valid_ids:
-                    detail_ids.update(evidence_ids)
+                evidence_tuple = tuple(evidence_ids)
+                if evidence_tuple in context_pairs:
+                    context_counts[evidence_tuple] += 1
+                else:
+                    detail_counts.update(evidence_ids)
             normalized_items.append({"text": text, "evidenceIds": list(evidence_ids)})
         normalized_sections[section] = normalized_items
 
     if set(collected_ids) != valid_ids:
         raise ValueError("structured output omits or adds evidence IDs")
-    if detail_ids != _summary_detail_ids(deterministic_summary):
+    if detail_counts != expected_detail_counts:
         raise ValueError("structured output omits evidence-specific detail")
+    if context_counts != expected_context_counts:
+        raise ValueError("structured output duplicates or omits deterministic context")
     if no_evidence_counts != _no_evidence_counts(deterministic_summary):
         raise ValueError("structured output omits or changes deterministic context")
 
