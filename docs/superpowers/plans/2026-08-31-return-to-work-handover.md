@@ -63,7 +63,7 @@
 {
   "patientId": "P001",
   "defaultReturnStartAt": "2026-06-29T15:00:00+09:00",
-  "snapshots": [{ "recorded_at": "2026-06-29T15:00:00+09:00" }],
+  "snapshots": [{ "updated_at": "2026-06-29T15:00:00+09:00" }],
   "coverageGaps": [{ "from": "2026-06-30T15:00:00+09:00", "to": "2026-07-01T07:00:00+09:00", "code": "source_unavailable" }]
 }
 ```
@@ -75,7 +75,7 @@ def test_each_timeline_has_eight_ordered_snapshots_and_66_hour_span(self):
     for patient_id in PATIENT_IDS:
         timeline = load_timeline(patient_id)
         self.assertEqual(8, len(timeline["snapshots"]))
-        stamps = [parse_iso(item["recorded_at"]) for item in timeline["snapshots"]]
+        stamps = [parse_iso(item["updated_at"]) for item in timeline["snapshots"]]
         self.assertEqual(stamps, sorted(stamps))
         self.assertGreaterEqual(stamps[-1] - stamps[0], timedelta(hours=66))
 

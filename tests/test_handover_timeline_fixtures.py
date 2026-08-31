@@ -183,13 +183,12 @@ class HandoverTimelineFixtureTests(unittest.TestCase):
 
         from services.handover_service import build_handover_comparison
 
-        event_count = sum(
-            len(
-                build_handover_comparison(previous, current)["changes"]
-            )
+        adjacent_event_counts = [
+            len(build_handover_comparison(previous, current)["changes"])
             for previous, current in zip(snapshots, snapshots[1:])
-        )
-        self.assertEqual(24, event_count)
+        ]
+        self.assertEqual([1, 2, 2, 2, 0, 8, 9], adjacent_event_counts)
+        self.assertEqual(24, sum(adjacent_event_counts))
 
 
 if __name__ == "__main__":
