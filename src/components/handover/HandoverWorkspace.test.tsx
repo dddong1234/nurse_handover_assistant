@@ -8,10 +8,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildDemoWorkspaceData } from "@/lib/demo-adapter";
 import type { HandoverApiResponse, HandoverStatus } from "@/lib/contracts";
 import { demoRecordPairs } from "@/lib/demo-records";
+import type { HandoverPeriodApiResponse, HandoverPeriodCoverageGap } from "@/lib/handover-period-contracts";
+import { getDemoTimeline } from "@/lib/demo-timelines";
 import { persistRecordDraft, RECORD_DRAFTS_STORAGE_KEY } from "@/lib/record-drafts";
 
 import { HandoverWorkspace } from "./HandoverWorkspace";
 import { SummaryPanel } from "./SummaryPanel";
+import { clearReturnHandoverCache } from "./useReturnHandover";
 
 function createDeferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -54,10 +57,97 @@ function makeStatusResponse(status: HandoverStatus): HandoverApiResponse {
   };
 }
 
+function makePeriodResponse(
+  patientId: string,
+  reviewStartAt: string,
+  label: string,
+): HandoverPeriodApiResponse {
+  const sourceResponse = buildDemoWorkspaceData().find(
+    (response) => response.comparison.patient.id === patientId,
+  );
+  const timeline = getDemoTimeline(patientId);
+  const currentRecordedAt = timeline.snapshots.at(-1)!.updated_at;
+  const eventId = `period-event-${patientId}-${label}`;
+  const changeId = `period-change-${patientId}-${label}`;
+
+  if (!sourceResponse) throw new Error(`기간 응답 환자 ${patientId}를 찾을 수 없습니다.`);
+
+  return {
+    patient: sourceResponse.comparison.patient,
+    period: {
+      requestedStartAt: reviewStartAt,
+      baselineRecordedAt: reviewStartAt,
+      currentRecordedAt,
+      snapshotCount: timeline.snapshots.length,
+      eventCount: 1,
+      status: "ready",
+    },
+    dataWarnings: [],
+    events: [
+      {
+        id: eventId,
+        detectedAt: currentRecordedAt,
+        interval: { previousRecordedAt: reviewStartAt, currentRecordedAt },
+        classification: "current",
+        change: {
+          id: changeId,
+          category: "diagnosis",
+          changeType: "added",
+          reviewPriority: "high",
+          label,
+          previousValue: null,
+          currentValue: label,
+          delta: null,
+          evidence: {
+            fieldPath: `diagnosis[\"${label}\"]`,
+            previousRecordedAt: reviewStartAt,
+            currentRecordedAt,
+          },
+        },
+      },
+    ],
+    reviewGroups: {
+      current: [{ id: `review-${eventId}`, category: "diagnosis", label, classification: "current", eventIds: [eventId] }],
+      periodOnly: [],
+      trends: [],
+      recordEvents: [],
+    },
+    summary: {
+      mode: "deterministic",
+      sections: {
+        situation: [{ text: `기간 결과 ${label}`, evidenceIds: [eventId] }],
+        background: [],
+        assessment: [],
+        recommendation: [{ text: "확인 필요", evidenceIds: [] }],
+      },
+      evidenceIds: [eventId],
+      warnings: [],
+    },
+  };
+}
+
+function responseWith<T>(body: T) {
+  return { ok: true, status: 200, json: vi.fn().mockResolvedValue(body) };
+}
+
+function requestBody(call: unknown[]): {
+  reviewStartAt: string;
+  records: Array<{ patient_id: string }>;
+  coverageGaps: HandoverPeriodCoverageGap[];
+} {
+  const options = call[1] as RequestInit;
+  return JSON.parse(String(options.body)) as {
+    reviewStartAt: string;
+    records: Array<{ patient_id: string }>;
+    coverageGaps: HandoverPeriodCoverageGap[];
+  };
+}
+
 describe("HandoverWorkspace patient queue and comparison flow", () => {
   afterEach(() => {
     cleanup();
     window.sessionStorage.clear();
+    clearReturnHandoverCache();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -1629,5 +1719,203 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(within(recordPanel).getByRole("spinbutton", { name: "체온" })).toHaveValue(39.1);
     expect(screen.getByText("마지막 검증 비교 결과")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "인수인계 비교" })).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("keeps shift mode by default and uses the fixture default when return mode starts", async () => {
+    const response = buildDemoWorkspaceData()[0];
+    if (!response) throw new Error("P001 데모 응답이 없습니다.");
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/handover/period-compare") {
+        const body = JSON.parse(String(options.body)) as { reviewStartAt: string };
+        return Promise.resolve(responseWith(makePeriodResponse("P001", body.reviewStartAt, "return-start")));
+      }
+      return Promise.resolve(responseWith(response));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<HandoverWorkspace data={[response]} />);
+    expect(screen.getByRole("radio", { name: "직전 교대" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "휴무 복귀" })).not.toBeChecked();
+
+    await userEvent.setup().click(screen.getByRole("radio", { name: "휴무 복귀" }));
+
+    const startSelect = await screen.findByRole("combobox", { name: "마지막 근무 시각" });
+    expect(startSelect).toHaveValue("2026-06-29T15:00:00+09:00");
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => url === "/api/handover/period-compare")).toBe(true));
+    const periodCall = fetchMock.mock.calls.find(([url]) => url === "/api/handover/period-compare");
+    if (!periodCall) throw new Error("기간 비교 요청이 없습니다.");
+    expect(requestBody(periodCall).reviewStartAt).toBe("2026-06-29T15:00:00+09:00");
+  });
+
+  it("requests the selected patient's return timeline with its default start", async () => {
+    const responses = buildDemoWorkspaceData();
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/handover/period-compare") {
+        const body = requestBody([url, options]);
+        return Promise.resolve(responseWith(makePeriodResponse(body.records[0]!.patient_id, body.reviewStartAt, "patient-switch")));
+      }
+      return Promise.resolve(responseWith(responses[0]!));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={responses} />);
+    await user.click(screen.getByRole("radio", { name: "휴무 복귀" }));
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([url]) => url === "/api/handover/period-compare")).toHaveLength(1));
+
+    await user.click(screen.getByRole("button", { name: /김영희/ }));
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([url]) => url === "/api/handover/period-compare")).toHaveLength(2));
+    const periodCalls = fetchMock.mock.calls.filter(([url]) => url === "/api/handover/period-compare");
+    const body = requestBody(periodCalls[1]!);
+    expect(body.records.every((record) => record.patient_id === "P002")).toBe(true);
+    expect(body.reviewStartAt).toBe(getDemoTimeline("P002").defaultReturnStartAt);
+    expect(screen.getByRole("combobox", { name: "마지막 근무 시각" })).toHaveValue(getDemoTimeline("P002").defaultReturnStartAt);
+  });
+
+  it("preserves the P003 timeline coverage gap in the return payload", async () => {
+    const responses = buildDemoWorkspaceData();
+    const p003Response = responses.find((response) => response.comparison.patient.id === "P003");
+    if (!p003Response) throw new Error("P003 데모 응답이 없습니다.");
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/handover/period-compare") {
+        const body = requestBody([url, options]);
+        return Promise.resolve(responseWith(makePeriodResponse("P003", body.reviewStartAt, "coverage-gap")));
+      }
+      return Promise.resolve(responseWith(p003Response));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={responses} />);
+    await user.click(screen.getByRole("button", { name: /박민수/ }));
+    await user.click(screen.getByRole("radio", { name: "휴무 복귀" }));
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([url]) => url === "/api/handover/period-compare")).toHaveLength(1));
+
+    const periodCall = fetchMock.mock.calls.find(([url]) => url === "/api/handover/period-compare");
+    if (!periodCall) throw new Error("P003 기간 비교 요청이 없습니다.");
+    expect(requestBody(periodCall).coverageGaps).toEqual(getDemoTimeline("P003").coverageGaps);
+  });
+
+  it("resets only after a successful period swap and preserves input while the next request loads", async () => {
+    const response = buildDemoWorkspaceData()[0];
+    if (!response) throw new Error("P001 데모 응답이 없습니다.");
+    let resolveSecond!: (value: unknown) => void;
+    const secondRequest = new Promise((resolve) => { resolveSecond = resolve; });
+    let periodRequestCount = 0;
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url !== "/api/handover/period-compare") return Promise.resolve(responseWith(response));
+      periodRequestCount += 1;
+      const body = requestBody([url, options]);
+      if (periodRequestCount === 1) return Promise.resolve(responseWith(makePeriodResponse("P001", body.reviewStartAt, "first")));
+      return secondRequest;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={[response]} />);
+    await user.click(screen.getByRole("radio", { name: "휴무 복귀" }));
+    await waitFor(() => expect(screen.getByText("기간 결과 first")).toBeInTheDocument());
+    const recommendation = screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" });
+    await user.type(recommendation, "첫 번째 기간 확인");
+    const sourceCheck = screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" });
+    await user.click(sourceCheck);
+
+    const options = getDemoTimeline("P001").snapshots.map((snapshot) => snapshot.updated_at);
+    await user.selectOptions(screen.getByRole("combobox", { name: "마지막 근무 시각" }), options[1]!);
+    await waitFor(() => expect(screen.getByText("기간 결과 first")).toBeInTheDocument());
+    expect(recommendation).toHaveValue("첫 번째 기간 확인");
+    expect(sourceCheck).toBeChecked();
+
+    resolveSecond(responseWith(makePeriodResponse("P001", options[1]!, "second")));
+    await waitFor(() => expect(screen.getByText("기간 결과 second")).toBeInTheDocument());
+    expect(screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" })).toHaveValue("");
+    expect(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" })).not.toBeChecked();
+  });
+
+  it("keeps the visible period and recommendation when a replacement request fails", async () => {
+    const response = buildDemoWorkspaceData()[0];
+    if (!response) throw new Error("P001 데모 응답이 없습니다.");
+    let periodRequestCount = 0;
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url !== "/api/handover/period-compare") return Promise.resolve(responseWith(response));
+      periodRequestCount += 1;
+      const body = requestBody([url, options]);
+      if (periodRequestCount === 1) return Promise.resolve(responseWith(makePeriodResponse("P001", body.reviewStartAt, "stable")));
+      return Promise.reject(new Error("offline"));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={[response]} />);
+    await user.click(screen.getByRole("radio", { name: "휴무 복귀" }));
+    await waitFor(() => expect(screen.getByText("기간 결과 stable")).toBeInTheDocument());
+    const recommendation = screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" });
+    await user.type(recommendation, "실패 전 입력 보존");
+    await user.selectOptions(screen.getByRole("combobox", { name: "마지막 근무 시각" }), getDemoTimeline("P001").snapshots[1]!.updated_at);
+
+    await waitFor(() => expect(screen.getByRole("status", { name: "기간 비교 상태" })).toHaveTextContent("불러오지 못했습니다"));
+    expect(screen.getByText("기간 결과 stable")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" })).toHaveValue("실패 전 입력 보존");
+  });
+
+  it("recomputes after saving the current draft without persisting period responses", async () => {
+    const response = buildDemoWorkspaceData()[0];
+    const pair = demoRecordPairs.P001;
+    if (!response || !pair) throw new Error("P001 데모 데이터가 없습니다.");
+    let periodRequestCount = 0;
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/handover/period-compare") {
+        periodRequestCount += 1;
+        const body = requestBody([url, options]);
+        return Promise.resolve(responseWith(makePeriodResponse("P001", body.reviewStartAt, `period-${periodRequestCount}`)));
+      }
+      return Promise.resolve(responseWith(response));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={[response]} recordPairs={{ P001: pair }} />);
+    await waitFor(() => expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument());
+    await user.click(screen.getByRole("radio", { name: "휴무 복귀" }));
+    await waitFor(() => expect(screen.getByText("기간 결과 period-1")).toBeInTheDocument());
+
+    await user.click(screen.getByRole("tab", { name: "원본 기록" }));
+    const recordPanel = screen.getByRole("tabpanel", { name: "원본 기록" });
+    await user.click(within(recordPanel).getByRole("tab", { name: /현재 기록/ }));
+    const temperature = within(recordPanel).getByRole("spinbutton", { name: "체온" });
+    await user.clear(temperature);
+    await user.type(temperature, "39.1");
+    await user.click(within(recordPanel).getByRole("button", { name: "변경사항 비교" }));
+
+    await waitFor(() => expect(screen.getByText("기간 결과 period-2")).toBeInTheDocument());
+    expect(periodRequestCount).toBe(2);
+    expect(Object.keys(window.sessionStorage)).toEqual([RECORD_DRAFTS_STORAGE_KEY]);
+    expect(window.sessionStorage.getItem(RECORD_DRAFTS_STORAGE_KEY)).toContain("39.1");
+    expect(window.sessionStorage.getItem(RECORD_DRAFTS_STORAGE_KEY)).not.toContain("period-2");
+  });
+
+  it("restores the prior pair-mode review session after returning from period mode", async () => {
+    const response = buildDemoWorkspaceData()[0];
+    const pair = demoRecordPairs.P001;
+    if (!response || !pair) throw new Error("P001 데모 데이터가 없습니다.");
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/handover/period-compare") {
+        const body = requestBody([url, options]);
+        return Promise.resolve(responseWith(makePeriodResponse("P001", body.reviewStartAt, "return-session")));
+      }
+      return Promise.resolve(responseWith(response));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={[response]} recordPairs={{ P001: pair }} />);
+    await waitFor(() => expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument());
+    await user.type(screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" }), "교대 모드 메모");
+    await user.click(screen.getByRole("radio", { name: "휴무 복귀" }));
+    await waitFor(() => expect(screen.getByText("기간 결과 return-session")).toBeInTheDocument());
+    await user.click(screen.getByRole("radio", { name: "직전 교대" }));
+
+    expect(screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" })).toHaveValue("교대 모드 메모");
+    expect(screen.getByRole("heading", { name: "인계 검토" })).toBeInTheDocument();
   });
 });
