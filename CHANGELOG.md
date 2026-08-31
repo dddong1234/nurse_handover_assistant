@@ -4,6 +4,27 @@
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-08-31
+
+### Changed
+
+- 데스크톱·태블릿 환자 컨텍스트 높이를 약 168px에서 137.8px로 줄이고 환자 ID를 이름 옆에 배치해 중앙 비교 영역의 불필요한 공백 축소
+- 근거 링크와 SBAR 근거 펼치기 글자를 8px에서 11px로, 조작 높이를 약 15px에서 24px로 확대
+- 근거 ID·상세를 10px, SBAR 핵심 문장을 11px로 조정해 원본 추적 정보의 판독성 강화
+
+### Verification
+
+- Harness, Python unittest 60/60, frontend Vitest 86/86, Playwright 27/27 통과
+- ESLint, TypeScript no-emit, Next production build와 `git diff --check` 통과
+- 감독 브라우저에서 1440·1279·1024px 환자 컨텍스트 137.8px, 960px 2행 요약과 390px 모바일 스택 유지 확인
+- 1440·1279·1024·960·390px에서 근거 링크·펼치기 11px/24px 및 펼친 전후 수평 overflow 0 확인
+- 구현 독립 리뷰와 수정 재검토에서 Critical/Important 0건 확인
+
+### Known limits
+
+- 960px 이하에서는 비교 시각과 통계를 읽기 위해 환자 컨텍스트가 반응형으로 여러 행을 사용하므로 높이 축소 상한을 적용하지 않는다.
+- OpenAI provider 크레딧 문제로 성공 AI 문장화는 실 API에서 미검증이며 규칙 요약 fallback을 유지한다.
+
 ## [0.7.0] - 2026-08-31
 
 ### Added
