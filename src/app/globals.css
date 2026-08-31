@@ -4561,3 +4561,185 @@ summary:focus-visible {
     padding-bottom: 5px;
   }
 }
+
+@media (min-width: 1600px) {
+  .workspace-shell {
+    grid-template-columns: 304px minmax(0, 1fr) 400px;
+  }
+
+  .eyebrow,
+  .clinical-header-mode,
+  .clinical-header-recorded-at,
+  .clinical-header-user,
+  .search-label,
+  .search-shortcut,
+  .queue-toolbar,
+  .queue-room,
+  .queue-id,
+  .queue-status,
+  .queue-diagnosis,
+  .queue-change-count,
+  .queue-priority-count,
+  .queue-footnote,
+  .field-label,
+  .context-id,
+  .context-facts,
+  .value-label,
+  .value-time,
+  .group-helper,
+  .group-count,
+  .change-field,
+  .evidence-id,
+  .delta-label,
+  .summary-rail-intro,
+  .integrity-heading,
+  .integrity-track + p,
+  .source-tag,
+  .category-label,
+  .type-label,
+  .priority-label,
+  .shift-seam,
+  .legend-side,
+  .record-workspace-patient,
+  .record-tab-note,
+  .record-tab-note .mono,
+  .record-section-code,
+  .record-value-pair > span,
+  .record-readonly-field > span,
+  .record-input-field > span,
+  .record-edit-field > span,
+  .record-time-field > span,
+  .record-medication-readonly span,
+  .record-input-with-unit small,
+  .record-value-pair > strong small,
+  .record-chart-time span,
+  .record-chart-time strong,
+  .record-time-field input {
+    font-size: 11px;
+  }
+
+  .queue-row {
+    min-height: 78px;
+    padding: 11px 18px 10px 16px;
+  }
+
+  .queue-patient-name {
+    font-size: 15px;
+  }
+
+  .search-field input {
+    font-size: 13px;
+  }
+
+  .small-tag,
+  .context-facts strong {
+    font-size: 13px;
+  }
+
+  .queue-change-count strong,
+  .shift-summary-stat strong,
+  .integrity-heading strong,
+  .record-value-pair > strong,
+  .record-medication-readonly strong {
+    font-size: 13px;
+  }
+
+  .queue-heading h2,
+  .comparison-header h2,
+  .summary-header h2,
+  .record-workspace-header h2 {
+    font-size: 20px;
+  }
+
+  .comparison-status,
+  .group-heading h3,
+  .shift-summary-heading h3,
+  .summary-section-heading h3,
+  .comparison-empty h3,
+  .record-section-heading h3 {
+    font-size: 13px;
+  }
+
+  .comparison-status strong {
+    font-size: 15px;
+  }
+
+  .legend-seam,
+  .shift-summary-interval-label,
+  .shift-summary-stat > span,
+  .shift-summary-heading .field-label,
+  .summary-item-count,
+  .summary-empty,
+  .control-note,
+  .review-check,
+  .record-row-remove,
+  .record-row-add,
+  .record-reset-button {
+    font-size: 11px;
+  }
+
+  .warning-banner,
+  .summary-warning,
+  .summary-item-copy p,
+  .value-text,
+  .evidence-details,
+  .evidence-detail-grid,
+  .evidence-detail-grid span,
+  .evidence-detail-grid strong,
+  .recommendation-input,
+  .comparison-empty p,
+  .record-line-list li,
+  .record-readonly-field input,
+  .record-input-field input,
+  .record-edit-field input,
+  .record-edit-field textarea,
+  .record-time-field input,
+  .record-workspace-error,
+  .workspace-empty p {
+    font-size: 13px;
+  }
+
+  .current-value .value-text {
+    font-size: 15px;
+  }
+
+  .change-card h4 {
+    font-size: 17px;
+  }
+
+  .change-card,
+  .change-record-row {
+    padding: 16px 12px 15px;
+  }
+
+  .summary-evidence-disclosure > summary,
+  .evidence-details > summary,
+  .evidence-link {
+    min-height: 30px;
+    font-size: 13px;
+  }
+
+  .summary-evidence-disclosure > summary,
+  .evidence-details > summary {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .evidence-link {
+    padding: 4px 3px;
+  }
+
+  .evidence-toggle {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    font-size: 13px;
+  }
+
+  .record-workspace-tabs button,
+  .workspace-mode-tabs button,
+  .record-compare-button,
+  .review-button {
+    font-size: 13px;
+  }
+}

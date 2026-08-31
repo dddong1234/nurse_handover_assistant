@@ -521,3 +521,108 @@ for (const viewportWidth of evidenceLegibilityViewports) {
     }
   });
 }
+
+test("wide-screen 2544px restores clinical readability without horizontal clipping", async ({ page }) => {
+  await page.setViewportSize({ width: 2544, height: 1258 });
+  await page.goto("/");
+  await expect(page.locator(".workspace-shell")).toBeVisible({ timeout: 10_000 });
+
+  await page.locator("details.evidence-details, details.summary-evidence-disclosure").evaluateAll((elements) => {
+    for (const element of elements) {
+      (element as HTMLDetailsElement).open = true;
+    }
+  });
+
+  const metrics = await page.evaluate(() => {
+    const readFontSizes = (selector: string) =>
+      Array.from(document.querySelectorAll<HTMLElement>(selector)).map((element) => {
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return {
+          fontSize: Number.parseFloat(style.fontSize),
+          height: rect.height,
+          overflow: element.scrollWidth - element.clientWidth,
+        };
+      });
+
+    const minFontSize = (selector: string) => {
+      const values = readFontSizes(selector).map(({ fontSize }) => fontSize);
+      if (values.length === 0) throw new Error(`측정 대상이 없습니다: ${selector}`);
+      return Math.min(...values);
+    };
+
+    const firstFontSize = (selector: string) => {
+      const values = readFontSizes(selector);
+      if (values.length === 0) throw new Error(`측정 대상이 없습니다: ${selector}`);
+      return values[0]!.fontSize;
+    };
+
+    const shell = document.querySelector<HTMLElement>(".workspace-shell");
+    const queue = document.querySelector<HTMLElement>(".patient-queue");
+    const center = document.querySelector<HTMLElement>(".comparison-workspace");
+    const summary = document.querySelector<HTMLElement>(".summary-panel");
+    if (!shell || !queue || !center || !summary) throw new Error("임상 쉘 측정 대상이 없습니다.");
+
+    const panels = [
+      ["patient rail", queue],
+      ["center workspace", center],
+      ["review rail", summary],
+      ...Array.from(document.querySelectorAll<HTMLElement>("details[open]"), (element) => ["expanded evidence", element] as const),
+    ] as const;
+
+    return {
+      queueWidth: queue.getBoundingClientRect().width,
+      centerWidth: center.getBoundingClientRect().width,
+      summaryWidth: summary.getBoundingClientRect().width,
+      shellColumns: getComputedStyle(shell).gridTemplateColumns,
+      pageOverflow: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth,
+      panelOverflow: panels.map(([name, element]) => ({
+        name,
+        overflow: element.scrollWidth - element.clientWidth,
+        right: element.getBoundingClientRect().right,
+      })),
+      microMetadata: minFontSize(
+        ".eyebrow, .clinical-header-mode, .clinical-header-recorded-at, .clinical-header-user, .search-label, .search-shortcut, .queue-toolbar, .queue-room, .queue-id, .queue-status, .queue-diagnosis, .queue-change-count, .queue-priority-count, .queue-footnote, .field-label, .context-id, .context-facts, .value-label, .value-time, .group-helper, .group-count, .category-label, .type-label, .priority-label, .change-field, .shift-seam, .delta-label, .evidence-id, .summary-rail-intro, .integrity-heading, .integrity-track + p",
+      ),
+      ordinaryBody: minFontSize(
+        ".summary-item-copy p, .small-tag, .context-facts strong, .value-text, .evidence-details, .evidence-detail-grid, .evidence-detail-grid span, .evidence-detail-grid strong",
+      ),
+      queuePatientName: firstFontSize(".queue-patient-name"),
+      currentValue: firstFontSize(".current-value .value-text"),
+      changeTitle: firstFontSize(".change-card h4"),
+      majorHeadings: readFontSizes(".queue-heading h2, .comparison-header h2, .summary-header h2"),
+      evidenceControls: readFontSizes(".evidence-link, .summary-evidence-disclosure > summary, .evidence-details > summary"),
+      evidenceToggles: readFontSizes(".evidence-toggle"),
+    };
+  });
+
+  expect(Math.round(metrics.queueWidth)).toBe(304);
+  expect(Math.round(metrics.summaryWidth)).toBe(400);
+  expect(Math.round(metrics.centerWidth)).toBe(1840);
+  expect(metrics.shellColumns).toBe("304px 1840px 400px");
+  expect(metrics.pageOverflow).toBeLessThanOrEqual(1);
+  for (const panel of metrics.panelOverflow) {
+    expect(panel.overflow, `${panel.name} overflow`).toBeLessThanOrEqual(1);
+    expect(panel.right, `${panel.name} crosses viewport`).toBeLessThanOrEqual(2545);
+  }
+
+  expect(metrics.microMetadata).toBeGreaterThanOrEqual(11);
+  expect(metrics.ordinaryBody).toBeGreaterThanOrEqual(13);
+  expect(metrics.queuePatientName).toBeGreaterThanOrEqual(15);
+  expect(metrics.currentValue).toBeGreaterThanOrEqual(15);
+  expect(metrics.changeTitle).toBeGreaterThanOrEqual(17);
+
+  for (const heading of metrics.majorHeadings) {
+    expect(heading.fontSize).toBeGreaterThanOrEqual(20);
+    expect(heading.fontSize).toBeLessThanOrEqual(22);
+  }
+  for (const control of metrics.evidenceControls) {
+    expect(control.fontSize).toBeGreaterThanOrEqual(13);
+    expect(control.height).toBeGreaterThanOrEqual(30);
+    expect(control.overflow).toBeLessThanOrEqual(1);
+  }
+  for (const toggle of metrics.evidenceToggles) {
+    expect(toggle.fontSize).toBeGreaterThanOrEqual(13);
+    expect(toggle.height).toBeGreaterThanOrEqual(30);
+  }
+});

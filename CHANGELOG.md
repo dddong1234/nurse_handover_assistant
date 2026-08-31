@@ -4,6 +4,28 @@
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-08-31
+
+### Changed
+
+- 1600px 이상 와이드 화면에서 환자 레일을 268px에서 304px로, 인계 검토 레일을 320px에서 400px로 확대해 각 영역의 정보 밀도와 판독 폭을 재균형화
+- 와이드 화면의 메타데이터를 최소 11px, 본문·근거를 13px, 환자명·현재 값을 15px, 변화 제목을 17px, 주요 제목을 20px로 확대
+- 근거 링크·펼치기 컨트롤을 13px/30px로 키우고 변화 행 여백을 보정해 원본 추적 정보가 중앙 여백에 묻히지 않도록 개선
+
+### Verification
+
+- TDD에서 기존 2544px 좌측 레일 268px 실패를 확인한 뒤 승인한 304px/400px 기하와 역할별 글자 크기 계약으로 전환
+- Harness, Python unittest 60/60, frontend Vitest 86/86, Playwright 28/28 통과
+- ESLint, TypeScript no-emit, Next production build와 `git diff --check` 통과
+- 감독 브라우저에서 2544×1258의 환자명 15px·변화 제목 17px·요약/근거 13px·주요 제목 20px와 수평 overflow 없음 확인
+- 1440px에서 기존 268px/320px 레일과 13px 환자명·14px 변화 제목·11px 근거를 유지하고 390px 모바일 수평 overflow 없음 확인
+- 독립 Luna Max 리뷰에서 Critical/Important/Minor 0건 확인
+
+### Known limits
+
+- 와이드 가독성 모드는 1600px 이상에서만 적용하므로 더 작은 화면은 기존 고밀도 임상 레이아웃을 유지한다.
+- OpenAI provider 크레딧 문제로 성공 AI 문장화는 실 API에서 미검증이며 규칙 요약 fallback을 유지한다.
+
 ## [0.7.1] - 2026-08-31
 
 ### Changed
