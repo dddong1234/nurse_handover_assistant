@@ -525,7 +525,7 @@ def _summary_situation(period_comparison: dict[str, Any], event_ids: list[str]) 
 def _classification_text(classification: str) -> str:
     return {
         "current": "현재 반영",
-        "period_only": "기간 중 종료",
+        "period_only": "기간 중 변경",
         "trend": "추세",
         "record_event": "기록 사건",
     }.get(classification, classification)

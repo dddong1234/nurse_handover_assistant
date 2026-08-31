@@ -89,6 +89,61 @@ def _single_modified_medication_inputs() -> tuple[dict, dict]:
 
 
 class OpenAIPeriodServiceTests(unittest.TestCase):
+    def test_neutral_period_only_wording_is_accepted_without_obsolete_copy(self):
+        comparison, deterministic = _inputs()
+        output = _valid_ai_output(deterministic)
+        period_only_event_ids = {
+            event["id"]
+            for event in comparison["events"]
+            if event["classification"] == "period_only"
+        }
+        item = next(
+            item
+            for item in output["sections"]["background"]
+            if period_only_event_ids.intersection(item["evidenceIds"])
+        )
+        item_index = output["sections"]["background"].index(item)
+        period_only_events = [
+            event
+            for event in comparison["events"]
+            if event["classification"] == "period_only"
+        ]
+        added_event = next(
+            event
+            for event in period_only_events
+            if event["change"]["changeType"] == "added"
+        )
+        removed_event = next(
+            event
+            for event in period_only_events
+            if event["change"]["changeType"] == "removed"
+        )
+        output["sections"]["background"][item_index : item_index + 1] = [
+            {
+                "text": "투약 생리식염주 500mL · IV · QD · 추가 · 기간 중 변경",
+                "evidenceIds": [added_event["id"]],
+            },
+            {
+                "text": "투약 생리식염주 500mL · IV · QD · 삭제 · 기간 중 변경",
+                "evidenceIds": [removed_event["id"]],
+            },
+        ]
+
+        result = rewrite_handover_period_summary(
+            comparison,
+            deterministic,
+            FakeClient(json.dumps(output, ensure_ascii=False)),
+        )
+
+        self.assertEqual(result["mode"], "ai")
+        result_text = " ".join(
+            summary_item["text"]
+            for items in result["sections"].values()
+            for summary_item in items
+        )
+        self.assertIn("기간 중 변경", result_text)
+        self.assertNotIn("기간 중 종료", result_text)
+
     def test_valid_structured_wording_preserves_evidence_and_uses_minimum_payload(self):
         comparison, deterministic = _inputs()
         output = _valid_ai_output(deterministic)
@@ -240,7 +295,7 @@ class OpenAIPeriodServiceTests(unittest.TestCase):
     def test_context_cannot_add_an_event_classification(self):
         comparison, deterministic = _inputs()
         output = _valid_ai_output(deterministic)
-        output["sections"]["situation"][0]["text"] += " · 기간 중 종료"
+        output["sections"]["situation"][0]["text"] += " · 기간 중 변경"
 
         result = rewrite_handover_period_summary(
             comparison,
@@ -249,6 +304,37 @@ class OpenAIPeriodServiceTests(unittest.TestCase):
         )
 
         self.assertEqual(result, _expected_fallback(deterministic))
+
+    def test_obsolete_period_only_wording_in_context_or_detail_falls_back(self):
+        comparison, deterministic = _inputs()
+        mutations = (
+            (
+                "context",
+                lambda output: output["sections"]["situation"][0].__setitem__(
+                    "text",
+                    output["sections"]["situation"][0]["text"] + " · 기간 중 종료",
+                ),
+            ),
+            (
+                "detail",
+                lambda output: output["sections"]["background"][0].__setitem__(
+                    "text",
+                    output["sections"]["background"][0]["text"] + " · 기간 중 종료",
+                ),
+            ),
+        )
+        for label, mutate in mutations:
+            with self.subTest(location=label):
+                output = _valid_ai_output(deterministic)
+                mutate(output)
+
+                result = rewrite_handover_period_summary(
+                    comparison,
+                    deterministic,
+                    FakeClient(json.dumps(output, ensure_ascii=False)),
+                )
+
+                self.assertEqual(result, _expected_fallback(deterministic))
 
     def test_detail_cannot_add_a_bare_priority_value(self):
         comparison, deterministic = _inputs()

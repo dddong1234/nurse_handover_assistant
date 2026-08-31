@@ -10,6 +10,7 @@ from typing import Any, Literal, TypedDict
 AI_FALLBACK_USED = "AI_FALLBACK_USED"
 _MODEL = "gpt-5-mini"
 _SECTIONS = ("situation", "background", "assessment", "recommendation")
+_OBSOLETE_PERIOD_ONLY_WORDING = "기간 중 종료"
 _FORBIDDEN_INTERPRETATIONS = (
     "해결",
     "완료",
@@ -497,7 +498,7 @@ def _event_allowed_numbers(event: dict[str, Any]) -> set[str]:
 def _classification_markers(classification: str) -> tuple[str, ...]:
     return {
         "current": ("현재 반영", "current"),
-        "period_only": ("기간 중 종료", "period_only"),
+        "period_only": ("기간 중 변경", "period_only"),
         "trend": ("추세", "trend"),
         "record_event": ("기록 사건", "record_event"),
     }.get(classification, (classification,))
@@ -775,6 +776,8 @@ def _validate_ai_summary(
             evidence_ids = raw_item.get("evidenceIds")
             if not isinstance(text, str) or not text.strip():
                 raise ValueError("structured output item has invalid text")
+            if _OBSOLETE_PERIOD_ONLY_WORDING in text:
+                raise ValueError("structured output contains obsolete period-only wording")
             if not isinstance(evidence_ids, list) or not all(
                 isinstance(event_id, str) for event_id in evidence_ids
             ):

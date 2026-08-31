@@ -383,6 +383,24 @@ class HandoverPeriodLifecycleTests(unittest.TestCase):
 
 
 class DeterministicPeriodSummaryTests(unittest.TestCase):
+    def test_period_only_summary_uses_neutral_change_wording(self):
+        timeline = load_timeline("P001")
+        comparison = build_handover_period_comparison(
+            timeline["snapshots"],
+            timeline["defaultReturnStartAt"],
+            timeline["coverageGaps"],
+        )
+
+        summary = build_deterministic_period_summary(comparison)
+        summary_text = " ".join(
+            item["text"]
+            for items in summary["sections"].values()
+            for item in items
+        )
+
+        self.assertIn("기간 중 변경", summary_text)
+        self.assertNotIn("기간 중 종료", summary_text)
+
     def test_summary_is_deterministic_sbar_and_every_detail_item_has_event_ids(self):
         timeline = load_timeline("P001")
         comparison = build_handover_period_comparison(
