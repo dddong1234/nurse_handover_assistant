@@ -148,6 +148,17 @@ describe("useReturnHandover", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("digests non-canonical fingerprint input before constructing a cache key", () => {
+    const rawText = "민감한 현재 기록";
+    const first = createReturnHandoverKey("P001", REVIEW_START_AT, rawText);
+    const second = createReturnHandoverKey("P001", REVIEW_START_AT, rawText);
+
+    expect(first).toBe(second);
+    expect(first).not.toContain(rawText);
+    expect(first).not.toContain("draft-1");
+    expect(createReturnHandoverKey("P001", REVIEW_START_AT, "draft-1")).not.toContain("draft-1");
+  });
+
   it("forwards supplied coverage gaps without changing the patient/start/fingerprint cache key", async () => {
     const p003Records: HandoverRecord[] = [
       { patient_id: "P003", updated_at: REVIEW_START_AT },

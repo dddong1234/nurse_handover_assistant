@@ -1747,6 +1747,26 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(requestBody(periodCall).reviewStartAt).toBe("2026-06-29T15:00:00+09:00");
   });
 
+  it("keeps return review controls disabled when the initial period request fails", async () => {
+    const response = buildDemoWorkspaceData()[0];
+    if (!response) throw new Error("P001 데모 응답이 없습니다.");
+    const fetchMock = vi.fn().mockRejectedValue(new Error("offline"));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={[response]} />);
+    await user.click(screen.getByRole("radio", { name: "휴무 복귀" }));
+    await waitFor(() => expect(screen.getByRole("status", { name: "기간 비교 상태" })).toHaveTextContent("불러오지 못했습니다"));
+
+    const recommendation = screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" });
+    const sourceCheck = screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" });
+    const completeButton = screen.getByRole("button", { name: "검토 완료" });
+    expect(recommendation).toBeDisabled();
+    expect(sourceCheck).toBeDisabled();
+    expect(completeButton).toBeDisabled();
+    expect(sourceCheck).not.toBeChecked();
+  });
+
   it("requests the selected patient's return timeline with its default start", async () => {
     const responses = buildDemoWorkspaceData();
     const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
@@ -1772,6 +1792,30 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(screen.getByRole("combobox", { name: "마지막 근무 시각" })).toHaveValue(getDemoTimeline("P002").defaultReturnStartAt);
   });
 
+  it("keeps return review controls disabled for a switched patient with no successful result", async () => {
+    const responses = buildDemoWorkspaceData();
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url !== "/api/handover/period-compare") return Promise.resolve(responseWith(responses[0]!));
+      const body = requestBody([url, options]);
+      if (body.records[0]?.patient_id === "P001") {
+        return Promise.resolve(responseWith(makePeriodResponse("P001", body.reviewStartAt, "patient-success")));
+      }
+      return Promise.reject(new Error("offline"));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={responses} />);
+    await user.click(screen.getByRole("radio", { name: "휴무 복귀" }));
+    await waitFor(() => expect(screen.getByText("기간 결과 patient-success")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: /김영희/ }));
+    await waitFor(() => expect(screen.getByRole("status", { name: "기간 비교 상태" })).toHaveTextContent("불러오지 못했습니다"));
+
+    expect(screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" })).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "검토 완료" })).toBeDisabled();
+  });
+
   it("preserves the P003 timeline coverage gap in the return payload", async () => {
     const responses = buildDemoWorkspaceData();
     const p003Response = responses.find((response) => response.comparison.patient.id === "P003");
@@ -1794,6 +1838,58 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     const periodCall = fetchMock.mock.calls.find(([url]) => url === "/api/handover/period-compare");
     if (!periodCall) throw new Error("P003 기간 비교 요청이 없습니다.");
     expect(requestBody(periodCall).coverageGaps).toEqual(getDemoTimeline("P003").coverageGaps);
+  });
+
+  it("preserves the workspace display tab when the handover scope changes", async () => {
+    const response = buildDemoWorkspaceData()[0];
+    const pair = demoRecordPairs.P001;
+    if (!response || !pair) throw new Error("P001 데모 응답이 없습니다.");
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/handover/period-compare") {
+        const body = requestBody([url, options]);
+        return Promise.resolve(responseWith(makePeriodResponse("P001", body.reviewStartAt, "tab-preserved")));
+      }
+      return Promise.resolve(responseWith(response));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={[response]} recordPairs={{ P001: pair }} />);
+    await waitFor(() => expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument());
+    await user.click(screen.getByRole("tab", { name: "원본 기록" }));
+    expect(screen.getByRole("tab", { name: "원본 기록" })).toHaveAttribute("aria-selected", "true");
+
+    await user.click(screen.getByRole("radio", { name: "휴무 복귀" }));
+    expect(screen.getByRole("tab", { name: "원본 기록" })).toHaveAttribute("aria-selected", "true");
+    await user.click(screen.getByRole("radio", { name: "직전 교대" }));
+    expect(screen.getByRole("tab", { name: "원본 기록" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("marks the queue only for the active handover scope", async () => {
+    const response = buildDemoWorkspaceData()[0];
+    if (!response) throw new Error("P001 데모 응답이 없습니다.");
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/handover/period-compare") {
+        const body = requestBody([url, options]);
+        return Promise.resolve(responseWith(makePeriodResponse("P001", body.reviewStartAt, "scope-review")));
+      }
+      return Promise.resolve(responseWith(response));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={[response]} />);
+    await user.click(screen.getByRole("radio", { name: "휴무 복귀" }));
+    await waitFor(() => expect(screen.getByText("기간 결과 scope-review")).toBeInTheDocument());
+    await user.click(screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" }));
+    await user.click(screen.getByRole("button", { name: "검토 완료" }));
+
+    const queuePatient = screen.getByRole("button", { name: /홍길동/ });
+    expect(within(queuePatient).getByText("검토 완료")).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "직전 교대" }));
+    expect(within(screen.getByRole("button", { name: /홍길동/ })).getByText("변화 검출")).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "휴무 복귀" }));
+    expect(within(screen.getByRole("button", { name: /홍길동/ })).getByText("검토 완료")).toBeInTheDocument();
   });
 
   it("resets only after a successful period swap and preserves input while the next request loads", async () => {
@@ -1851,11 +1947,15 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     await waitFor(() => expect(screen.getByText("기간 결과 stable")).toBeInTheDocument());
     const recommendation = screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" });
     await user.type(recommendation, "실패 전 입력 보존");
+    const sourceCheck = screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" });
+    await user.click(sourceCheck);
     await user.selectOptions(screen.getByRole("combobox", { name: "마지막 근무 시각" }), getDemoTimeline("P001").snapshots[1]!.updated_at);
 
     await waitFor(() => expect(screen.getByRole("status", { name: "기간 비교 상태" })).toHaveTextContent("불러오지 못했습니다"));
     expect(screen.getByText("기간 결과 stable")).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" })).toHaveValue("실패 전 입력 보존");
+    expect(sourceCheck).toBeChecked();
+    expect(screen.getByRole("button", { name: "검토 완료" })).not.toBeDisabled();
   });
 
   it("recomputes after saving the current draft without persisting period responses", async () => {

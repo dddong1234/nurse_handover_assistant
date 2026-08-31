@@ -67,7 +67,7 @@ export function normalizeCurrentRecordFingerprint(fingerprint: string): string {
   try {
     return digest(stableSerialize(JSON.parse(trimmed) as unknown));
   } catch {
-    return trimmed;
+    return digest(trimmed);
   }
 }
 

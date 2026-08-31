@@ -396,8 +396,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
       focusedEvidenceId: null,
       focusRequestId: 0,
     });
-  const returnControlsPending = returnHandover.status === "loading" ||
-    (returnHandover.status === "idle" && !returnResponse);
+  const returnControlsPending = !returnResponse || returnHandover.status === "loading";
   const apiPending = recordDrawerBusy || Boolean(
     activePair &&
       !session.reviewed &&
@@ -407,14 +406,12 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
           patientApiState.status !== "fallback" &&
           patientApiState.status !== "snapshot")),
   );
+  const reviewedSessions = handoverScope === "return" ? returnSessions : sessions;
   const reviewedPatientIds = new Set(
-    Object.entries(sessions)
+    Object.entries(reviewedSessions)
       .filter(([, patientSession]) => patientSession.reviewed)
       .map(([id]) => id),
   );
-  Object.entries(returnSessions)
-    .filter(([, patientSession]) => patientSession.reviewed)
-    .forEach(([id]) => reviewedPatientIds.add(id));
 
   function updateSession(patientSession: PatientReviewSession) {
     setSessions((current) => ({ ...current, [patientId]: patientSession }));
@@ -611,7 +608,6 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
                 checked={handoverScope === "shift"}
                 onChange={() => {
                   setHandoverScope("shift");
-                  setWorkspaceMode("comparison");
                 }}
               />
               직전 교대
@@ -624,7 +620,6 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
                 checked={handoverScope === "return"}
                 onChange={() => {
                   setHandoverScope("return");
-                  setWorkspaceMode("comparison");
                 }}
               />
               휴무 복귀
