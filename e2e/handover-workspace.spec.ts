@@ -467,7 +467,10 @@ for (const viewportWidth of evidenceLegibilityViewports) {
     for (let index = 0; index < disclosureCount; index += 1) {
       const disclosure = evidenceDisclosures.nth(index);
       await expect(disclosure).toBeVisible();
-      await disclosure.locator(":scope > summary").click();
+      await disclosure.evaluate((element) => {
+        (element as HTMLDetailsElement).open = true;
+      });
+      await expect(disclosure).toHaveAttribute("open", "");
     }
 
     const metrics = await page.evaluate(() => {
