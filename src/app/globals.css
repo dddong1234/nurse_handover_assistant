@@ -2977,9 +2977,9 @@ summary:focus-visible {
     "main diagnoses"
     "summary summary";
   grid-template-columns: minmax(0, 1fr) minmax(180px, 0.8fr);
-  gap: 12px 24px;
+  gap: 8px 24px;
   min-width: 0;
-  padding: 15px 20px 14px;
+  padding: 8px 20px 7px;
   border: 0;
   border-bottom: 1px solid var(--line);
 }
@@ -3020,7 +3020,7 @@ summary:focus-visible {
 
 .context-id {
   align-self: flex-start;
-  margin: 5px 0 0 auto;
+  margin: 5px 0 0;
   color: var(--primary);
   font-size: 10px;
 }
@@ -3086,7 +3086,7 @@ summary:focus-visible {
   align-items: center;
   gap: 14px;
   min-width: 0;
-  padding: 10px 12px;
+  padding: 6px 12px;
   border: 1px solid #bed8e0;
   border-left: 3px solid var(--primary);
   background: var(--primary-soft);
@@ -3599,7 +3599,7 @@ summary:focus-visible {
   min-width: 0;
   overflow-wrap: anywhere;
   color: var(--muted);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .delta-label {
@@ -3620,7 +3620,7 @@ summary:focus-visible {
 .evidence-details {
   min-width: 0;
   color: var(--secondary);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .evidence-details summary {
@@ -3793,7 +3793,7 @@ summary:focus-visible {
 
 .summary-item-copy p {
   color: var(--ink);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.5;
 }
 
@@ -3802,10 +3802,12 @@ summary:focus-visible {
 }
 
 .summary-evidence-disclosure > summary {
+  min-height: 24px;
+  padding: 2px 0;
   gap: 4px;
   color: var(--primary);
   font-family: var(--mono-font);
-  font-size: 8px;
+  font-size: 11px;
 }
 
 .summary-evidence-disclosure .evidence-links {
@@ -3828,10 +3830,13 @@ summary:focus-visible {
 }
 
 .evidence-link {
-  padding: 1px 2px;
-  border-bottom: 1px solid #9bc5d1;
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  padding: 2px;
+  border-bottom: 1px solid #b7ccef;
   color: var(--primary);
-  font-size: 8px;
+  font-size: 11px;
 }
 
 .summary-empty {
@@ -4163,7 +4168,7 @@ summary:focus-visible {
 
   .patient-context {
     grid-template-columns: minmax(0, 1fr) minmax(150px, 0.7fr);
-    gap: 10px 16px;
+    gap: 8px 16px;
     padding-right: 16px;
     padding-left: 16px;
   }
@@ -4547,5 +4552,12 @@ summary:focus-visible {
     margin-left: -10px;
     padding-right: 10px;
     padding-left: 10px;
+  }
+}
+
+@media (min-width: 1020px) {
+  .patient-context {
+    padding-top: 6px;
+    padding-bottom: 5px;
   }
 }

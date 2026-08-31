@@ -404,3 +404,117 @@ test("keeps both center modules reachable and stacks structured medication input
     )
     .toBeLessThanOrEqual(1);
 });
+
+const densityCapViewports = [1440, 1279, 1024] as const;
+
+for (const viewportWidth of densityCapViewports) {
+  test(`keeps the patient context dense and unclipped at ${viewportWidth}px`, async ({ page }) => {
+    await page.setViewportSize({ width: viewportWidth, height: 768 });
+    await page.goto("/");
+
+    const context = page.locator(".patient-context");
+    await expect(context).toBeVisible();
+
+    const metrics = await context.evaluate((element) => {
+      const contextRect = element.getBoundingClientRect();
+      const textElements = Array.from(element.querySelectorAll<HTMLElement>("h2, h3, p, span"));
+      const clippedText = textElements
+        .filter((textElement) => (textElement.textContent ?? "").trim().length > 0)
+        .map((textElement) => {
+          const rect = textElement.getBoundingClientRect();
+          const style = getComputedStyle(textElement);
+          return {
+            text: textElement.textContent?.trim() ?? "",
+            clippedByContext:
+              rect.top < contextRect.top - 1 ||
+              rect.bottom > contextRect.bottom + 1 ||
+              rect.left < contextRect.left - 1 ||
+              rect.right > contextRect.right + 1,
+            clippedByElement:
+              (style.overflow === "hidden" || style.overflowY === "hidden") &&
+              (textElement.scrollWidth - textElement.clientWidth > 1 ||
+                textElement.scrollHeight - textElement.clientHeight > 1),
+          };
+        })
+        .filter(({ clippedByContext, clippedByElement }) => clippedByContext || clippedByElement);
+
+      return {
+        height: contextRect.height,
+        clippedText,
+      };
+    });
+
+    expect(metrics.height).toBeLessThanOrEqual(138);
+    expect(metrics.height).toBeLessThanOrEqual(142);
+    expect(metrics.clippedText).toEqual([]);
+  });
+}
+
+const evidenceLegibilityViewports = [1440, 1279, 1024, 960, 390] as const;
+
+for (const viewportWidth of evidenceLegibilityViewports) {
+  test(`keeps evidence controls legible at ${viewportWidth}px`, async ({ page }) => {
+    await page.setViewportSize({ width: viewportWidth, height: viewportWidth === 390 ? 844 : 768 });
+    await page.goto("/");
+
+    const evidenceDisclosures = page.locator(".summary-evidence-disclosure");
+    await expect(evidenceDisclosures.first()).toBeVisible();
+    const bodyOverflowBeforeEvidence = await page.evaluate(
+      () => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth,
+    );
+    const disclosureCount = await evidenceDisclosures.count();
+    expect(disclosureCount).toBeGreaterThan(0);
+    for (let index = 0; index < disclosureCount; index += 1) {
+      const disclosure = evidenceDisclosures.nth(index);
+      await expect(disclosure).toBeVisible();
+      await disclosure.locator(":scope > summary").click();
+    }
+
+    const metrics = await page.evaluate(() => {
+      const measure = (selector: string) =>
+        Array.from(document.querySelectorAll<HTMLElement>(selector)).map((element) => {
+          const style = getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          return {
+            fontSize: Number.parseFloat(style.fontSize),
+            height: rect.height,
+            overflow: element.scrollWidth - element.clientWidth,
+            borderBottomColor: style.borderBottomColor,
+          };
+        });
+
+      return {
+        evidenceLinks: measure(".evidence-link"),
+        disclosureSummaries: measure(".summary-evidence-disclosure > summary"),
+        evidenceIds: measure(".evidence-id"),
+        evidenceDetails: measure(".evidence-details"),
+        summaryCopies: measure(".summary-item-copy p"),
+        bodyOverflowAfterEvidence:
+          Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth,
+      };
+    });
+
+    expect(bodyOverflowBeforeEvidence).toBeLessThanOrEqual(1);
+    expect(metrics.bodyOverflowAfterEvidence).toBeLessThanOrEqual(1);
+    for (const metric of metrics.evidenceLinks) {
+      expect(metric.fontSize).toBeGreaterThanOrEqual(11);
+      expect(metric.height).toBeGreaterThanOrEqual(24);
+      expect(metric.overflow).toBeLessThanOrEqual(1);
+      expect(metric.borderBottomColor).toBe("rgb(183, 204, 239)");
+    }
+    for (const metric of metrics.disclosureSummaries) {
+      expect(metric.fontSize).toBeGreaterThanOrEqual(11);
+      expect(metric.height).toBeGreaterThanOrEqual(24);
+    }
+    for (const metric of metrics.evidenceIds) {
+      expect(metric.fontSize).toBeGreaterThanOrEqual(10);
+      expect(metric.overflow).toBeLessThanOrEqual(1);
+    }
+    for (const metric of metrics.evidenceDetails) {
+      expect(metric.fontSize).toBeGreaterThanOrEqual(10);
+    }
+    for (const metric of metrics.summaryCopies) {
+      expect(metric.fontSize).toBeGreaterThanOrEqual(11);
+    }
+  });
+}
