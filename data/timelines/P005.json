@@ -1,0 +1,274 @@
+{
+  "patientId": "P005",
+  "defaultReturnStartAt": "2026-06-29T15:00:00+09:00",
+  "snapshots": [
+    {
+      "patient_id": "P005",
+      "name": "이정호",
+      "room_no": "503",
+      "age": 61,
+      "sex": "M",
+      "diagnosis": [
+        "type 2 diabetes mellitus",
+        "right diabetic foot ulcer"
+      ],
+      "vitals": {
+        "systolic": 142,
+        "diastolic": 88,
+        "heartrate": 86,
+        "respiratory": 18,
+        "saturation": 98,
+        "body_temperature": 37.9
+      },
+      "medications": [
+        {
+          "name": "인슐린 글라진",
+          "route": "SC",
+          "frequency": "HS"
+        }
+      ],
+      "notes": [
+        "족부 드레싱 유지",
+        "상처 삼출물 관찰"
+      ],
+      "updated_at": "2026-06-29T15:00:00+09:00"
+    },
+    {
+      "patient_id": "P005",
+      "name": "이정호",
+      "room_no": "503",
+      "age": 61,
+      "sex": "M",
+      "diagnosis": [
+        "type 2 diabetes mellitus",
+        "right diabetic foot ulcer"
+      ],
+      "vitals": {
+        "systolic": 142,
+        "diastolic": 88,
+        "heartrate": 86,
+        "respiratory": 18,
+        "saturation": 98,
+        "body_temperature": 37.9
+      },
+      "medications": [
+        {
+          "name": "인슐린 글라진",
+          "route": "SC",
+          "frequency": "HS"
+        },
+        {
+          "name": "메트포르민 500mg",
+          "route": "PO",
+          "frequency": "BID"
+        }
+      ],
+      "notes": [
+        "족부 드레싱 유지",
+        "상처 삼출물 관찰"
+      ],
+      "updated_at": "2026-06-29T23:00:00+09:00"
+    },
+    {
+      "patient_id": "P005",
+      "name": "이정호",
+      "room_no": "503",
+      "age": 61,
+      "sex": "M",
+      "diagnosis": [
+        "type 2 diabetes mellitus",
+        "right diabetic foot ulcer"
+      ],
+      "vitals": {
+        "systolic": 148,
+        "diastolic": 90,
+        "heartrate": 90,
+        "respiratory": 20,
+        "saturation": 97,
+        "body_temperature": 38.1
+      },
+      "medications": [
+        {
+          "name": "인슐린 글라진",
+          "route": "SC",
+          "frequency": "QD"
+        },
+        {
+          "name": "메트포르민 500mg",
+          "route": "PO",
+          "frequency": "BID"
+        }
+      ],
+      "notes": [
+        "족부 드레싱 유지",
+        "상처 삼출물 관찰"
+      ],
+      "updated_at": "2026-06-30T07:00:00+09:00"
+    },
+    {
+      "patient_id": "P005",
+      "name": "이정호",
+      "room_no": "503",
+      "age": 61,
+      "sex": "M",
+      "diagnosis": [
+        "type 2 diabetes mellitus",
+        "right diabetic foot ulcer"
+      ],
+      "vitals": {
+        "systolic": 142,
+        "diastolic": 88,
+        "heartrate": 86,
+        "respiratory": 18,
+        "saturation": 98,
+        "body_temperature": 37.9
+      },
+      "medications": [
+        {
+          "name": "인슐린 글라진",
+          "route": "SC",
+          "frequency": "HS"
+        }
+      ],
+      "notes": [
+        "족부 드레싱 유지",
+        "상처 삼출물 관찰"
+      ],
+      "updated_at": "2026-06-30T15:00:00+09:00"
+    },
+    {
+      "patient_id": "P005",
+      "name": "이정호",
+      "room_no": "503",
+      "age": 61,
+      "sex": "M",
+      "diagnosis": [
+        "type 2 diabetes mellitus",
+        "right diabetic foot ulcer"
+      ],
+      "vitals": {
+        "systolic": 142,
+        "diastolic": 88,
+        "heartrate": 86,
+        "respiratory": 18,
+        "saturation": 98,
+        "body_temperature": 37.9
+      },
+      "medications": [
+        {
+          "name": "인슐린 글라진",
+          "route": "SC",
+          "frequency": "HS"
+        }
+      ],
+      "notes": [
+        "족부 드레싱 유지",
+        "상처 삼출물 관찰"
+      ],
+      "updated_at": "2026-07-01T07:00:00+09:00"
+    },
+    {
+      "patient_id": "P005",
+      "name": "이정호",
+      "room_no": "503",
+      "age": 61,
+      "sex": "M",
+      "diagnosis": [
+        "type 2 diabetes mellitus",
+        "right diabetic foot ulcer"
+      ],
+      "vitals": {
+        "systolic": 142,
+        "diastolic": 88,
+        "heartrate": 86,
+        "respiratory": 18,
+        "saturation": 98,
+        "body_temperature": 37.9
+      },
+      "medications": [
+        {
+          "name": "인슐린 글라진",
+          "route": "SC",
+          "frequency": "HS"
+        }
+      ],
+      "notes": [
+        "족부 드레싱 유지",
+        "상처 삼출물 관찰"
+      ],
+      "updated_at": "2026-07-01T19:00:00+09:00"
+    },
+    {
+      "patient_id": "P005",
+      "name": "이정호",
+      "room_no": "503",
+      "age": 61,
+      "sex": "M",
+      "diagnosis": [
+        "type 2 diabetes mellitus",
+        "right diabetic foot ulcer"
+      ],
+      "vitals": {
+        "systolic": 138,
+        "diastolic": 86,
+        "heartrate": 84,
+        "respiratory": 18,
+        "saturation": 98,
+        "body_temperature": 37.5
+      },
+      "medications": [
+        {
+          "name": "인슐린 글라진",
+          "route": "SC",
+          "frequency": "HS"
+        },
+        {
+          "name": "피페라실린/타조박탐",
+          "route": "IV",
+          "frequency": "Q8H"
+        }
+      ],
+      "notes": [
+        "족부 드레싱 유지"
+      ],
+      "updated_at": "2026-07-02T07:00:00+09:00"
+    },
+    {
+      "patient_id": "P005",
+      "name": "이정호",
+      "room_no": "503",
+      "age": 61,
+      "sex": "M",
+      "diagnosis": [
+        "type 2 diabetes mellitus",
+        "right diabetic foot ulcer"
+      ],
+      "vitals": {
+        "systolic": 136,
+        "diastolic": 84,
+        "heartrate": 82,
+        "respiratory": 18,
+        "saturation": 98,
+        "body_temperature": 37.2
+      },
+      "medications": [
+        {
+          "name": "인슐린 글라진",
+          "route": "SC",
+          "frequency": "HS"
+        },
+        {
+          "name": "피페라실린/타조박탐",
+          "route": "IV",
+          "frequency": "Q8H"
+        }
+      ],
+      "notes": [
+        "족부 드레싱 유지",
+        "혈당 조절 필요"
+      ],
+      "updated_at": "2026-07-02T09:30:00+09:00"
+    }
+  ],
+  "coverageGaps": []
+}

@@ -1,0 +1,2864 @@
+{
+  "ready": {
+    "patient": {
+      "id": "P001",
+      "name": "홍길동",
+      "room": "301",
+      "age": 67,
+      "sex": "M",
+      "diagnoses": [
+        "acute pharyngitis",
+        "hypertension"
+      ]
+    },
+    "period": {
+      "requestedStartAt": "2026-06-29T15:00:00+09:00",
+      "baselineRecordedAt": "2026-06-29T15:00:00+09:00",
+      "currentRecordedAt": "2026-07-02T09:00:00+09:00",
+      "snapshotCount": 8,
+      "eventCount": 24,
+      "status": "ready"
+    },
+    "dataWarnings": [],
+    "events": [
+      {
+        "id": "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "diagnosis-hypertension-97cf39b495a5-added",
+          "category": "diagnosis",
+          "changeType": "added",
+          "reviewPriority": "high",
+          "label": "hypertension",
+          "previousValue": null,
+          "currentValue": "hypertension",
+          "delta": null,
+          "evidence": {
+            "fieldPath": "diagnosis[\"hypertension\"]",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "medications-타세놀정-500mg-3abed59ec690-added",
+          "category": "medications",
+          "changeType": "added",
+          "reviewPriority": "high",
+          "label": "타세놀정 500mg",
+          "previousValue": null,
+          "currentValue": {
+            "name": "타세놀정 500mg",
+            "route": "PO",
+            "frequency": "TID"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"타세놀정 500mg\"]",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "medications-이부프로펜-400mg-38af305ba26a-modified",
+          "category": "medications",
+          "changeType": "modified",
+          "reviewPriority": "high",
+          "label": "이부프로펜 400mg",
+          "previousValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "BID"
+          },
+          "currentValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "TID"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"이부프로펜 400mg\"]",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-01T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-30T15:00:00+09:00",
+          "currentRecordedAt": "2026-07-01T07:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "medications-이부프로펜-400mg-38af305ba26a-modified",
+          "category": "medications",
+          "changeType": "modified",
+          "reviewPriority": "high",
+          "label": "이부프로펜 400mg",
+          "previousValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "TID"
+          },
+          "currentValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "BID"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"이부프로펜 400mg\"]",
+            "previousRecordedAt": "2026-06-30T15:00:00+09:00",
+            "currentRecordedAt": "2026-07-01T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed",
+        "detectedAt": "2026-06-30T15:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-30T07:00:00+09:00",
+          "currentRecordedAt": "2026-06-30T15:00:00+09:00"
+        },
+        "classification": "period_only",
+        "change": {
+          "id": "medications-생리식염주-500ml-51e5191a00a4-removed",
+          "category": "medications",
+          "changeType": "removed",
+          "reviewPriority": "high",
+          "label": "생리식염주 500mL",
+          "previousValue": {
+            "name": "생리식염주 500mL",
+            "route": "IV",
+            "frequency": "QD"
+          },
+          "currentValue": null,
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"생리식염주 500mL\"]",
+            "previousRecordedAt": "2026-06-30T07:00:00+09:00",
+            "currentRecordedAt": "2026-06-30T15:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+        "detectedAt": "2026-06-30T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-29T23:00:00+09:00",
+          "currentRecordedAt": "2026-06-30T07:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "medications-이부프로펜-400mg-38af305ba26a-modified",
+          "category": "medications",
+          "changeType": "modified",
+          "reviewPriority": "high",
+          "label": "이부프로펜 400mg",
+          "previousValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "BID"
+          },
+          "currentValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "TID"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"이부프로펜 400mg\"]",
+            "previousRecordedAt": "2026-06-29T23:00:00+09:00",
+            "currentRecordedAt": "2026-06-30T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+        "detectedAt": "2026-06-29T23:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-29T15:00:00+09:00",
+          "currentRecordedAt": "2026-06-29T23:00:00+09:00"
+        },
+        "classification": "period_only",
+        "change": {
+          "id": "medications-생리식염주-500ml-51e5191a00a4-added",
+          "category": "medications",
+          "changeType": "added",
+          "reviewPriority": "high",
+          "label": "생리식염주 500mL",
+          "previousValue": null,
+          "currentValue": {
+            "name": "생리식염주 500mL",
+            "route": "IV",
+            "frequency": "QD"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"생리식염주 500mL\"]",
+            "previousRecordedAt": "2026-06-29T15:00:00+09:00",
+            "currentRecordedAt": "2026-06-29T23:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 37.9,
+          "currentValue": 38.2,
+          "delta": 0.3,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-diastolic-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "이완기 혈압",
+          "previousValue": 88,
+          "currentValue": 95,
+          "delta": 7,
+          "evidence": {
+            "fieldPath": "vitals.diastolic",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-heartrate-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "심박수",
+          "previousValue": 86,
+          "currentValue": 92,
+          "delta": 6,
+          "evidence": {
+            "fieldPath": "vitals.heartrate",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-respiratory-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "호흡수",
+          "previousValue": 17,
+          "currentValue": 18,
+          "delta": 1,
+          "evidence": {
+            "fieldPath": "vitals.respiratory",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-saturation-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "산소포화도",
+          "previousValue": 98,
+          "currentValue": 97,
+          "delta": -1,
+          "evidence": {
+            "fieldPath": "vitals.saturation",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-systolic-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "수축기 혈압",
+          "previousValue": 138,
+          "currentValue": 150,
+          "delta": 12,
+          "evidence": {
+            "fieldPath": "vitals.systolic",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 37.4,
+          "currentValue": 37.9,
+          "delta": 0.5,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-diastolic-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "이완기 혈압",
+          "previousValue": 82,
+          "currentValue": 88,
+          "delta": 6,
+          "evidence": {
+            "fieldPath": "vitals.diastolic",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-heartrate-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "심박수",
+          "previousValue": 80,
+          "currentValue": 86,
+          "delta": 6,
+          "evidence": {
+            "fieldPath": "vitals.heartrate",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-respiratory-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "호흡수",
+          "previousValue": 16,
+          "currentValue": 17,
+          "delta": 1,
+          "evidence": {
+            "fieldPath": "vitals.respiratory",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-systolic-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "수축기 혈압",
+          "previousValue": 122,
+          "currentValue": 138,
+          "delta": 16,
+          "evidence": {
+            "fieldPath": "vitals.systolic",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-01T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-30T15:00:00+09:00",
+          "currentRecordedAt": "2026-07-01T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 37.5,
+          "currentValue": 37.4,
+          "delta": -0.1,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-06-30T15:00:00+09:00",
+            "currentRecordedAt": "2026-07-01T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+        "detectedAt": "2026-06-30T15:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-30T07:00:00+09:00",
+          "currentRecordedAt": "2026-06-30T15:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 38.0,
+          "currentValue": 37.5,
+          "delta": -0.5,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-06-30T07:00:00+09:00",
+            "currentRecordedAt": "2026-06-30T15:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+        "detectedAt": "2026-06-30T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-29T23:00:00+09:00",
+          "currentRecordedAt": "2026-06-30T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 37.4,
+          "currentValue": 38.0,
+          "delta": 0.6,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-06-29T23:00:00+09:00",
+            "currentRecordedAt": "2026-06-30T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "record_event",
+        "change": {
+          "id": "notes-미열-지속-deb9221b78ad-added",
+          "category": "notes",
+          "changeType": "added",
+          "reviewPriority": "low",
+          "label": "미열 지속",
+          "previousValue": null,
+          "currentValue": "미열 지속",
+          "delta": null,
+          "evidence": {
+            "fieldPath": "notes[\"미열 지속\"]",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "record_event",
+        "change": {
+          "id": "notes-인후통-호소-c0208da3e2cb-added",
+          "category": "notes",
+          "changeType": "added",
+          "reviewPriority": "low",
+          "label": "인후통 호소",
+          "previousValue": null,
+          "currentValue": "인후통 호소",
+          "delta": null,
+          "evidence": {
+            "fieldPath": "notes[\"인후통 호소\"]",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "record_event",
+        "change": {
+          "id": "notes-인후통-시작-639845b7ad30-removed",
+          "category": "notes",
+          "changeType": "removed",
+          "reviewPriority": "low",
+          "label": "인후통 시작",
+          "previousValue": "인후통 시작",
+          "currentValue": null,
+          "delta": null,
+          "evidence": {
+            "fieldPath": "notes[\"인후통 시작\"]",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      }
+    ],
+    "reviewGroups": {
+      "current": [
+        {
+          "id": "review:p001:diagnosis:hypertension",
+          "category": "diagnosis",
+          "label": "hypertension",
+          "classification": "current",
+          "eventIds": [
+            "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added"
+          ]
+        },
+        {
+          "id": "review:p001:medications:타세놀정-500mg",
+          "category": "medications",
+          "label": "타세놀정 500mg",
+          "classification": "current",
+          "eventIds": [
+            "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added"
+          ]
+        },
+        {
+          "id": "review:p001:medications:이부프로펜-400mg",
+          "category": "medications",
+          "label": "이부프로펜 400mg",
+          "classification": "current",
+          "eventIds": [
+            "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+            "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+            "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified"
+          ]
+        }
+      ],
+      "periodOnly": [
+        {
+          "id": "review:p001:medications:생리식염주-500mL",
+          "category": "medications",
+          "label": "생리식염주 500mL",
+          "classification": "period_only",
+          "eventIds": [
+            "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+            "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed"
+          ]
+        }
+      ],
+      "trends": [
+        {
+          "id": "review:p001:vitals:body-temperature",
+          "category": "vitals",
+          "label": "체온",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+            "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+            "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+            "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:diastolic",
+          "category": "vitals",
+          "label": "이완기 혈압",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:heartrate",
+          "category": "vitals",
+          "label": "심박수",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:respiratory",
+          "category": "vitals",
+          "label": "호흡수",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:saturation",
+          "category": "vitals",
+          "label": "산소포화도",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:systolic",
+          "category": "vitals",
+          "label": "수축기 혈압",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified"
+          ]
+        }
+      ],
+      "recordEvents": [
+        {
+          "id": "review:p001:notes:note-12fbbc2c0c33",
+          "category": "notes",
+          "label": "미열 지속",
+          "classification": "record_event",
+          "eventIds": [
+            "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added"
+          ]
+        },
+        {
+          "id": "review:p001:notes:note-75e6b48cf811",
+          "category": "notes",
+          "label": "인후통 호소",
+          "classification": "record_event",
+          "eventIds": [
+            "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added"
+          ]
+        },
+        {
+          "id": "review:p001:notes:note-fd67bb8c1ce5",
+          "category": "notes",
+          "label": "인후통 시작",
+          "classification": "record_event",
+          "eventIds": [
+            "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed"
+          ]
+        }
+      ]
+    },
+    "summary": {
+      "mode": "deterministic",
+      "sections": {
+        "situation": [
+          {
+            "text": "홍길동(P001) · 301호 · 기준 2026-06-29T15:00:00+09:00 → 현재 2026-07-02T09:00:00+09:00 · 기간 변화 24건",
+            "evidenceIds": [
+              "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added",
+              "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added",
+              "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+              "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed",
+              "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+              "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+              "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+              "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added",
+              "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added",
+              "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed"
+            ]
+          }
+        ],
+        "background": [
+          {
+            "text": "진단 hypertension · 현재 반영",
+            "evidenceIds": [
+              "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added"
+            ]
+          },
+          {
+            "text": "투약 타세놀정 500mg · 현재 반영",
+            "evidenceIds": [
+              "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added"
+            ]
+          },
+          {
+            "text": "투약 이부프로펜 400mg · 현재 반영",
+            "evidenceIds": [
+              "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+              "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+              "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "투약 생리식염주 500mL · 기간 중 변경",
+            "evidenceIds": [
+              "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+              "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed"
+            ]
+          }
+        ],
+        "assessment": [
+          {
+            "text": "체온 추세: 37.4 → 38.0 → 37.5 → 37.4 → 37.9 → 38.2",
+            "evidenceIds": [
+              "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "이완기 혈압 추세: 82 → 88 → 95",
+            "evidenceIds": [
+              "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "심박수 추세: 80 → 86 → 92",
+            "evidenceIds": [
+              "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "호흡수 추세: 16 → 17 → 18",
+            "evidenceIds": [
+              "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "산소포화도 추세: 98 → 97",
+            "evidenceIds": [
+              "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "수축기 혈압 추세: 122 → 138 → 150",
+            "evidenceIds": [
+              "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "간호 메모 미열 지속 · 추가",
+            "evidenceIds": [
+              "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added"
+            ]
+          },
+          {
+            "text": "간호 메모 인후통 호소 · 추가",
+            "evidenceIds": [
+              "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added"
+            ]
+          },
+          {
+            "text": "간호 메모 인후통 시작 · 삭제",
+            "evidenceIds": [
+              "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed"
+            ]
+          }
+        ],
+        "recommendation": [
+          {
+            "text": "간호사가 확인할 후속 항목을 입력하세요.",
+            "evidenceIds": []
+          }
+        ]
+      },
+      "evidenceIds": [
+        "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added",
+        "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added",
+        "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+        "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed",
+        "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+        "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+        "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+        "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+        "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+        "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added",
+        "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added",
+        "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed"
+      ],
+      "warnings": []
+    }
+  },
+  "partial": {
+    "patient": {
+      "id": "P001",
+      "name": "홍길동",
+      "room": "301",
+      "age": 67,
+      "sex": "M",
+      "diagnoses": [
+        "acute pharyngitis",
+        "hypertension"
+      ]
+    },
+    "period": {
+      "requestedStartAt": "2026-06-29T15:00:00+09:00",
+      "baselineRecordedAt": "2026-06-29T15:00:00+09:00",
+      "currentRecordedAt": "2026-07-02T09:00:00+09:00",
+      "snapshotCount": 8,
+      "eventCount": 24,
+      "status": "partial"
+    },
+    "dataWarnings": [
+      "coverage gap: fictional_source_unavailable (2026-06-30T12:00:00+09:00 -> 2026-06-30T14:00:00+09:00)"
+    ],
+    "events": [
+      {
+        "id": "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "diagnosis-hypertension-97cf39b495a5-added",
+          "category": "diagnosis",
+          "changeType": "added",
+          "reviewPriority": "high",
+          "label": "hypertension",
+          "previousValue": null,
+          "currentValue": "hypertension",
+          "delta": null,
+          "evidence": {
+            "fieldPath": "diagnosis[\"hypertension\"]",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "medications-타세놀정-500mg-3abed59ec690-added",
+          "category": "medications",
+          "changeType": "added",
+          "reviewPriority": "high",
+          "label": "타세놀정 500mg",
+          "previousValue": null,
+          "currentValue": {
+            "name": "타세놀정 500mg",
+            "route": "PO",
+            "frequency": "TID"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"타세놀정 500mg\"]",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "medications-이부프로펜-400mg-38af305ba26a-modified",
+          "category": "medications",
+          "changeType": "modified",
+          "reviewPriority": "high",
+          "label": "이부프로펜 400mg",
+          "previousValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "BID"
+          },
+          "currentValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "TID"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"이부프로펜 400mg\"]",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-01T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-30T15:00:00+09:00",
+          "currentRecordedAt": "2026-07-01T07:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "medications-이부프로펜-400mg-38af305ba26a-modified",
+          "category": "medications",
+          "changeType": "modified",
+          "reviewPriority": "high",
+          "label": "이부프로펜 400mg",
+          "previousValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "TID"
+          },
+          "currentValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "BID"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"이부프로펜 400mg\"]",
+            "previousRecordedAt": "2026-06-30T15:00:00+09:00",
+            "currentRecordedAt": "2026-07-01T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed",
+        "detectedAt": "2026-06-30T15:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-30T07:00:00+09:00",
+          "currentRecordedAt": "2026-06-30T15:00:00+09:00"
+        },
+        "classification": "period_only",
+        "change": {
+          "id": "medications-생리식염주-500ml-51e5191a00a4-removed",
+          "category": "medications",
+          "changeType": "removed",
+          "reviewPriority": "high",
+          "label": "생리식염주 500mL",
+          "previousValue": {
+            "name": "생리식염주 500mL",
+            "route": "IV",
+            "frequency": "QD"
+          },
+          "currentValue": null,
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"생리식염주 500mL\"]",
+            "previousRecordedAt": "2026-06-30T07:00:00+09:00",
+            "currentRecordedAt": "2026-06-30T15:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+        "detectedAt": "2026-06-30T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-29T23:00:00+09:00",
+          "currentRecordedAt": "2026-06-30T07:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "medications-이부프로펜-400mg-38af305ba26a-modified",
+          "category": "medications",
+          "changeType": "modified",
+          "reviewPriority": "high",
+          "label": "이부프로펜 400mg",
+          "previousValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "BID"
+          },
+          "currentValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "TID"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"이부프로펜 400mg\"]",
+            "previousRecordedAt": "2026-06-29T23:00:00+09:00",
+            "currentRecordedAt": "2026-06-30T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+        "detectedAt": "2026-06-29T23:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-29T15:00:00+09:00",
+          "currentRecordedAt": "2026-06-29T23:00:00+09:00"
+        },
+        "classification": "period_only",
+        "change": {
+          "id": "medications-생리식염주-500ml-51e5191a00a4-added",
+          "category": "medications",
+          "changeType": "added",
+          "reviewPriority": "high",
+          "label": "생리식염주 500mL",
+          "previousValue": null,
+          "currentValue": {
+            "name": "생리식염주 500mL",
+            "route": "IV",
+            "frequency": "QD"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"생리식염주 500mL\"]",
+            "previousRecordedAt": "2026-06-29T15:00:00+09:00",
+            "currentRecordedAt": "2026-06-29T23:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 37.9,
+          "currentValue": 38.2,
+          "delta": 0.3,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-diastolic-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "이완기 혈압",
+          "previousValue": 88,
+          "currentValue": 95,
+          "delta": 7,
+          "evidence": {
+            "fieldPath": "vitals.diastolic",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-heartrate-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "심박수",
+          "previousValue": 86,
+          "currentValue": 92,
+          "delta": 6,
+          "evidence": {
+            "fieldPath": "vitals.heartrate",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-respiratory-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "호흡수",
+          "previousValue": 17,
+          "currentValue": 18,
+          "delta": 1,
+          "evidence": {
+            "fieldPath": "vitals.respiratory",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-saturation-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "산소포화도",
+          "previousValue": 98,
+          "currentValue": 97,
+          "delta": -1,
+          "evidence": {
+            "fieldPath": "vitals.saturation",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-systolic-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "수축기 혈압",
+          "previousValue": 138,
+          "currentValue": 150,
+          "delta": 12,
+          "evidence": {
+            "fieldPath": "vitals.systolic",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 37.4,
+          "currentValue": 37.9,
+          "delta": 0.5,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-diastolic-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "이완기 혈압",
+          "previousValue": 82,
+          "currentValue": 88,
+          "delta": 6,
+          "evidence": {
+            "fieldPath": "vitals.diastolic",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-heartrate-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "심박수",
+          "previousValue": 80,
+          "currentValue": 86,
+          "delta": 6,
+          "evidence": {
+            "fieldPath": "vitals.heartrate",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-respiratory-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "호흡수",
+          "previousValue": 16,
+          "currentValue": 17,
+          "delta": 1,
+          "evidence": {
+            "fieldPath": "vitals.respiratory",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-systolic-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "수축기 혈압",
+          "previousValue": 122,
+          "currentValue": 138,
+          "delta": 16,
+          "evidence": {
+            "fieldPath": "vitals.systolic",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-01T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-30T15:00:00+09:00",
+          "currentRecordedAt": "2026-07-01T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 37.5,
+          "currentValue": 37.4,
+          "delta": -0.1,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-06-30T15:00:00+09:00",
+            "currentRecordedAt": "2026-07-01T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+        "detectedAt": "2026-06-30T15:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-30T07:00:00+09:00",
+          "currentRecordedAt": "2026-06-30T15:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 38.0,
+          "currentValue": 37.5,
+          "delta": -0.5,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-06-30T07:00:00+09:00",
+            "currentRecordedAt": "2026-06-30T15:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+        "detectedAt": "2026-06-30T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-29T23:00:00+09:00",
+          "currentRecordedAt": "2026-06-30T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 37.4,
+          "currentValue": 38.0,
+          "delta": 0.6,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-06-29T23:00:00+09:00",
+            "currentRecordedAt": "2026-06-30T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "record_event",
+        "change": {
+          "id": "notes-미열-지속-deb9221b78ad-added",
+          "category": "notes",
+          "changeType": "added",
+          "reviewPriority": "low",
+          "label": "미열 지속",
+          "previousValue": null,
+          "currentValue": "미열 지속",
+          "delta": null,
+          "evidence": {
+            "fieldPath": "notes[\"미열 지속\"]",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "record_event",
+        "change": {
+          "id": "notes-인후통-호소-c0208da3e2cb-added",
+          "category": "notes",
+          "changeType": "added",
+          "reviewPriority": "low",
+          "label": "인후통 호소",
+          "previousValue": null,
+          "currentValue": "인후통 호소",
+          "delta": null,
+          "evidence": {
+            "fieldPath": "notes[\"인후통 호소\"]",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "record_event",
+        "change": {
+          "id": "notes-인후통-시작-639845b7ad30-removed",
+          "category": "notes",
+          "changeType": "removed",
+          "reviewPriority": "low",
+          "label": "인후통 시작",
+          "previousValue": "인후통 시작",
+          "currentValue": null,
+          "delta": null,
+          "evidence": {
+            "fieldPath": "notes[\"인후통 시작\"]",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      }
+    ],
+    "reviewGroups": {
+      "current": [
+        {
+          "id": "review:p001:diagnosis:hypertension",
+          "category": "diagnosis",
+          "label": "hypertension",
+          "classification": "current",
+          "eventIds": [
+            "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added"
+          ]
+        },
+        {
+          "id": "review:p001:medications:타세놀정-500mg",
+          "category": "medications",
+          "label": "타세놀정 500mg",
+          "classification": "current",
+          "eventIds": [
+            "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added"
+          ]
+        },
+        {
+          "id": "review:p001:medications:이부프로펜-400mg",
+          "category": "medications",
+          "label": "이부프로펜 400mg",
+          "classification": "current",
+          "eventIds": [
+            "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+            "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+            "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified"
+          ]
+        }
+      ],
+      "periodOnly": [
+        {
+          "id": "review:p001:medications:생리식염주-500mL",
+          "category": "medications",
+          "label": "생리식염주 500mL",
+          "classification": "period_only",
+          "eventIds": [
+            "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+            "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed"
+          ]
+        }
+      ],
+      "trends": [
+        {
+          "id": "review:p001:vitals:body-temperature",
+          "category": "vitals",
+          "label": "체온",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+            "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+            "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+            "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:diastolic",
+          "category": "vitals",
+          "label": "이완기 혈압",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:heartrate",
+          "category": "vitals",
+          "label": "심박수",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:respiratory",
+          "category": "vitals",
+          "label": "호흡수",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:saturation",
+          "category": "vitals",
+          "label": "산소포화도",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:systolic",
+          "category": "vitals",
+          "label": "수축기 혈압",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified"
+          ]
+        }
+      ],
+      "recordEvents": [
+        {
+          "id": "review:p001:notes:note-12fbbc2c0c33",
+          "category": "notes",
+          "label": "미열 지속",
+          "classification": "record_event",
+          "eventIds": [
+            "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added"
+          ]
+        },
+        {
+          "id": "review:p001:notes:note-75e6b48cf811",
+          "category": "notes",
+          "label": "인후통 호소",
+          "classification": "record_event",
+          "eventIds": [
+            "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added"
+          ]
+        },
+        {
+          "id": "review:p001:notes:note-fd67bb8c1ce5",
+          "category": "notes",
+          "label": "인후통 시작",
+          "classification": "record_event",
+          "eventIds": [
+            "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed"
+          ]
+        }
+      ]
+    },
+    "summary": {
+      "mode": "deterministic",
+      "sections": {
+        "situation": [
+          {
+            "text": "홍길동(P001) · 301호 · 기준 2026-06-29T15:00:00+09:00 → 현재 2026-07-02T09:00:00+09:00 · 기간 변화 24건",
+            "evidenceIds": [
+              "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added",
+              "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added",
+              "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+              "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed",
+              "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+              "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+              "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+              "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added",
+              "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added",
+              "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed"
+            ]
+          }
+        ],
+        "background": [
+          {
+            "text": "진단 hypertension · 현재 반영",
+            "evidenceIds": [
+              "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added"
+            ]
+          },
+          {
+            "text": "투약 타세놀정 500mg · 현재 반영",
+            "evidenceIds": [
+              "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added"
+            ]
+          },
+          {
+            "text": "투약 이부프로펜 400mg · 현재 반영",
+            "evidenceIds": [
+              "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+              "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+              "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "투약 생리식염주 500mL · 기간 중 변경",
+            "evidenceIds": [
+              "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+              "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed"
+            ]
+          }
+        ],
+        "assessment": [
+          {
+            "text": "체온 추세: 37.4 → 38.0 → 37.5 → 37.4 → 37.9 → 38.2",
+            "evidenceIds": [
+              "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "이완기 혈압 추세: 82 → 88 → 95",
+            "evidenceIds": [
+              "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "심박수 추세: 80 → 86 → 92",
+            "evidenceIds": [
+              "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "호흡수 추세: 16 → 17 → 18",
+            "evidenceIds": [
+              "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "산소포화도 추세: 98 → 97",
+            "evidenceIds": [
+              "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "수축기 혈압 추세: 122 → 138 → 150",
+            "evidenceIds": [
+              "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "간호 메모 미열 지속 · 추가",
+            "evidenceIds": [
+              "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added"
+            ]
+          },
+          {
+            "text": "간호 메모 인후통 호소 · 추가",
+            "evidenceIds": [
+              "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added"
+            ]
+          },
+          {
+            "text": "간호 메모 인후통 시작 · 삭제",
+            "evidenceIds": [
+              "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed"
+            ]
+          }
+        ],
+        "recommendation": [
+          {
+            "text": "간호사가 확인할 후속 항목을 입력하세요.",
+            "evidenceIds": []
+          }
+        ]
+      },
+      "evidenceIds": [
+        "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added",
+        "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added",
+        "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+        "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed",
+        "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+        "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+        "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+        "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+        "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+        "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added",
+        "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added",
+        "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed"
+      ],
+      "warnings": [
+        "coverage gap: fictional_source_unavailable (2026-06-30T12:00:00+09:00 -> 2026-06-30T14:00:00+09:00)"
+      ]
+    }
+  },
+  "no_baseline": {
+    "patient": {
+      "id": "P001",
+      "name": "홍길동",
+      "room": "301",
+      "age": 67,
+      "sex": "M",
+      "diagnoses": [
+        "acute pharyngitis",
+        "hypertension"
+      ]
+    },
+    "period": {
+      "requestedStartAt": "2026-06-29T14:00:00+09:00",
+      "baselineRecordedAt": null,
+      "currentRecordedAt": "2026-07-02T09:00:00+09:00",
+      "snapshotCount": 8,
+      "eventCount": 24,
+      "status": "no_baseline"
+    },
+    "dataWarnings": [],
+    "events": [
+      {
+        "id": "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "diagnosis-hypertension-97cf39b495a5-added",
+          "category": "diagnosis",
+          "changeType": "added",
+          "reviewPriority": "high",
+          "label": "hypertension",
+          "previousValue": null,
+          "currentValue": "hypertension",
+          "delta": null,
+          "evidence": {
+            "fieldPath": "diagnosis[\"hypertension\"]",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "medications-타세놀정-500mg-3abed59ec690-added",
+          "category": "medications",
+          "changeType": "added",
+          "reviewPriority": "high",
+          "label": "타세놀정 500mg",
+          "previousValue": null,
+          "currentValue": {
+            "name": "타세놀정 500mg",
+            "route": "PO",
+            "frequency": "TID"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"타세놀정 500mg\"]",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "medications-이부프로펜-400mg-38af305ba26a-modified",
+          "category": "medications",
+          "changeType": "modified",
+          "reviewPriority": "high",
+          "label": "이부프로펜 400mg",
+          "previousValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "BID"
+          },
+          "currentValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "TID"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"이부프로펜 400mg\"]",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-01T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-30T15:00:00+09:00",
+          "currentRecordedAt": "2026-07-01T07:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "medications-이부프로펜-400mg-38af305ba26a-modified",
+          "category": "medications",
+          "changeType": "modified",
+          "reviewPriority": "high",
+          "label": "이부프로펜 400mg",
+          "previousValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "TID"
+          },
+          "currentValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "BID"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"이부프로펜 400mg\"]",
+            "previousRecordedAt": "2026-06-30T15:00:00+09:00",
+            "currentRecordedAt": "2026-07-01T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed",
+        "detectedAt": "2026-06-30T15:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-30T07:00:00+09:00",
+          "currentRecordedAt": "2026-06-30T15:00:00+09:00"
+        },
+        "classification": "period_only",
+        "change": {
+          "id": "medications-생리식염주-500ml-51e5191a00a4-removed",
+          "category": "medications",
+          "changeType": "removed",
+          "reviewPriority": "high",
+          "label": "생리식염주 500mL",
+          "previousValue": {
+            "name": "생리식염주 500mL",
+            "route": "IV",
+            "frequency": "QD"
+          },
+          "currentValue": null,
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"생리식염주 500mL\"]",
+            "previousRecordedAt": "2026-06-30T07:00:00+09:00",
+            "currentRecordedAt": "2026-06-30T15:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+        "detectedAt": "2026-06-30T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-29T23:00:00+09:00",
+          "currentRecordedAt": "2026-06-30T07:00:00+09:00"
+        },
+        "classification": "current",
+        "change": {
+          "id": "medications-이부프로펜-400mg-38af305ba26a-modified",
+          "category": "medications",
+          "changeType": "modified",
+          "reviewPriority": "high",
+          "label": "이부프로펜 400mg",
+          "previousValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "BID"
+          },
+          "currentValue": {
+            "name": "이부프로펜 400mg",
+            "route": "PO",
+            "frequency": "TID"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"이부프로펜 400mg\"]",
+            "previousRecordedAt": "2026-06-29T23:00:00+09:00",
+            "currentRecordedAt": "2026-06-30T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+        "detectedAt": "2026-06-29T23:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-29T15:00:00+09:00",
+          "currentRecordedAt": "2026-06-29T23:00:00+09:00"
+        },
+        "classification": "period_only",
+        "change": {
+          "id": "medications-생리식염주-500ml-51e5191a00a4-added",
+          "category": "medications",
+          "changeType": "added",
+          "reviewPriority": "high",
+          "label": "생리식염주 500mL",
+          "previousValue": null,
+          "currentValue": {
+            "name": "생리식염주 500mL",
+            "route": "IV",
+            "frequency": "QD"
+          },
+          "delta": null,
+          "evidence": {
+            "fieldPath": "medications[\"생리식염주 500mL\"]",
+            "previousRecordedAt": "2026-06-29T15:00:00+09:00",
+            "currentRecordedAt": "2026-06-29T23:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 37.9,
+          "currentValue": 38.2,
+          "delta": 0.3,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-diastolic-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "이완기 혈압",
+          "previousValue": 88,
+          "currentValue": 95,
+          "delta": 7,
+          "evidence": {
+            "fieldPath": "vitals.diastolic",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-heartrate-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "심박수",
+          "previousValue": 86,
+          "currentValue": 92,
+          "delta": 6,
+          "evidence": {
+            "fieldPath": "vitals.heartrate",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-respiratory-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "호흡수",
+          "previousValue": 17,
+          "currentValue": 18,
+          "delta": 1,
+          "evidence": {
+            "fieldPath": "vitals.respiratory",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-saturation-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "산소포화도",
+          "previousValue": 98,
+          "currentValue": 97,
+          "delta": -1,
+          "evidence": {
+            "fieldPath": "vitals.saturation",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-systolic-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "수축기 혈압",
+          "previousValue": 138,
+          "currentValue": 150,
+          "delta": 12,
+          "evidence": {
+            "fieldPath": "vitals.systolic",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 37.4,
+          "currentValue": 37.9,
+          "delta": 0.5,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-diastolic-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "이완기 혈압",
+          "previousValue": 82,
+          "currentValue": 88,
+          "delta": 6,
+          "evidence": {
+            "fieldPath": "vitals.diastolic",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-heartrate-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "심박수",
+          "previousValue": 80,
+          "currentValue": 86,
+          "delta": 6,
+          "evidence": {
+            "fieldPath": "vitals.heartrate",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-respiratory-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "호흡수",
+          "previousValue": 16,
+          "currentValue": 17,
+          "delta": 1,
+          "evidence": {
+            "fieldPath": "vitals.respiratory",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-systolic-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "수축기 혈압",
+          "previousValue": 122,
+          "currentValue": 138,
+          "delta": 16,
+          "evidence": {
+            "fieldPath": "vitals.systolic",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+        "detectedAt": "2026-07-01T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-30T15:00:00+09:00",
+          "currentRecordedAt": "2026-07-01T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 37.5,
+          "currentValue": 37.4,
+          "delta": -0.1,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-06-30T15:00:00+09:00",
+            "currentRecordedAt": "2026-07-01T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+        "detectedAt": "2026-06-30T15:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-30T07:00:00+09:00",
+          "currentRecordedAt": "2026-06-30T15:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 38.0,
+          "currentValue": 37.5,
+          "delta": -0.5,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-06-30T07:00:00+09:00",
+            "currentRecordedAt": "2026-06-30T15:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+        "detectedAt": "2026-06-30T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-06-29T23:00:00+09:00",
+          "currentRecordedAt": "2026-06-30T07:00:00+09:00"
+        },
+        "classification": "trend",
+        "change": {
+          "id": "vitals-body_temperature-modified",
+          "category": "vitals",
+          "changeType": "modified",
+          "reviewPriority": "medium",
+          "label": "체온",
+          "previousValue": 37.4,
+          "currentValue": 38.0,
+          "delta": 0.6,
+          "evidence": {
+            "fieldPath": "vitals.body_temperature",
+            "previousRecordedAt": "2026-06-29T23:00:00+09:00",
+            "currentRecordedAt": "2026-06-30T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added",
+        "detectedAt": "2026-07-02T09:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+        },
+        "classification": "record_event",
+        "change": {
+          "id": "notes-미열-지속-deb9221b78ad-added",
+          "category": "notes",
+          "changeType": "added",
+          "reviewPriority": "low",
+          "label": "미열 지속",
+          "previousValue": null,
+          "currentValue": "미열 지속",
+          "delta": null,
+          "evidence": {
+            "fieldPath": "notes[\"미열 지속\"]",
+            "previousRecordedAt": "2026-07-02T07:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T09:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "record_event",
+        "change": {
+          "id": "notes-인후통-호소-c0208da3e2cb-added",
+          "category": "notes",
+          "changeType": "added",
+          "reviewPriority": "low",
+          "label": "인후통 호소",
+          "previousValue": null,
+          "currentValue": "인후통 호소",
+          "delta": null,
+          "evidence": {
+            "fieldPath": "notes[\"인후통 호소\"]",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      },
+      {
+        "id": "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed",
+        "detectedAt": "2026-07-02T07:00:00+09:00",
+        "interval": {
+          "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+          "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+        },
+        "classification": "record_event",
+        "change": {
+          "id": "notes-인후통-시작-639845b7ad30-removed",
+          "category": "notes",
+          "changeType": "removed",
+          "reviewPriority": "low",
+          "label": "인후통 시작",
+          "previousValue": "인후통 시작",
+          "currentValue": null,
+          "delta": null,
+          "evidence": {
+            "fieldPath": "notes[\"인후통 시작\"]",
+            "previousRecordedAt": "2026-07-01T21:00:00+09:00",
+            "currentRecordedAt": "2026-07-02T07:00:00+09:00"
+          }
+        }
+      }
+    ],
+    "reviewGroups": {
+      "current": [
+        {
+          "id": "review:p001:diagnosis:hypertension",
+          "category": "diagnosis",
+          "label": "hypertension",
+          "classification": "current",
+          "eventIds": [
+            "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added"
+          ]
+        },
+        {
+          "id": "review:p001:medications:타세놀정-500mg",
+          "category": "medications",
+          "label": "타세놀정 500mg",
+          "classification": "current",
+          "eventIds": [
+            "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added"
+          ]
+        },
+        {
+          "id": "review:p001:medications:이부프로펜-400mg",
+          "category": "medications",
+          "label": "이부프로펜 400mg",
+          "classification": "current",
+          "eventIds": [
+            "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+            "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+            "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified"
+          ]
+        }
+      ],
+      "periodOnly": [
+        {
+          "id": "review:p001:medications:생리식염주-500mL",
+          "category": "medications",
+          "label": "생리식염주 500mL",
+          "classification": "period_only",
+          "eventIds": [
+            "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+            "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed"
+          ]
+        }
+      ],
+      "trends": [
+        {
+          "id": "review:p001:vitals:body-temperature",
+          "category": "vitals",
+          "label": "체온",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+            "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+            "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+            "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:diastolic",
+          "category": "vitals",
+          "label": "이완기 혈압",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:heartrate",
+          "category": "vitals",
+          "label": "심박수",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:respiratory",
+          "category": "vitals",
+          "label": "호흡수",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:saturation",
+          "category": "vitals",
+          "label": "산소포화도",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified"
+          ]
+        },
+        {
+          "id": "review:p001:vitals:systolic",
+          "category": "vitals",
+          "label": "수축기 혈압",
+          "classification": "trend",
+          "eventIds": [
+            "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+            "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified"
+          ]
+        }
+      ],
+      "recordEvents": [
+        {
+          "id": "review:p001:notes:note-12fbbc2c0c33",
+          "category": "notes",
+          "label": "미열 지속",
+          "classification": "record_event",
+          "eventIds": [
+            "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added"
+          ]
+        },
+        {
+          "id": "review:p001:notes:note-75e6b48cf811",
+          "category": "notes",
+          "label": "인후통 호소",
+          "classification": "record_event",
+          "eventIds": [
+            "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added"
+          ]
+        },
+        {
+          "id": "review:p001:notes:note-fd67bb8c1ce5",
+          "category": "notes",
+          "label": "인후통 시작",
+          "classification": "record_event",
+          "eventIds": [
+            "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed"
+          ]
+        }
+      ]
+    },
+    "summary": {
+      "mode": "deterministic",
+      "sections": {
+        "situation": [
+          {
+            "text": "홍길동(P001) · 301호 · 기준 기록 없음 · 현재 2026-07-02T09:00:00+09:00 · 기간 변화 24건",
+            "evidenceIds": [
+              "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added",
+              "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added",
+              "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+              "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed",
+              "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+              "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+              "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+              "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added",
+              "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added",
+              "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed"
+            ]
+          }
+        ],
+        "background": [
+          {
+            "text": "진단 hypertension · 현재 반영",
+            "evidenceIds": [
+              "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added"
+            ]
+          },
+          {
+            "text": "투약 타세놀정 500mg · 현재 반영",
+            "evidenceIds": [
+              "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added"
+            ]
+          },
+          {
+            "text": "투약 이부프로펜 400mg · 현재 반영",
+            "evidenceIds": [
+              "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+              "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+              "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "투약 생리식염주 500mL · 기간 중 변경",
+            "evidenceIds": [
+              "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+              "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed"
+            ]
+          }
+        ],
+        "assessment": [
+          {
+            "text": "체온 추세: 37.4 → 38.0 → 37.5 → 37.4 → 37.9 → 38.2",
+            "evidenceIds": [
+              "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "이완기 혈압 추세: 82 → 88 → 95",
+            "evidenceIds": [
+              "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "심박수 추세: 80 → 86 → 92",
+            "evidenceIds": [
+              "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "호흡수 추세: 16 → 17 → 18",
+            "evidenceIds": [
+              "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "산소포화도 추세: 98 → 97",
+            "evidenceIds": [
+              "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "수축기 혈압 추세: 122 → 138 → 150",
+            "evidenceIds": [
+              "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+              "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified"
+            ]
+          },
+          {
+            "text": "간호 메모 미열 지속 · 추가",
+            "evidenceIds": [
+              "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added"
+            ]
+          },
+          {
+            "text": "간호 메모 인후통 호소 · 추가",
+            "evidenceIds": [
+              "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added"
+            ]
+          },
+          {
+            "text": "간호 메모 인후통 시작 · 삭제",
+            "evidenceIds": [
+              "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed"
+            ]
+          }
+        ],
+        "recommendation": [
+          {
+            "text": "간호사가 확인할 후속 항목을 입력하세요.",
+            "evidenceIds": []
+          }
+        ]
+      },
+      "evidenceIds": [
+        "event:P001:diagnosis:hypertension:2026-07-02T09:00:00+09:00:added",
+        "event:P001:medications:타세놀정-500mg:2026-07-02T09:00:00+09:00:added",
+        "event:P001:medications:이부프로펜-400mg:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:medications:이부프로펜-400mg:2026-07-01T07:00:00+09:00:modified",
+        "event:P001:medications:생리식염주-500mL:2026-06-30T15:00:00+09:00:removed",
+        "event:P001:medications:이부프로펜-400mg:2026-06-30T07:00:00+09:00:modified",
+        "event:P001:medications:생리식염주-500mL:2026-06-29T23:00:00+09:00:added",
+        "event:P001:vitals:body-temperature:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:diastolic:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:heartrate:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:respiratory:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:saturation:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:systolic:2026-07-02T09:00:00+09:00:modified",
+        "event:P001:vitals:body-temperature:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:diastolic:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:heartrate:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:respiratory:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:systolic:2026-07-02T07:00:00+09:00:modified",
+        "event:P001:vitals:body-temperature:2026-07-01T07:00:00+09:00:modified",
+        "event:P001:vitals:body-temperature:2026-06-30T15:00:00+09:00:modified",
+        "event:P001:vitals:body-temperature:2026-06-30T07:00:00+09:00:modified",
+        "event:P001:notes:note-12fbbc2c0c33:2026-07-02T09:00:00+09:00:added",
+        "event:P001:notes:note-75e6b48cf811:2026-07-02T07:00:00+09:00:added",
+        "event:P001:notes:note-fd67bb8c1ce5:2026-07-02T07:00:00+09:00:removed"
+      ],
+      "warnings": []
+    }
+  },
+  "no_events": {
+    "patient": {
+      "id": "P001",
+      "name": "홍길동",
+      "room": "301",
+      "age": 67,
+      "sex": "M",
+      "diagnoses": [
+        "acute pharyngitis",
+        "hypertension"
+      ]
+    },
+    "period": {
+      "requestedStartAt": "2026-07-02T09:00:00+09:00",
+      "baselineRecordedAt": "2026-07-02T09:00:00+09:00",
+      "currentRecordedAt": "2026-07-02T09:00:00+09:00",
+      "snapshotCount": 1,
+      "eventCount": 0,
+      "status": "no_events"
+    },
+    "dataWarnings": [],
+    "events": [],
+    "reviewGroups": {
+      "current": [],
+      "periodOnly": [],
+      "trends": [],
+      "recordEvents": []
+    },
+    "summary": {
+      "mode": "deterministic",
+      "sections": {
+        "situation": [
+          {
+            "text": "홍길동(P001) · 301호 · 기준 2026-07-02T09:00:00+09:00 → 현재 2026-07-02T09:00:00+09:00 · 기간 변화 0건",
+            "evidenceIds": []
+          }
+        ],
+        "background": [],
+        "assessment": [],
+        "recommendation": [
+          {
+            "text": "간호사가 확인할 후속 항목을 입력하세요.",
+            "evidenceIds": []
+          }
+        ]
+      },
+      "evidenceIds": [],
+      "warnings": []
+    }
+  }
+}
