@@ -34,6 +34,7 @@
 | 2026-08-31 | Figma 기반 통합 임상 워크벤치 재설계 | frontend (Luna Max) + supervisor | 1.2.0 | PASSED | 전역 임상 헤더, 담당 환자 레일, 비교·원본 기록 중앙 모듈, 인계 검토 레일, 960–1440/390 반응형 | 기능·시각 작업별 독립 review 및 수정 재검토 완료; supervisor harness·Python 60/60·Vitest 86/86·로컬·Production Playwright 각 19/19·lint·typecheck·build·diff-check 통과; Preview health ok·P001 ready/변화 9/근거 9; Production root 200·health ok·P001 ready/9/9; 1440/960/390 공개 화면 overflow 0 | 3 | PR #2 병합, 공개 주소 `https://nurse-handover-assistant.vercel.app`; 임상·API 계약 변경 없음. 960px 레일 침범·비교 시각 clipping·원본 기록 요청 중 검토 상태 경쟁을 회귀 테스트로 보완; CSS dead override 정리는 후속 비차단 항목 |
 | 2026-08-31 | 중앙 밀도·근거 가독성 개선 | frontend (Luna Max) + supervisor | 1.2.0 | PASSED | 환자 컨텍스트 간격·ID 배치, 근거 링크·상세·SBAR 글자와 조작 높이, 5개 viewport 회귀 테스트 | TDD baseline 8건 실패 확인 후 구현; 독립 review의 신규 색상·overflow 범위·높이 여유 문제를 1회 수정. supervisor harness·Python 60/60·Vitest 86/86·Playwright 27/27·lint·typecheck·build·diff-check 통과; 1440/1279/1024 컨텍스트 137.8px, 5개 폭 근거 11px/24px·overflow 0 확인 | 1 | 임상 데이터·비교 로직·API·세션 경계는 변경하지 않음. 960px 2행 요약과 390px 모바일 스택 유지 |
 | 2026-08-31 | 2544px 와이드 화면 임상 가독성 개선 | frontend (Luna Max) + supervisor | 1.2.0 | PASSED | 1600px 이상 전용 레일 기하, 역할별 타이포그래피, 근거 조작 높이, 2544px 계산 스타일 회귀 테스트, `0.7.2` | 기존 268px 레일로 RED 후 구현 GREEN; 독립 review Critical/Important/Minor 0. supervisor harness·Python 60/60·Vitest 86/86·Playwright 28/28·lint·typecheck·build·diff-check 통과; 2544px에서 좌/우 304/400px, 환자 15px, 변화 17px, 요약·근거 13px, 근거 컨트롤 30px·overflow 0 직접 확인 | 0 | `>=1600px`에서만 적용하며 1440 이하 디자인·기능·임상 데이터·비교 로직·API·세션 경계는 변경하지 않음 |
+| 2026-09-01 | 휴무 복귀 다중 시점 인수인계 | core-logic + frontend (Luna Max), supervisor | 1.2.0 | PASSED | 5×8 가상 타임라인, 기간 비교·AI fallback·FastAPI, 복귀 모드·원본 근거·검토 세션, 반응형 E2E, `0.8.0` | 각 단계 독립 review와 수정 재검토 완료; supervisor Python 112/112·Vitest 171/171·Playwright 42/42·lint·typecheck·build·harness·diff-check 통과; P001 기간 사건 24건·근거 24/24, 불완전 투약 partial, 편집 중 근거 snapshot, 7개 viewport와 pair-mode 회귀 확인 | 6 | 실제 EMR·근무표·인증·공유 영속 저장은 비범위. OpenAI 성공 문장화는 provider 크레딧 문제로 실 API 미검증이며 deterministic fallback 유지 |
 
 ## 마일스톤 게이트
 
@@ -43,6 +44,7 @@
 | 구조화된 차이 비교 | `0.4.0` | PLANNED | 단위 테스트, 누락·오탐 사례 검증, UI 계약 고정 |
 | Figma 기반 UI 통합 | `0.5.0` | PASSED | MCP 설계 대조, 주요 화면 시각 검증, 상태별 UI 확인 |
 | 통합 임상 워크벤치 | `0.7.0` | PASSED | 중앙 모듈 전환, 3레일 기하, 원본 기록 성공·실패 경계, 390·960·1024·1279·1440 회귀 검증 |
+| 휴무 복귀 인계 | `0.8.0` | PASSED | 5×8 기간 데이터, 인접 변화·생명주기 보존, 근거 100%, pair-mode 회귀, 390–2544px·배포 검증 |
 | 근거 제한 AI 요약 | `0.6.0` | PLANNED | 오프라인 fallback, API 통합 테스트, 환각·누락 평가 |
 | 포트폴리오 안정판 | `1.0.0` | PLANNED | 전체 시연 시나리오, 회귀 테스트, 문서·영상 준비 |
 

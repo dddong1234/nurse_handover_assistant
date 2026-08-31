@@ -16,11 +16,13 @@
 
 - Next.js 16 + React 19 기반 통합 임상 워크벤치: 전역 헤더, 담당 환자 레일, 중앙 작업 모듈, 인계 검토 레일
 - 환자 검색·선택, Shift Seam 이전/현재 비교, 중요도별 변화 검토
+- `직전 교대`·`휴무 복귀` 모드와 마지막 근무 선택, 휴무 기간의 모든 인접 기록 변화 검토
+- 환자 5명 × 8개 시점의 가상 타임라인, 현재 반영·기간 중 변경·활력징후 추세·기록 사건 분류
 - `인수인계 비교`·`원본 기록` 중앙 탭, 환자별 이전·현재 원본 차트 조회와 구조화된 현재 기록 입력
 - 입력 기록의 비교 성공 후 적용, 브라우저 세션 유지와 가상 데이터 초기화
 - 근거 링크에서 대응 변화 카드로 이동·focus
 - SBAR 근거 포함률, 간호사 직접 Recommendation, 원본 확인 후 검토 잠금
-- Python FastAPI `/api/health`, `/api/handover/compare`
+- Python FastAPI `/api/health`, `/api/handover/compare`, `/api/handover/period-compare`
 - OpenAI Responses API 기반 선택적 문장화와 서버 전용 키 사용
 - Vitest, Python unittest, Playwright E2E, 하네스·아키텍처 검사
 - Vercel 배포를 전제로 한 무상태 API와 읽기 전용 가상 fixture
@@ -33,7 +35,7 @@
 - API: FastAPI, Python 3.12
 - AI: OpenAI Responses API, Structured Outputs, deterministic fallback
 - Test: Vitest, Testing Library, Playwright, Python unittest
-- Deploy: Vercel Preview 검증 후 Production (`0.7.0`)
+- Deploy: Vercel Preview 검증 후 Production (`0.8.0`)
 
 ## 로컬 실행
 
@@ -84,12 +86,24 @@ pnpm test:e2e
 1. 위 로컬 전체 검증을 통과합니다.
 2. Vercel 프로젝트를 연결하고 Preview를 생성합니다.
 3. Preview에서 `/`, `/api/health`, `/api/handover/compare`를 확인합니다.
+   복귀 인계 릴리스에서는 `/api/handover/period-compare`도 함께 확인합니다.
 4. 키 없음·provider 실패의 deterministic fallback과, Preview 전용 키가 있을 때 AI 문장화를 각각 확인합니다.
 5. 사용자 승인 후에만 Production으로 승격합니다.
 
 Vercel 환경에서 `OPENAI_API_KEY`는 서버 환경변수로만 등록하며 `NEXT_PUBLIC_` 접두사를 사용하지 않습니다.
 
 원본 기록 모듈에서 적용한 기록은 `sessionStorage`에만 보관됩니다. 같은 탭 세션에서는 유지되지만 서버, 다른 브라우저나 다른 기기로 공유되지 않습니다. `변경사항 비교`와 `초기화` 모두 API 비교가 성공한 경우에만 화면 결과와 검토 상태를 교체하며, 실패하면 원본 기록 탭과 입력값을 유지합니다.
+
+## 0.8.0 핵심 데모
+
+1. 담당 환자에서 `홍길동(P001)`을 선택합니다.
+2. 중앙 상단에서 `휴무 복귀`를 선택하고 기본 `3일 전 마지막 근무`를 유지합니다.
+3. `복귀 인계 불러오기`를 실행해 기간 사건 `24건`과 근거 포함률 `24/24`를 확인합니다.
+4. `기간 중 변경`에서 휴무 중 추가된 뒤 현재 전에 제거된 `생리식염주 500mL` 이력을 확인합니다.
+5. 이부프로펜 빈도 `BID → TID → BID → TID`의 각 사건 근거를 열어 정확한 직전·현재 원본 기록으로 이동합니다.
+6. Recommendation을 입력하고 원본 기록 확인 후 검토를 완료합니다.
+
+이 수치는 P001 가상 fixture에 고정된 포트폴리오 시연 계약이며 실제 병동 성과나 의료적 판단을 의미하지 않습니다.
 
 ## 주요 구조
 
