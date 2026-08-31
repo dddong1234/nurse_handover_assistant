@@ -135,8 +135,8 @@ test("a provider failure shows the deterministic fallback banner without hiding 
   await expect(banner.getByText("서버 연결", { exact: true })).toBeVisible();
   await expect(page.locator(".source-tag")).toHaveText(/^(AI 요약|규칙 요약)$/);
   await expect(temperatureChange(page)).toBeVisible();
-  await expect(page.getByText("37.9", { exact: true })).toBeVisible();
-  await expect(page.getByText("38.2", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("comparison-workspace").getByText("37.9", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("comparison-workspace").getByText("38.2", { exact: true })).toBeVisible();
 });
 
 test("the workspace uses clinician source labels without portfolio chrome or raw medication JSON", async ({ page }) => {
@@ -184,21 +184,21 @@ test("applies an edited P001 temperature through the route-controlled compare wo
   });
 
   await page.goto("/");
-  const openButton = page.getByRole("button", { name: "원본 기록", exact: true });
+  const openButton = page.getByRole("tab", { name: "원본 기록", exact: true });
   await expect(openButton).toBeVisible();
   await openButton.click();
 
-  const dialog = page.getByRole("dialog", { name: /홍길동/ });
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole("tab", { name: /현재 기록/ }).click();
-  await dialog.getByRole("spinbutton", { name: "체온" }).fill("39.1");
-  await dialog.getByRole("button", { name: "변경사항 비교" }).click();
+  const recordPanel = page.getByRole("tabpanel", { name: "원본 기록" });
+  await expect(recordPanel).toBeVisible();
+  await recordPanel.getByRole("tab", { name: /현재 기록/ }).click();
+  await recordPanel.getByRole("spinbutton", { name: "체온" }).fill("39.1");
+  await recordPanel.getByRole("button", { name: "변경사항 비교" }).click();
 
   await expect(page.getByText("편집 비교 성공 · 체온 39.1", { exact: true })).toBeVisible();
   const temperatureCard = temperatureChange(page);
   await expect(temperatureCard.getByText("39.1", { exact: true })).toBeVisible();
   await expect(page.getByText("편집 비교 성공 · 체온 39.1", { exact: true })).toContainText("39.1");
-  await expect(dialog).not.toBeVisible();
+  await expect(recordPanel).not.toBeVisible();
   expect(editedRequestBodies.length).toBeGreaterThanOrEqual(1);
   expect(editedRequestBodies[0]?.current.patient_id).toBe("P001");
   expect(editedRequestBodies[0]?.current.vitals.body_temperature).toBe(39.1);
@@ -215,7 +215,7 @@ for (const viewport of responsiveViewports) {
     await page.setViewportSize(viewport);
     await page.goto("/");
 
-    const queueHeading = page.getByRole("heading", { name: "환자 큐" });
+    const queueHeading = page.getByRole("heading", { name: "담당 환자" });
     const comparisonHeading = page.getByRole("heading", { name: "변화 검토" });
     const summaryHeading = page.getByRole("heading", { name: "인계 검토" });
 
@@ -253,12 +253,13 @@ for (const viewport of responsiveViewports) {
       )
       .toBeLessThanOrEqual(1);
 
-    const recordButton = page.getByRole("button", { name: "원본 기록", exact: true });
+    const recordButton = page.getByRole("tab", { name: "원본 기록", exact: true });
     await recordButton.scrollIntoViewIfNeeded();
     await expect(recordButton).toBeVisible();
     await recordButton.click();
-    const recordDialog = page.getByRole("dialog", { name: /홍길동/ });
-    await expect(recordDialog).toBeVisible();
+    const recordPanel = page.getByRole("tabpanel", { name: "원본 기록" });
+    await expect(recordPanel).toBeVisible();
+    await recordPanel.getByRole("tab", { name: /현재 기록/ }).click();
     await expect
       .poll(() =>
         page.evaluate(() => {
@@ -268,7 +269,138 @@ for (const viewport of responsiveViewports) {
         }),
       )
       .toBeLessThanOrEqual(1);
-    await recordDialog.getByRole("button", { name: "원본 기록 닫기" }).click();
-    await expect(recordDialog).not.toBeVisible();
+    await page.getByRole("tab", { name: "인수인계 비교" }).click();
+    await expect(recordPanel).not.toBeVisible();
   });
 }
+
+const shellGeometryCases = [
+  { width: 1440, height: 900, queueWidth: 268, reviewWidth: 320 },
+  { width: 960, height: 768, queueWidth: 220, reviewWidth: 280 },
+  { width: 1024, height: 768, queueWidth: 220, reviewWidth: 280 },
+  { width: 1279, height: 768, queueWidth: 220, reviewWidth: 280 },
+] as const;
+
+for (const geometryCase of shellGeometryCases) {
+  test(`uses the integrated clinical shell geometry at ${geometryCase.width}px`, async ({ page }) => {
+    await page.setViewportSize({ width: geometryCase.width, height: geometryCase.height });
+    await page.goto("/");
+    await expect(page.locator(".workspace-shell")).toBeVisible({ timeout: 10_000 });
+
+    const metrics = await page.evaluate(() => {
+      const header = document.querySelector<HTMLElement>(".clinical-header");
+      const shell = document.querySelector<HTMLElement>(".workspace-shell");
+      const queue = document.querySelector<HTMLElement>(".patient-queue");
+      const summary = document.querySelector<HTMLElement>(".summary-panel");
+      if (!header || !shell || !queue || !summary) throw new Error("임상 쉘 측정 대상이 없습니다.");
+      const shellStyle = getComputedStyle(shell);
+      return {
+        headerHeight: header.getBoundingClientRect().height,
+        queueWidth: queue.getBoundingClientRect().width,
+        summaryWidth: summary.getBoundingClientRect().width,
+        shellGap: shellStyle.columnGap,
+      };
+    });
+
+    expect(Math.round(metrics.headerHeight)).toBe(56);
+    expect(Math.round(metrics.queueWidth)).toBe(geometryCase.queueWidth);
+    expect(Math.round(metrics.summaryWidth)).toBe(geometryCase.reviewWidth);
+    expect(metrics.shellGap).toBe("0px");
+  });
+}
+
+const tabletOverflowCases = [960, 1024, 1279] as const;
+
+for (const viewportWidth of tabletOverflowCases) {
+  test(`keeps tablet center descendants inside the center column at ${viewportWidth}px`, async ({ page }) => {
+    await page.setViewportSize({ width: viewportWidth, height: 768 });
+    await page.goto("/");
+    await expect(page.locator(".workspace-shell")).toBeVisible({ timeout: 10_000 });
+
+    const metrics = await page.evaluate(() => {
+      const center = document.querySelector<HTMLElement>(".comparison-workspace");
+      const context = document.querySelector<HTMLElement>(".patient-context");
+      const shiftSummary = document.querySelector<HTMLElement>(".shift-summary-strip");
+      const shiftSummaryStats = document.querySelector<HTMLElement>(".shift-summary-stats");
+      if (!center || !context || !shiftSummary || !shiftSummaryStats) throw new Error("센터 overflow 측정 대상이 없습니다.");
+
+      const centerRect = center.getBoundingClientRect();
+      const statCrossings = Array.from(shiftSummary.querySelectorAll<HTMLElement>(".shift-summary-stat"))
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return { text: element.textContent?.trim() ?? "", right: rect.right, centerRight: centerRect.right };
+        })
+        .filter(({ right }) => right > centerRect.right + 1);
+
+      return {
+        centerWidth: centerRect.width,
+        centerOverflow: center.scrollWidth - center.clientWidth,
+        contextOverflow: context.scrollWidth - context.clientWidth,
+        shiftSummaryOverflow: shiftSummary.scrollWidth - shiftSummary.clientWidth,
+        shiftSummaryStatsOverflow: shiftSummaryStats.scrollWidth - shiftSummaryStats.clientWidth,
+        statCrossings,
+      };
+    });
+
+    expect(metrics.centerOverflow).toBeLessThanOrEqual(1);
+    expect(metrics.contextOverflow).toBeLessThanOrEqual(1);
+    expect(metrics.shiftSummaryOverflow).toBeLessThanOrEqual(1);
+    expect(metrics.shiftSummaryStatsOverflow).toBeLessThanOrEqual(1);
+    expect(metrics.statCrossings).toEqual([]);
+  });
+}
+
+test("keeps both shift-summary timestamps readable at 960px", async ({ page }) => {
+  await page.setViewportSize({ width: 960, height: 768 });
+  await page.goto("/");
+  await expect(page.locator(".workspace-shell")).toBeVisible({ timeout: 10_000 });
+
+  const timestampPoints = page.locator(".shift-summary-strip .shift-summary-point");
+  await expect(timestampPoints).toHaveCount(2);
+  const metrics = await timestampPoints.evaluateAll((elements) =>
+    elements.map((element) => {
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return {
+        text: element.textContent?.trim() ?? "",
+        visible: style.visibility !== "hidden" && style.display !== "none" && rect.width > 0 && rect.height > 0,
+        overflow: element.scrollWidth - element.clientWidth,
+      };
+    }),
+  );
+
+  expect(metrics.map(({ text }) => text)).toEqual(["07/02 07:00", "07/02 09:00"]);
+  for (const metric of metrics) {
+    expect(metric.visible).toBe(true);
+    expect(metric.overflow).toBeLessThanOrEqual(1);
+  }
+});
+
+test("keeps both center modules reachable and stacks structured medication inputs on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+
+  await expect(page.getByRole("tab", { name: "인수인계 비교" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "인계 검토" })).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth),
+    )
+    .toBeLessThanOrEqual(1);
+
+  await page.getByRole("tab", { name: "원본 기록" }).click();
+  const recordPanel = page.getByRole("tabpanel", { name: "원본 기록" });
+  await expect(recordPanel).toBeVisible();
+  await recordPanel.getByRole("tab", { name: /현재 기록/ }).click();
+  const medicationRow = recordPanel.locator(".record-medication-edit-row").first();
+  await expect(medicationRow).toBeVisible();
+  const medicationColumns = await medicationRow.evaluate((element) =>
+    getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length,
+  );
+  expect(medicationColumns).toBe(1);
+  await expect
+    .poll(() =>
+      page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth),
+    )
+    .toBeLessThanOrEqual(1);
+});

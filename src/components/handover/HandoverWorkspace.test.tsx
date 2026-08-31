@@ -70,6 +70,23 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(screen.getByRole("heading", { name: "홍길동" })).toBeInTheDocument();
   });
 
+  it("renders the approved clinical shell labels without unsupported modules", () => {
+    render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);
+
+    expect(screen.getByText("NURSE HANDOVER", { exact: true })).toBeInTheDocument();
+    expect(screen.getByText("SHIFT REVIEW", { exact: true })).toBeInTheDocument();
+    expect(screen.getByText("일반병동 · DAY 07:00–15:00", { exact: true })).toBeInTheDocument();
+    expect(screen.getByText("RN · 근무중", { exact: true })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "담당 환자" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "인수인계 비교" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "원본 기록" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "인계 검토" })).toBeInTheDocument();
+
+    expect(screen.queryByText("투약(MAR)", { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText("I&O", { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText("실시간 연결", { exact: true })).not.toBeInTheDocument();
+  });
+
   it("updates patient identity and both comparison timestamps when another patient is selected", async () => {
     const user = userEvent.setup();
     render(<HandoverWorkspace data={buildDemoWorkspaceData()} />);

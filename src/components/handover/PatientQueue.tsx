@@ -97,7 +97,7 @@ export function PatientQueue({
       <div className="queue-heading">
         <div>
           <p className="eyebrow">이번 근무 · 07:00–15:00</p>
-          <h2 id="patient-queue-title">환자 큐</h2>
+          <h2 id="patient-queue-title">담당 환자</h2>
         </div>
         <span className="queue-count mono">{filteredResponses.length.toString().padStart(2, "0")}</span>
       </div>

@@ -6,7 +6,7 @@ export type ClinicalHeaderProps = {
 
 export function ClinicalHeader({ currentRecordedAt }: ClinicalHeaderProps) {
   return (
-    <header className="clinical-header">
+    <header className="clinical-header" aria-label="임상 작업 컨텍스트">
       <div className="clinical-header-brand">
         <span className="clinical-header-product">NURSE HANDOVER</span>
         <span className="clinical-header-divider" aria-hidden="true">·</span>

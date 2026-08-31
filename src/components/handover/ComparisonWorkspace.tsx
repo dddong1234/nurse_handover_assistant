@@ -44,7 +44,7 @@ export function ComparisonWorkspace({
   })).filter(({ changes }) => changes.length > 0);
 
   return (
-    <section className="comparison-panel panel comparison-primary" aria-labelledby="comparison-title">
+    <section className="comparison-panel panel comparison-primary" data-testid="comparison-workspace" aria-labelledby="comparison-title">
       <header className="section-header comparison-header">
         <div>
           <p className="eyebrow">두 기록의 변화</p>
