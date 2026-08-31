@@ -10,8 +10,10 @@ export type PatientRecordWorkspaceProps = {
   busy: boolean;
   errorMessage: string | null;
   resetRequestId: number;
-  onCompare: (current: DemoPatientRecord) => void | Promise<void>;
-  onReset: () => void | Promise<void>;
+  onCompare?: (current: DemoPatientRecord) => void | Promise<void>;
+  onReset?: () => void | Promise<void>;
+  editableCurrent?: boolean;
+  onClose?: () => void;
 };
 
 const VITAL_FIELDS = [
@@ -294,6 +296,8 @@ export function PatientRecordWorkspace({
   resetRequestId,
   onCompare,
   onReset,
+  editableCurrent = true,
+  onClose,
 }: PatientRecordWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<"previous" | "current">("previous");
   const [draft, setDraft] = useState<DemoPatientRecord>(() => cloneDemoRecord(pair.current));
@@ -309,12 +313,13 @@ export function PatientRecordWorkspace({
   }, [pair, resetRequestId, rowIdPrefix]);
 
   function handleCompare() {
+    if (!editableCurrent || !onCompare) return;
     const sanitized = sanitizeRecord(draft);
     void Promise.resolve(onCompare(sanitized)).catch(() => undefined);
   }
 
   function handleReset() {
-    if (busy) return;
+    if (busy || !editableCurrent || !onReset) return;
     void Promise.resolve(onReset()).catch(() => undefined);
   }
 
@@ -336,7 +341,20 @@ export function PatientRecordWorkspace({
           <h2 id={workspaceTitleId}>원본 차트 · {patientName} · <span className="mono">{pair.current.patient_id}</span></h2>
           <p className="record-workspace-patient">{patientName}</p>
         </div>
+        {onClose ? (
+          <button type="button" className="record-close-button" onClick={onClose}>
+            비교로 돌아가기
+          </button>
+        ) : null}
       </header>
+
+      <div className="record-source-interval" aria-label="근거 기록 구간">
+        <span>이전 기록 시각</span>
+        <time className="mono" dateTime={pair.previous?.updated_at}>{pair.previous?.updated_at ?? "기록 없음"}</time>
+        <span aria-hidden="true">→</span>
+        <span>현재 기록 시각</span>
+        <time className="mono" dateTime={pair.current.updated_at}>{pair.current.updated_at}</time>
+      </div>
 
       <div className="record-workspace-tabs" role="tablist" aria-label="원본 기록 시점">
         <button id={previousTabId} type="button" role="tab" aria-selected={activeTab === "previous"} aria-controls={previousPanelId} className={activeTab === "previous" ? "is-active" : ""} onClick={() => setActiveTab("previous")}>이전 기록 <span className="mono">{dateTimeLocalValue(pair.previous?.updated_at ?? "").slice(11) || "—"}</span></button>
@@ -351,24 +369,35 @@ export function PatientRecordWorkspace({
           </div>
         ) : (
           <div id={currentPanelId} role="tabpanel" aria-labelledby={currentTabId}>
-            <div className="record-tab-note current"><span className="mono">EDITABLE DRAFT</span><span>변경 후 비교할 현재 기록</span></div>
-            <EditableChart
-              record={draft}
-              busy={busy}
-              onChange={setDraft}
-              rowIds={rowIds}
-              onRowIdsChange={setRowIds}
-              createRowId={() => nextRecordRowId(rowIdPrefix)}
-            />
+            {editableCurrent ? (
+              <>
+                <div className="record-tab-note current"><span className="mono">EDITABLE DRAFT</span><span>변경 후 비교할 현재 기록</span></div>
+                <EditableChart
+                  record={draft}
+                  busy={busy}
+                  onChange={setDraft}
+                  rowIds={rowIds}
+                  onRowIdsChange={setRowIds}
+                  createRowId={() => nextRecordRowId(rowIdPrefix)}
+                />
+              </>
+            ) : (
+              <>
+                <div className="record-tab-note"><span className="mono">READ ONLY</span><span>선택 사건의 현재 snapshot</span></div>
+                <ReadOnlyChart record={pair.current} />
+              </>
+            )}
           </div>
         )}
       </div>
 
       {errorMessage ? <div className="record-workspace-error" id={errorId} role="alert">{errorMessage}</div> : null}
-      <footer className="record-workspace-actions">
-        <button type="button" className="record-reset-button" disabled={busy} onClick={handleReset}>초기화</button>
-        <button type="button" className="record-compare-button" disabled={busy} onClick={handleCompare}>{busy ? "비교 중" : "변경사항 비교"}</button>
-      </footer>
+      {editableCurrent ? (
+        <footer className="record-workspace-actions">
+          <button type="button" className="record-reset-button" disabled={busy} onClick={handleReset}>초기화</button>
+          <button type="button" className="record-compare-button" disabled={busy} onClick={handleCompare}>{busy ? "비교 중" : "변경사항 비교"}</button>
+        </footer>
+      ) : null}
     </section>
   );
 }

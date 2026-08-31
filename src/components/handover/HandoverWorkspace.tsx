@@ -19,6 +19,9 @@ import { ClinicalHeader } from "./ClinicalHeader";
 import { PatientContextHeader } from "./PatientContextHeader";
 import { PatientQueue } from "./PatientQueue";
 import { PatientRecordWorkspace } from "./PatientRecordWorkspace";
+import { ReturnComparisonWorkspace } from "./ReturnComparisonWorkspace";
+import { ReturnHandoverControls, type ReturnHandoverScope } from "./ReturnHandoverControls";
+import { ReturnSummaryPanel } from "./ReturnSummaryPanel";
 import { SummaryPanel } from "./SummaryPanel";
 import {
   createCurrentRecordFingerprint,
@@ -50,11 +53,17 @@ type PatientReviewSession = {
 };
 
 type PatientReviewSessions = Record<string, PatientReviewSession>;
-type HandoverScope = "shift" | "return";
 type PatientApiStatus = "pending" | "success" | "fallback" | "snapshot";
 type PatientApiState = {
   pair: HandoverRecordPair;
   status: PatientApiStatus;
+};
+
+type ReturnEvidenceState = {
+  eventId: string;
+  patientId: string;
+  pair: DemoRecordPair;
+  editableCurrent: boolean;
 };
 
 const DEMO_IDENTITY_KEYS = ["patient_id", "name", "room_no", "age", "sex"] as const;
@@ -124,11 +133,13 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const [recordDraftsHydrated, setRecordDraftsHydrated] = useState(!recordDraftHydrationRequired);
   const [recordResetRequestId, setRecordResetRequestId] = useState(0);
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("comparison");
-  const [handoverScope, setHandoverScope] = useState<HandoverScope>("shift");
+  const [handoverScope, setHandoverScope] = useState<ReturnHandoverScope>("shift");
   const [returnStartAtByPatient, setReturnStartAtByPatient] = useState<Record<string, string>>({});
   const [returnResponsesByPatient, setReturnResponsesByPatient] = useState<Record<string, HandoverPeriodApiResponse>>({});
   const [returnSessions, setReturnSessions] = useState<PatientReviewSessions>({});
   const [returnAppliedKeys, setReturnAppliedKeys] = useState<Record<string, string>>({});
+  const [returnEvidenceState, setReturnEvidenceState] = useState<ReturnEvidenceState | null>(null);
+  const [returnEvidenceError, setReturnEvidenceError] = useState<string | null>(null);
   const [recordDrawerBusy, setRecordDrawerBusy] = useState(false);
   const [recordDrawerError, setRecordDrawerError] = useState<string | null>(null);
   const [sessions, setSessions] = useState<PatientReviewSessions>({});
@@ -138,6 +149,8 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const selectedPatientRef = useRef(firstValidPatientId);
   const recordDraftsLoadedRef = useRef(false);
   const recordDrawerBusyRef = useRef(false);
+  const returnEvidenceFocusRef = useRef<string | null>(null);
+  const returnEvidenceTriggerRef = useRef<HTMLElement | null>(null);
   const requestVersion = useRef(0);
 
   function nextRequestVersion() {
@@ -234,6 +247,8 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
       ...current,
       [activePatientId]: createReturnReviewSession(response),
     }));
+    setReturnEvidenceState(null);
+    setReturnEvidenceError(null);
   }, [activePatientId, handoverScope, returnHandover.response, returnHandover.status, returnHandoverKey, returnStartAt, returnResponsesByPatient]);
 
   function setPatientApiState(patientId: string, pair: HandoverRecordPair, status: PatientApiStatus) {
@@ -383,9 +398,11 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const selectedEvidenceIds = session.selectedEvidenceIds.filter((id) => availableEvidenceIds.has(id));
   const baseRecordPair = recordPairs?.[patientId];
   const activePair = recordPairOverrides[patientId] ?? baseRecordPair;
-  const drawerPair = isCompleteDemoRecordPair(activePair) ? activePair : null;
   const patientApiState = apiStateByPatient[patientId];
   const returnResponse = returnResponsesByPatient[patientId];
+  const activeReturnEvidence = returnEvidenceState?.patientId === patientId ? returnEvidenceState : null;
+  const drawerPair = activeReturnEvidence?.pair ?? (isCompleteDemoRecordPair(activePair) ? activePair : null);
+  const drawerEditableCurrent = activeReturnEvidence ? activeReturnEvidence.editableCurrent : true;
   const returnSession = returnSessions[patientId] ?? (returnResponse
     ? createReturnReviewSession(returnResponse)
     : {
@@ -396,6 +413,8 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
       focusedEvidenceId: null,
       focusRequestId: 0,
     });
+  const availableReturnEvidenceIds = new Set(returnResponse?.events.map((event) => event.id) ?? []);
+  const selectedReturnEvidenceIds = returnSession.selectedEvidenceIds.filter((id) => availableReturnEvidenceIds.has(id));
   const returnControlsPending = !returnResponse || returnHandover.status === "loading";
   const apiPending = recordDrawerBusy || Boolean(
     activePair &&
@@ -459,6 +478,73 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
     updateReturnSession({ ...returnSession, reviewed: true });
   }
 
+  function handleToggleReturnEvidence(evidenceId: string) {
+    if (returnSession.reviewed || returnControlsPending || !availableReturnEvidenceIds.has(evidenceId)) return;
+    const selected = new Set(returnSession.selectedEvidenceIds);
+    if (selected.has(evidenceId)) selected.delete(evidenceId);
+    else selected.add(evidenceId);
+    updateReturnSession({ ...returnSession, selectedEvidenceIds: [...selected] });
+  }
+
+  function focusReturnEvidence(eventId: string) {
+    if (typeof document === "undefined") return;
+    queueMicrotask(() => {
+      const trigger = returnEvidenceTriggerRef.current;
+      if (trigger?.isConnected) {
+        trigger.focus();
+        return;
+      }
+      document.getElementById(`return-evidence-${eventId}`)?.focus();
+    });
+  }
+
+  function handleReturnEvidenceActivate(eventId: string) {
+    const event = returnResponse?.events.find((candidate) => candidate.id === eventId);
+    if (!returnResponse || !event) {
+      setReturnEvidenceError("선택한 기간 사건의 근거를 찾지 못했습니다.");
+      return;
+    }
+
+    const previous = returnRecords.find((record) => record.updated_at === event.interval.previousRecordedAt);
+    const current = returnRecords.find((record) => record.updated_at === event.interval.currentRecordedAt);
+    if (!previous || !current) {
+      setReturnEvidenceError("정확한 원본 기록 구간을 찾지 못했습니다. 가까운 기록으로 대체하지 않았습니다.");
+      return;
+    }
+
+    returnEvidenceFocusRef.current = eventId;
+    returnEvidenceTriggerRef.current = typeof document !== "undefined" && document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    setReturnEvidenceError(null);
+    setReturnEvidenceState({
+      eventId,
+      patientId,
+      pair: {
+        previous: cloneDemoRecord(previous),
+        current: cloneDemoRecord(current),
+      },
+      editableCurrent: current.updated_at === returnRecords.at(-1)?.updated_at,
+    });
+    setWorkspaceMode("record");
+  }
+
+  function handleReturnEvidenceClose() {
+    const eventId = returnEvidenceState?.eventId ?? returnEvidenceFocusRef.current;
+    setReturnEvidenceState(null);
+    setReturnEvidenceError(null);
+    setWorkspaceMode("comparison");
+    if (eventId) focusReturnEvidence(eventId);
+  }
+
+  function handleWorkspaceModeChange(nextMode: WorkspaceMode) {
+    if (nextMode === "comparison" && returnEvidenceState) {
+      handleReturnEvidenceClose();
+      return;
+    }
+    setWorkspaceMode(nextMode);
+  }
+
   function handleEvidenceActivate(evidenceId: string) {
     setWorkspaceMode("comparison");
     updateSession({
@@ -508,6 +594,8 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
         ...currentSessions,
         [patientId]: createReviewSession(nextResponse),
       }));
+      setReturnEvidenceState(null);
+      setReturnEvidenceError(null);
       setWorkspaceMode("comparison");
       setRecordDrawerError(null);
     } catch {
@@ -559,6 +647,8 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
         ...currentSessions,
         [patientId]: createReviewSession(resetResponse),
       }));
+      setReturnEvidenceState(null);
+      setReturnEvidenceError(null);
       setRecordResetRequestId((current) => current + 1);
       setRecordDrawerError(null);
     } catch {
@@ -580,7 +670,29 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
     setRecordDrawerBusy(false);
     setWorkspaceMode("comparison");
     setRecordDrawerError(null);
+    setReturnEvidenceState(null);
+    setReturnEvidenceError(null);
+    returnEvidenceTriggerRef.current = null;
     setSelectedPatientId(nextPatientId);
+  }
+
+  function handleScopeChange(nextScope: ReturnHandoverScope) {
+    setHandoverScope(nextScope);
+    if (nextScope !== "return") {
+      setReturnEvidenceState(null);
+      setReturnEvidenceError(null);
+      returnEvidenceTriggerRef.current = null;
+    }
+  }
+
+  function handleReturnStartAtChange(nextStartAt: string) {
+    setReturnStartAtByPatient((current) => ({
+      ...current,
+      [patientId]: nextStartAt,
+    }));
+    setReturnEvidenceState(null);
+    setReturnEvidenceError(null);
+    returnEvidenceTriggerRef.current = null;
   }
 
   return (
@@ -596,67 +708,27 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
           onSelectPatient={handleSelectPatient}
           reviewedPatientIds={reviewedPatientIds}
         />
-        <main className="comparison-workspace" aria-live="polite">
-          <PatientContextHeader comparison={selectedResponse.comparison} />
-          <fieldset className="handover-scope-selector">
-            <legend>인수인계 범위</legend>
-            <label>
-              <input
-                type="radio"
-                name={`handover-scope-${patientId}`}
-                value="shift"
-                checked={handoverScope === "shift"}
-                onChange={() => {
-                  setHandoverScope("shift");
-                }}
-              />
-              직전 교대
-            </label>
-            <label>
-              <input
-                type="radio"
-                name={`handover-scope-${patientId}`}
-                value="return"
-                checked={handoverScope === "return"}
-                onChange={() => {
-                  setHandoverScope("return");
-                }}
-              />
-              휴무 복귀
-            </label>
-          </fieldset>
-          {handoverScope === "return" ? (
-            <label className="return-start-selector">
-              마지막 근무 시각
-              <select
-                aria-label="마지막 근무 시각"
-                value={returnStartAt}
-                disabled={!activeReturnTimeline || activeReturnTimeline.snapshots.length === 0}
-                onChange={(event) => {
-                  setReturnStartAtByPatient((current) => ({
-                    ...current,
-                    [patientId]: event.target.value,
-                  }));
-                  setWorkspaceMode("comparison");
-                }}
-              >
-                {activeReturnTimeline?.snapshots.map((snapshot) => (
-                  <option key={snapshot.updated_at} value={snapshot.updated_at}>
-                    {snapshot.updated_at}
-                  </option>
-                ))}
-                {!activeReturnTimeline || activeReturnTimeline.snapshots.length === 0 ? (
-                  <option value="">사용 가능한 기록이 없습니다.</option>
-                ) : null}
-              </select>
-            </label>
-          ) : null}
+        <main className="comparison-workspace">
+          <PatientContextHeader
+            comparison={selectedResponse.comparison}
+            scope={handoverScope}
+            period={handoverScope === "return" ? returnResponse?.period ?? null : null}
+            requestedStartAt={handoverScope === "return" ? returnStartAt : null}
+            periodCurrentCount={returnResponse?.reviewGroups.current.reduce((total, item) => total + item.eventIds.length, 0) ?? 0}
+          />
+          <ReturnHandoverControls
+            scope={handoverScope}
+            reviewStartAt={returnStartAt}
+            availableStartTimes={activeReturnTimeline?.snapshots.map((snapshot) => snapshot.updated_at) ?? []}
+            onScopeChange={handleScopeChange}
+            onStartAtChange={handleReturnStartAtChange}
+          />
           <WorkspaceModeTabs
             mode={workspaceMode}
             recordAvailable={Boolean(drawerPair)}
             comparisonPanelId="comparison-panel"
             recordPanelId="record-panel"
-            onModeChange={setWorkspaceMode}
+            onModeChange={handleWorkspaceModeChange}
           />
           <section
             id="comparison-panel"
@@ -665,25 +737,13 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
             hidden={workspaceMode !== "comparison"}
           >
             {handoverScope === "return" ? (
-              <section className="return-handover-placeholder" aria-labelledby="return-handover-title">
-                <h2 id="return-handover-title">복귀 인계</h2>
-                <p role="status" aria-label="기간 비교 상태" aria-live="polite">
-                  {returnHandover.status === "loading"
-                    ? "기간 비교를 불러오는 중입니다."
-                    : returnHandover.status === "error"
-                      ? "기간 비교를 불러오지 못했습니다."
-                      : returnHandover.status === "success" && returnResponsesByPatient[patientId]
-                        ? `기간 결과 ${returnResponsesByPatient[patientId]!.period.eventCount}건`
-                        : "기간 비교를 준비 중입니다."}
-                </p>
-                {returnResponsesByPatient[patientId] ? (
-                  <p data-testid="return-period-response">
-                    {returnResponsesByPatient[patientId]!.summary.sections.situation
-                      .map((item) => item.text)
-                      .join(" ")}
-                  </p>
-                ) : null}
-              </section>
+              <ReturnComparisonWorkspace
+                response={returnResponse ?? null}
+                loading={returnHandover.status === "loading"}
+                errorMessage={returnEvidenceError ?? (returnHandover.status === "error" ? "기간 비교를 불러오지 못했습니다." : null)}
+                onRetry={returnHandover.retry}
+                onOpenEvidence={handleReturnEvidenceActivate}
+              />
             ) : (
               <ComparisonWorkspace
                 comparison={selectedResponse.comparison}
@@ -705,47 +765,30 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
                 busy={recordDrawerBusy}
                 errorMessage={recordDrawerError}
                 resetRequestId={recordResetRequestId}
-                onCompare={handleRecordCompare}
-                onReset={handleRecordReset}
+                editableCurrent={drawerEditableCurrent}
+                onClose={activeReturnEvidence ? handleReturnEvidenceClose : undefined}
+                onCompare={drawerEditableCurrent ? handleRecordCompare : undefined}
+                onReset={drawerEditableCurrent ? handleRecordReset : undefined}
               />
             </section>
           ) : null}
         </main>
         {handoverScope === "return" ? (
-          <aside className="summary-panel panel return-handover-summary" data-testid="return-summary-panel" aria-labelledby="return-summary-title">
-            <header className="section-header summary-header">
-              <div>
-                <p className="eyebrow">복귀 인계 · PERIOD REVIEW</p>
-                <h2 id="return-summary-title">복귀 인계 검토</h2>
-              </div>
-            </header>
-            <p>기간 결과의 원본 근거를 확인하고 검토를 완료합니다.</p>
-            <label>
-              간호사가 확인할 후속 항목
-              <textarea
-                aria-label="간호사가 확인할 후속 항목"
-                value={returnSession.recommendation}
-                disabled={returnSession.reviewed || returnControlsPending}
-                onChange={(event) => handleReturnRecommendationChange(event.target.value)}
-              />
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={returnSession.sourceConfirmed}
-                disabled={returnSession.reviewed || returnControlsPending}
-                onChange={(event) => handleReturnSourceConfirmedChange(event.target.checked)}
-              />
-              원본 기록을 확인했습니다
-            </label>
-            <button
-              type="button"
-              disabled={!returnSession.sourceConfirmed || returnSession.reviewed || returnControlsPending}
-              onClick={handleReturnReviewComplete}
-            >
-              검토 완료
-            </button>
-          </aside>
+          <ReturnSummaryPanel
+            response={returnResponse ?? null}
+            selectedEvidenceIds={selectedReturnEvidenceIds}
+            onToggleEvidence={handleToggleReturnEvidence}
+            onEvidenceActivate={handleReturnEvidenceActivate}
+            recommendation={returnSession.recommendation}
+            onRecommendationChange={handleReturnRecommendationChange}
+            sourceConfirmed={returnSession.sourceConfirmed}
+            onSourceConfirmedChange={handleReturnSourceConfirmedChange}
+            reviewed={returnSession.reviewed}
+            onReviewComplete={handleReturnReviewComplete}
+            status={returnHandover.status}
+            errorMessage={returnHandover.status === "error" ? "기간 비교를 불러오지 못했습니다." : null}
+            onRetry={returnHandover.retry}
+          />
         ) : (
           <SummaryPanel
             comparison={selectedResponse.comparison}
