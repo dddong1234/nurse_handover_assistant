@@ -149,4 +149,3 @@ export function listReturnStartOptions(patientId: string): string[] {
 export function listDemoTimelinePatientIds(): string[] {
   return Object.keys(DEMO_RECORD_TIMELINES);
 }
-
