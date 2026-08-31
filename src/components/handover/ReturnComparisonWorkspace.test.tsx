@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -168,6 +168,15 @@ describe("ReturnComparisonWorkspace", () => {
 
     await user.click(screen.getAllByRole("button", { name: /^근거 보기/ })[0]!);
     expect(onOpenEvidence).toHaveBeenCalledWith("event-diagnosis");
+  });
+
+  it("keeps each event value pair in one semantic content flow for narrow layouts", () => {
+    render(<ReturnComparisonWorkspace response={createResponse()} onOpenEvidence={vi.fn()} />);
+
+    const change = screen.getAllByLabelText(/이전과 현재 값/)[0];
+    expect(change).toHaveClass("return-event-change");
+    expect(within(change).getAllByText(/^(이전|현재)$/)).toHaveLength(2);
+    expect(within(change).getByLabelText(/방향$/)).toBeInTheDocument();
   });
 
   it.each([

@@ -5582,7 +5582,7 @@ summary:focus-visible {
   }
 
   .return-event-change {
-    grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 3px;
   }
 
