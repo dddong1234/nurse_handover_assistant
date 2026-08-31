@@ -291,7 +291,7 @@ export function SummaryPanel({
   const readableWarnings = readableSummaryWarnings(summary.warnings);
 
   return (
-    <aside className="summary-panel panel" aria-labelledby="summary-title">
+    <aside className="summary-panel panel" data-testid="summary-panel" aria-labelledby="summary-title">
       <header className="section-header summary-header">
         <div>
           <p className="eyebrow">인계 검토 · SBAR</p>

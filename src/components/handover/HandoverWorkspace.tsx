@@ -13,10 +13,12 @@ import {
 } from "@/lib/record-drafts";
 
 import { ComparisonWorkspace } from "./ComparisonWorkspace";
+import { ClinicalHeader } from "./ClinicalHeader";
 import { PatientContextHeader } from "./PatientContextHeader";
 import { PatientQueue } from "./PatientQueue";
-import { PatientRecordDrawer } from "./PatientRecordDrawer";
+import { PatientRecordWorkspace } from "./PatientRecordWorkspace";
 import { SummaryPanel } from "./SummaryPanel";
+import { type WorkspaceMode, WorkspaceModeTabs } from "./WorkspaceModeTabs";
 
 const API_FALLBACK_MESSAGE = "서버 요약을 불러오지 못해 검증된 데모 결과를 표시합니다.";
 const RECORD_COMPARE_ERROR = "비교하지 못했습니다. 기록을 확인한 뒤 다시 시도하세요.";
@@ -93,7 +95,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const [recordPairOverrides, setRecordPairOverrides] = useState<Record<string, DemoRecordPair>>({});
   const [recordDraftsHydrated, setRecordDraftsHydrated] = useState(!recordDraftHydrationRequired);
   const [recordResetRequestId, setRecordResetRequestId] = useState(0);
-  const [recordDrawerOpen, setRecordDrawerOpen] = useState(false);
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("comparison");
   const [recordDrawerBusy, setRecordDrawerBusy] = useState(false);
   const [recordDrawerError, setRecordDrawerError] = useState<string | null>(null);
   const [sessions, setSessions] = useState<PatientReviewSessions>({});
@@ -285,7 +287,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const activePair = recordPairOverrides[patientId] ?? baseRecordPair;
   const drawerPair = isCompleteDemoRecordPair(activePair) ? activePair : null;
   const patientApiState = apiStateByPatient[patientId];
-  const apiPending = Boolean(
+  const apiPending = recordDrawerBusy || Boolean(
     activePair &&
       !session.reviewed &&
       (!patientApiState ||
@@ -328,17 +330,12 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   }
 
   function handleEvidenceActivate(evidenceId: string) {
+    setWorkspaceMode("comparison");
     updateSession({
       ...session,
       focusedEvidenceId: evidenceId,
       focusRequestId: session.focusRequestId + 1,
     });
-  }
-
-  function handleOpenRecord() {
-    if (!drawerPair || recordDrawerBusyRef.current) return;
-    setRecordDrawerError(null);
-    setRecordDrawerOpen(true);
   }
 
   async function handleRecordCompare(current: DemoPatientRecord) {
@@ -381,12 +378,13 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
         ...currentSessions,
         [patientId]: createReviewSession(nextResponse),
       }));
-      setRecordDrawerOpen(false);
+      setWorkspaceMode("comparison");
       setRecordDrawerError(null);
     } catch {
       if (!isCurrentRequest(requestId, patientId)) return;
       setPatientApiState(patientId, activePair, "snapshot");
       setRecordDrawerError(RECORD_COMPARE_ERROR);
+      setWorkspaceMode("record");
     } finally {
       if (isCurrentRequest(requestId, patientId)) {
         recordDrawerBusyRef.current = false;
@@ -450,25 +448,14 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
     nextRequestVersion();
     recordDrawerBusyRef.current = false;
     setRecordDrawerBusy(false);
-    setRecordDrawerOpen(false);
+    setWorkspaceMode("comparison");
     setRecordDrawerError(null);
     setSelectedPatientId(nextPatientId);
   }
 
   return (
     <div className="app-shell">
-      <header className="utility-bar">
-        <div className="brand-lockup">
-          <span className="brand-mark" aria-hidden="true">/</span>
-          <div>
-            <p className="brand-kicker">NURSE HANDOVER</p>
-            <h1>교대 인수인계 작업공간</h1>
-          </div>
-        </div>
-        <div className="utility-meta">
-          <span className="utility-clock mono">07/02 09:45</span>
-        </div>
-      </header>
+      <ClinicalHeader currentRecordedAt={selectedResponse.comparison.interval.currentRecordedAt} />
 
       <div className="workspace-shell">
         <PatientQueue
@@ -480,15 +467,44 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
           reviewedPatientIds={reviewedPatientIds}
         />
         <main className="comparison-workspace" aria-live="polite">
-          <PatientContextHeader
-            comparison={selectedResponse.comparison}
-            onOpenRecord={drawerPair ? handleOpenRecord : undefined}
+          <PatientContextHeader comparison={selectedResponse.comparison} />
+          <WorkspaceModeTabs
+            mode={workspaceMode}
+            recordAvailable={Boolean(drawerPair)}
+            comparisonPanelId="comparison-panel"
+            recordPanelId="record-panel"
+            onModeChange={setWorkspaceMode}
           />
-          <ComparisonWorkspace
-            comparison={selectedResponse.comparison}
-            focusedEvidenceId={session.focusedEvidenceId}
-            focusRequestId={session.focusRequestId}
-          />
+          <section
+            id="comparison-panel"
+            role="tabpanel"
+            aria-labelledby="comparison-tab"
+            hidden={workspaceMode !== "comparison"}
+          >
+            <ComparisonWorkspace
+              comparison={selectedResponse.comparison}
+              focusedEvidenceId={session.focusedEvidenceId}
+              focusRequestId={session.focusRequestId}
+            />
+          </section>
+          {drawerPair ? (
+            <section
+              id="record-panel"
+              role="tabpanel"
+              aria-labelledby="record-tab"
+              hidden={workspaceMode !== "record"}
+            >
+              <PatientRecordWorkspace
+                pair={drawerPair}
+                patientName={selectedResponse.comparison.patient.name}
+                busy={recordDrawerBusy}
+                errorMessage={recordDrawerError}
+                resetRequestId={recordResetRequestId}
+                onCompare={handleRecordCompare}
+                onReset={handleRecordReset}
+              />
+            </section>
+          ) : null}
         </main>
         <SummaryPanel
           comparison={selectedResponse.comparison}
@@ -506,22 +522,6 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
           fallbackMessage={fallbackByPatient[patientId] ? API_FALLBACK_MESSAGE : null}
         />
       </div>
-      {drawerPair ? (
-        <PatientRecordDrawer
-          open={recordDrawerOpen}
-          pair={drawerPair}
-          patientName={selectedResponse.comparison.patient.name}
-          busy={recordDrawerBusy}
-          errorMessage={recordDrawerError}
-          resetRequestId={recordResetRequestId}
-          onClose={() => {
-            setRecordDrawerOpen(false);
-            setRecordDrawerError(null);
-          }}
-          onCompare={handleRecordCompare}
-          onReset={handleRecordReset}
-        />
-      ) : null}
     </div>
   );
 }

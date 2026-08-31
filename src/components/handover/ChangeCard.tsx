@@ -65,7 +65,7 @@ export function ChangeCard({ change, isFocused = false, focusRequestId = 0 }: Ch
   return (
     <article
       ref={cardRef}
-      className={`change-card priority-border-${change.reviewPriority} ${isFocused ? "is-evidence-focused" : ""}`.trim()}
+      className={`change-card change-record-row priority-border-${change.reviewPriority} ${isFocused ? "is-evidence-focused" : ""}`.trim()}
       id={`evidence-${change.id}`}
       data-testid="change-card"
       data-review-priority={change.reviewPriority}

@@ -1,19 +1,17 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { DemoMedication, DemoPatientRecord, DemoRecordPair } from "@/lib/demo-records";
 import { cloneDemoRecord } from "@/lib/record-drafts";
 
-export type PatientRecordDrawerProps = {
-  open: boolean;
+export type PatientRecordWorkspaceProps = {
   pair: DemoRecordPair;
   patientName: string;
   busy: boolean;
   errorMessage: string | null;
-  resetRequestId?: number;
-  onClose: () => void;
-  onCompare: (current: DemoPatientRecord) => Promise<void> | void;
-  onReset: () => Promise<void> | void;
+  resetRequestId: number;
+  onCompare: (current: DemoPatientRecord) => void | Promise<void>;
+  onReset: () => void | Promise<void>;
 };
 
 const VITAL_FIELDS = [
@@ -288,80 +286,27 @@ function EditableChart({ record, busy, onChange, rowIds, onRowIdsChange, createR
   );
 }
 
-export function PatientRecordDrawer({
-  open,
+export function PatientRecordWorkspace({
   pair,
   patientName,
   busy,
   errorMessage,
-  resetRequestId = 0,
-  onClose,
+  resetRequestId,
   onCompare,
   onReset,
-}: PatientRecordDrawerProps) {
+}: PatientRecordWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<"previous" | "current">("previous");
   const [draft, setDraft] = useState<DemoPatientRecord>(() => cloneDemoRecord(pair.current));
   const rowIdPrefix = useId();
   const [rowIds, setRowIds] = useState<RecordRowIds>(() => createRecordRowIds(pair.current, rowIdPrefix));
-  const originRef = useRef<HTMLElement | null>(null);
-  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const openRef = useRef(false);
-  const drawerTitleId = `record-drawer-title-${pair.current.patient_id}`;
+  const workspaceTitleId = `record-workspace-title-${pair.current.patient_id}`;
 
   useEffect(() => {
-    if (open) {
-      if (!openRef.current) {
-        const activeElement = document.activeElement;
-        originRef.current = activeElement instanceof HTMLElement ? activeElement : null;
-        openRef.current = true;
-        closeButtonRef.current?.focus();
-      }
-      return;
-    }
-
-    if (openRef.current) {
-      openRef.current = false;
-      originRef.current?.focus();
-      originRef.current = null;
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
     queueMicrotask(() => {
       setDraft(cloneDemoRecord(pair.current));
       setRowIds(createRecordRowIds(pair.current, rowIdPrefix));
     });
-  }, [open, pair, resetRequestId, rowIdPrefix]);
-
-  useEffect(() => {
-    if (open) queueMicrotask(() => setActiveTab("previous"));
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !busy) {
-        event.preventDefault();
-        onClose();
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [busy, onClose, open]);
-
-  if (!open) return null;
-
-  const errorId = `${drawerTitleId}-error`;
+  }, [pair, resetRequestId, rowIdPrefix]);
 
   function handleCompare() {
     const sanitized = sanitizeRecord(draft);
@@ -373,57 +318,57 @@ export function PatientRecordDrawer({
     void Promise.resolve(onReset()).catch(() => undefined);
   }
 
+  const previousTabId = `${workspaceTitleId}-previous-tab`;
+  const currentTabId = `${workspaceTitleId}-current-tab`;
+  const previousPanelId = `${workspaceTitleId}-previous`;
+  const currentPanelId = `${workspaceTitleId}-current`;
+  const errorId = `${workspaceTitleId}-error`;
+
   return (
-    <div className="record-drawer-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
-      <aside
-        className="record-drawer"
-        role="dialog"
-        aria-modal="true"
-        aria-label={`${patientName} 원본 기록`}
-        aria-labelledby={drawerTitleId}
-        aria-describedby={errorMessage ? errorId : undefined}
-      >
-        <header className="record-drawer-header">
-          <div>
-            <p className="eyebrow">CHART LEDGER · SOURCE RECORD</p>
-            <h2 id={drawerTitleId}>원본 차트 · {patientName} · <span className="mono">{pair.current.patient_id}</span></h2>
-            <p className="record-drawer-patient">{patientName}</p>
+    <section
+      className="record-workspace"
+      role="region"
+      aria-label={`${patientName} 원본 기록`}
+    >
+      <header className="record-workspace-header">
+        <div>
+          <p className="eyebrow">CHART LEDGER · SOURCE RECORD</p>
+          <h2 id={workspaceTitleId}>원본 차트 · {patientName} · <span className="mono">{pair.current.patient_id}</span></h2>
+          <p className="record-workspace-patient">{patientName}</p>
+        </div>
+      </header>
+
+      <div className="record-workspace-tabs" role="tablist" aria-label="원본 기록 시점">
+        <button id={previousTabId} type="button" role="tab" aria-selected={activeTab === "previous"} aria-controls={previousPanelId} className={activeTab === "previous" ? "is-active" : ""} onClick={() => setActiveTab("previous")}>이전 기록 <span className="mono">{dateTimeLocalValue(pair.previous?.updated_at ?? "").slice(11) || "—"}</span></button>
+        <button id={currentTabId} type="button" role="tab" aria-selected={activeTab === "current"} aria-controls={currentPanelId} className={activeTab === "current" ? "is-active" : ""} onClick={() => setActiveTab("current")}>현재 기록 <span className="mono">{dateTimeLocalValue(pair.current.updated_at).slice(11) || "—"}</span></button>
+      </div>
+
+      <div className="record-workspace-scroll">
+        {activeTab === "previous" ? (
+          <div id={previousPanelId} role="tabpanel" aria-labelledby={previousTabId}>
+            <div className="record-tab-note"><span className="mono">READ ONLY</span><span>이전 인계 시점의 원본 기록</span></div>
+            <ReadOnlyChart record={pair.previous} />
           </div>
-          <button ref={closeButtonRef} type="button" className="record-drawer-close" aria-label="원본 기록 닫기" onClick={onClose}>×</button>
-        </header>
+        ) : (
+          <div id={currentPanelId} role="tabpanel" aria-labelledby={currentTabId}>
+            <div className="record-tab-note current"><span className="mono">EDITABLE DRAFT</span><span>변경 후 비교할 현재 기록</span></div>
+            <EditableChart
+              record={draft}
+              busy={busy}
+              onChange={setDraft}
+              rowIds={rowIds}
+              onRowIdsChange={setRowIds}
+              createRowId={() => nextRecordRowId(rowIdPrefix)}
+            />
+          </div>
+        )}
+      </div>
 
-        <div className="record-drawer-tabs" role="tablist" aria-label="기록 시점">
-          <button id={`${drawerTitleId}-previous-tab`} type="button" role="tab" aria-selected={activeTab === "previous"} aria-controls={`${drawerTitleId}-previous`} className={activeTab === "previous" ? "is-active" : ""} onClick={() => setActiveTab("previous")}>이전 기록 <span className="mono">{dateTimeLocalValue(pair.previous?.updated_at ?? "").slice(11) || "—"}</span></button>
-          <button id={`${drawerTitleId}-current-tab`} type="button" role="tab" aria-selected={activeTab === "current"} aria-controls={`${drawerTitleId}-current`} className={activeTab === "current" ? "is-active" : ""} onClick={() => setActiveTab("current")}>현재 기록 <span className="mono">{dateTimeLocalValue(pair.current.updated_at).slice(11) || "—"}</span></button>
-        </div>
-
-        <div className="record-drawer-scroll">
-          {activeTab === "previous" ? (
-            <div id={`${drawerTitleId}-previous`} role="tabpanel" aria-labelledby={`${drawerTitleId}-previous-tab`}>
-              <div className="record-tab-note"><span className="mono">READ ONLY</span><span>이전 인계 시점의 원본 기록</span></div>
-              <ReadOnlyChart record={pair.previous} />
-            </div>
-          ) : (
-            <div id={`${drawerTitleId}-current`} role="tabpanel" aria-labelledby={`${drawerTitleId}-current-tab`}>
-              <div className="record-tab-note current"><span className="mono">EDITABLE DRAFT</span><span>변경 후 비교할 현재 기록</span></div>
-              <EditableChart
-                record={draft}
-                busy={busy}
-                onChange={setDraft}
-                rowIds={rowIds}
-                onRowIdsChange={setRowIds}
-                createRowId={() => nextRecordRowId(rowIdPrefix)}
-              />
-            </div>
-          )}
-        </div>
-
-        {errorMessage ? <div className="record-drawer-error" id={errorId} role="alert">{errorMessage}</div> : null}
-        <footer className="record-drawer-footer">
-          <button type="button" className="record-reset-button" disabled={busy} onClick={handleReset}>초기화</button>
-          <button type="button" className="record-compare-button" disabled={busy} onClick={handleCompare}>{busy ? "비교 중" : "변경사항 비교"}</button>
-        </footer>
-      </aside>
-    </div>
+      {errorMessage ? <div className="record-workspace-error" id={errorId} role="alert">{errorMessage}</div> : null}
+      <footer className="record-workspace-actions">
+        <button type="button" className="record-reset-button" disabled={busy} onClick={handleReset}>초기화</button>
+        <button type="button" className="record-compare-button" disabled={busy} onClick={handleCompare}>{busy ? "비교 중" : "변경사항 비교"}</button>
+      </footer>
+    </section>
   );
 }

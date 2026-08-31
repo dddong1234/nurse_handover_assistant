@@ -4,6 +4,36 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-31
+
+### Added
+
+- `NURSE HANDOVER · SHIFT REVIEW` 전역 임상 헤더와 담당 환자·중앙 작업·인계 검토가 이어지는 단일 워크벤치
+- 중앙의 `인수인계 비교`·`원본 기록` 접근성 탭과 Arrow/Home/End 키보드 이동
+- 960·1024·1279·1440px 기하, 중앙 자손 overflow, 390px 구조화 입력을 고정하는 Playwright 회귀 테스트
+
+### Changed
+
+- 원본 기록 modal drawer를 선택 환자와 인계 검토 맥락이 유지되는 인라인 중앙 모듈로 전환
+- 환자 큐, 환자 컨텍스트, Shift Seam 변화 행과 SBAR 검토 레일을 Figma 기반 고밀도·평면형 임상 UI로 통합
+- 환자 변경과 근거 이동은 비교 모듈로 복귀하고, 편집 비교는 성공 시에만 비교 모듈·결과·세션을 교체하며 실패 시 원본 기록과 draft를 유지
+- 960–1019px에서 비교 구간 시각과 변화 통계가 잘리거나 우측 검토 레일 아래로 침범하지 않도록 두 줄 요약 레이아웃 적용
+
+### Verification
+
+- Harness 통과, Python unittest 60/60, frontend Vitest 86/86, 로컬 Playwright 19/19 통과
+- 원본 기록 재비교·초기화 요청 중 근거 선택, 추천 편집, 원본 확인, 검토 완료를 하나의 pending 경계로 잠그는 회귀 테스트 추가
+- ESLint, TypeScript no-emit, Next production build와 `git diff --check` 통과
+- 감독 브라우저에서 1440×900·1024×768·960×768·390×844 시각 검증, 콘솔 오류 0건 확인
+- 960px에서 중앙/context scrollWidth=clientWidth, 변화 통계 레일 침범 0건, 두 비교 시각 각각 64/64px 확인
+- 기능·시각 작업별 독립 Luna Max 리뷰와 수정 라운드 재검토에서 Critical/Important 0건 확인
+
+### Known limits
+
+- 적용 기록은 현재 브라우저 탭의 `sessionStorage`에만 유지되며 실제 EMR·다중 사용자·서버 영구 저장과 연결되지 않는다.
+- OpenAI provider 크레딧 문제로 성공 AI 문장화는 실 API에서 미검증이며 규칙 요약 fallback을 유지한다.
+- 전역 CSS에는 기존 화면 규칙 위의 0.7 override 계층이 남아 있어 후속 마일스톤에서 dead rule 정리가 필요하다.
+
 ## [0.6.0] - 2026-08-28
 
 ### Added
