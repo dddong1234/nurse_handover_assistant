@@ -840,6 +840,90 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(reviewButton).toBeEnabled();
   });
 
+  it.each(["compare", "reset"] as const)(
+    "locks review mutations while an inline record %s is pending",
+    async (recordAction) => {
+      const [response] = buildDemoWorkspaceData();
+      const pair = demoRecordPairs.P001;
+      if (!response || !pair) throw new Error("P001 데모 응답이 없습니다.");
+      const recordRequest = createDeferred<{
+        ok: boolean;
+        status: number;
+        json: () => Promise<unknown>;
+      }>();
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: vi.fn().mockResolvedValue(response),
+        })
+        .mockReturnValueOnce(recordRequest.promise);
+      vi.stubGlobal("fetch", fetchMock);
+      const user = userEvent.setup();
+
+      render(<HandoverWorkspace data={[response]} recordPairs={{ P001: pair }} />);
+      await waitFor(() => expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument());
+
+      const recommendation = screen.getByRole("textbox", { name: "간호사가 확인할 후속 항목" }) as HTMLTextAreaElement;
+      await user.type(recommendation, "기존 후속 항목");
+      const summary = screen.getByRole("complementary", { name: "인계 검토" });
+      const situation = within(summary).getByRole("region", { name: "Situation" });
+      await user.click(within(situation).getByRole("button", { name: "근거 9건" }));
+      const evidenceToggle = within(situation).getAllByRole("button", { name: /근거 .*포함됨/ })[0] as HTMLButtonElement | undefined;
+      if (!evidenceToggle) throw new Error("근거 토글이 없습니다.");
+      const sourceConfirmed = screen.getByRole("checkbox", { name: "원본 기록을 확인했습니다" }) as HTMLInputElement;
+      await user.click(sourceConfirmed);
+
+      await user.click(screen.getByRole("tab", { name: "원본 기록" }));
+      const recordPanel = screen.getByRole("tabpanel", { name: "원본 기록" });
+      await user.click(within(recordPanel).getByRole("tab", { name: /현재 기록/ }));
+      if (recordAction === "compare") {
+        const temperature = within(recordPanel).getByRole("spinbutton", { name: "체온" });
+        await user.clear(temperature);
+        await user.type(temperature, "39.1");
+        await user.click(within(recordPanel).getByRole("button", { name: "변경사항 비교" }));
+      } else {
+        await user.click(within(recordPanel).getByRole("button", { name: "초기화" }));
+      }
+      await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+      const reviewButton = screen.getByRole("button", { name: "검토 완료" }) as HTMLButtonElement;
+      fireEvent.change(recommendation, { target: { value: "변경 시도" } });
+      await user.click(sourceConfirmed);
+      await user.click(sourceConfirmed);
+      await user.click(evidenceToggle);
+      await user.click(reviewButton);
+
+      const pendingState = {
+        recommendation: recommendation.value,
+        sourceConfirmed: sourceConfirmed.checked,
+        evidenceIncluded: evidenceToggle.getAttribute("aria-pressed"),
+        recommendationDisabled: recommendation.disabled,
+        sourceConfirmedDisabled: sourceConfirmed.disabled,
+        evidenceToggleDisabled: evidenceToggle.disabled,
+        reviewButtonDisabled: reviewButton.disabled,
+        reviewed: Boolean(screen.queryByText("검토 완료", { selector: ".queue-status" })),
+      };
+
+      recordRequest.resolve({
+        ok: true,
+        status: 200,
+        json: async () => response,
+      });
+
+      expect(pendingState).toEqual({
+        recommendation: "기존 후속 항목",
+        sourceConfirmed: true,
+        evidenceIncluded: "true",
+        recommendationDisabled: true,
+        sourceConfirmedDisabled: true,
+        evidenceToggleDisabled: true,
+        reviewButtonDisabled: true,
+        reviewed: false,
+      });
+    },
+  );
+
   it("preserves a reviewed API snapshot and avoids refetching when revisiting the patient", async () => {
     const responses = buildDemoWorkspaceData();
     const first = responses[0];

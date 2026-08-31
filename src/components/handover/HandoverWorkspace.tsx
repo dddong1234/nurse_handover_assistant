@@ -287,7 +287,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const activePair = recordPairOverrides[patientId] ?? baseRecordPair;
   const drawerPair = isCompleteDemoRecordPair(activePair) ? activePair : null;
   const patientApiState = apiStateByPatient[patientId];
-  const apiPending = Boolean(
+  const apiPending = recordDrawerBusy || Boolean(
     activePair &&
       !session.reviewed &&
       (!patientApiState ||

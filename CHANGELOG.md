@@ -21,7 +21,8 @@
 
 ### Verification
 
-- Harness 통과, Python unittest 60/60, frontend Vitest 84/84, 로컬 Playwright 19/19 통과
+- Harness 통과, Python unittest 60/60, frontend Vitest 86/86, 로컬 Playwright 19/19 통과
+- 원본 기록 재비교·초기화 요청 중 근거 선택, 추천 편집, 원본 확인, 검토 완료를 하나의 pending 경계로 잠그는 회귀 테스트 추가
 - ESLint, TypeScript no-emit, Next production build와 `git diff --check` 통과
 - 감독 브라우저에서 1440×900·1024×768·960×768·390×844 시각 검증, 콘솔 오류 0건 확인
 - 960px에서 중앙/context scrollWidth=clientWidth, 변화 통계 레일 침범 0건, 두 비교 시각 각각 64/64px 확인
