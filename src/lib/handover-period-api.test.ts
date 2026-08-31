@@ -165,6 +165,59 @@ describe("requestHandoverPeriodComparison", () => {
     await expect(requestHandoverPeriodComparison(request)).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
   });
 
+  it("maps an AbortError from response.json to ABORTED", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockRejectedValue(Object.assign(new Error("aborted"), { name: "AbortError" })),
+      }),
+    );
+
+    await expect(requestHandoverPeriodComparison(request)).rejects.toMatchObject({ code: "ABORTED" });
+  });
+
+  it("maps a signal aborted while reading response.json to ABORTED", async () => {
+    const controller = new AbortController();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockImplementation(() => {
+          controller.abort();
+          return Promise.reject(new Error("body read stopped"));
+        }),
+      }),
+    );
+
+    await expect(requestHandoverPeriodComparison(request, { signal: controller.signal })).rejects.toMatchObject({
+      code: "ABORTED",
+    });
+  });
+
+  it.each([
+    ["missing patient identity", [{ updated_at: previousRecordedAt }]],
+    [
+      "mixed patient identity",
+      [
+        { patient_id: "P001", updated_at: previousRecordedAt },
+        { patient_id: "P002", updated_at: currentRecordedAt },
+      ],
+    ],
+  ])("rejects %s before fetch", async (_caseName, records) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock.mockResolvedValue(responseWith(createResponse())));
+    const invalidRequest = { ...request, records } as HandoverPeriodRequest;
+
+    await expect(requestHandoverPeriodComparison(invalidRequest)).rejects.toMatchObject({
+      name: "HandoverApiError",
+      code: "REQUEST_SERIALIZATION",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("never sends an API key in browser headers or request body", async () => {
     const fetchMock = vi.fn().mockResolvedValue(responseWith(createResponse()));
     vi.stubGlobal("fetch", fetchMock);

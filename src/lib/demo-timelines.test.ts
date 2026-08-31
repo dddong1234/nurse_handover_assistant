@@ -4,6 +4,7 @@ import { demoRecordPairs } from "./demo-records";
 import {
   DEMO_RECORD_TIMELINES,
   getDemoTimeline,
+  isDemoRecordTimeline,
   listReturnStartOptions,
 } from "./demo-timelines";
 
@@ -55,5 +56,23 @@ describe("demo return timelines", () => {
   it("rejects an unknown patient timeline", () => {
     expect(() => getDemoTimeline("P999")).toThrow();
     expect(() => listReturnStartOptions("P999")).toThrow();
+  });
+
+  it("requires exactly eight snapshots", () => {
+    const timeline = getDemoTimeline("P001");
+
+    expect(
+      isDemoRecordTimeline({
+        ...timeline,
+        snapshots: timeline.snapshots.slice(0, 7),
+      }),
+    ).toBe(false);
+  });
+
+  it("requires final parity with the current demo record", () => {
+    const timeline = getDemoTimeline("P001");
+    const mismatchedFinal = structuredClone(timeline);
+    mismatchedFinal.snapshots[7]!.notes[0] = "not the current demo record";
+    expect(isDemoRecordTimeline(mismatchedFinal)).toBe(false);
   });
 });

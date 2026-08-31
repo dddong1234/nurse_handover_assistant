@@ -264,6 +264,9 @@ function isPeriodEvent(value: unknown): value is PeriodEvent {
   }
 
   const interval = value.interval;
+  const change = value.change;
+  if (!isChange(change)) return false;
+  const evidence = change.evidence;
   return (
     isNonBlankString(value.id) &&
     isIsoTimestamp(value.detectedAt) &&
@@ -271,8 +274,11 @@ function isPeriodEvent(value: unknown): value is PeriodEvent {
     hasExactKeys(interval, ["previousRecordedAt", "currentRecordedAt"]) &&
     isIsoTimestamp(interval.previousRecordedAt) &&
     isIsoTimestamp(interval.currentRecordedAt) &&
+    Date.parse(interval.previousRecordedAt) < Date.parse(interval.currentRecordedAt) &&
+    value.detectedAt === interval.currentRecordedAt &&
     PERIOD_CLASSIFICATIONS.includes(value.classification as PeriodClassification) &&
-    isChange(value.change)
+    evidence.previousRecordedAt === interval.previousRecordedAt &&
+    evidence.currentRecordedAt === interval.currentRecordedAt
   );
 }
 
@@ -361,9 +367,45 @@ function isPeriodResponse(value: unknown): value is HandoverPeriodApiResponse {
   }
 
   if (!isSummary(value.summary)) return false;
+  if (
+    value.summary.evidenceIds.length !== value.events.length ||
+    new Set(value.summary.evidenceIds).size !== value.events.length
+  ) {
+    return false;
+  }
   if (!hasOnlyKnownEventIds(value.summary.evidenceIds, knownEventIds)) return false;
   const sectionItems = Object.values(value.summary.sections).flat();
-  return sectionItems.every((item) => hasOnlyKnownEventIds(item.evidenceIds, knownEventIds));
+  if (!sectionItems.every((item) => hasOnlyKnownEventIds(item.evidenceIds, knownEventIds))) {
+    return false;
+  }
+
+  const expectedBucket: Record<(typeof REVIEW_GROUP_NAMES)[number], PeriodClassification> = {
+    current: "current",
+    periodOnly: "period_only",
+    trends: "trend",
+    recordEvents: "record_event",
+  };
+  const eventsById = new Map(value.events.map((event) => [event.id, event]));
+  const groupedEventIds = new Set<string>();
+  for (const groupName of REVIEW_GROUP_NAMES) {
+    for (const item of reviewGroups[groupName] as PeriodReviewItem[]) {
+      if (item.classification !== expectedBucket[groupName]) return false;
+      for (const eventId of item.eventIds) {
+        const event = eventsById.get(eventId);
+        if (
+          !event ||
+          groupedEventIds.has(eventId) ||
+          item.category !== event.change.category ||
+          item.label !== event.change.label ||
+          item.classification !== event.classification
+        ) {
+          return false;
+        }
+        groupedEventIds.add(eventId);
+      }
+    }
+  }
+  return groupedEventIds.size === value.events.length;
 }
 
 /** Return true only for a complete, reference-safe period comparison response. */

@@ -4,7 +4,7 @@ import p003Timeline from "../../data/timelines/P003.json";
 import p004Timeline from "../../data/timelines/P004.json";
 import p005Timeline from "../../data/timelines/P005.json";
 
-import type { DemoPatientRecord } from "./demo-records";
+import { demoRecordPairs, type DemoPatientRecord } from "./demo-records";
 import { isDemoPatientRecord } from "./record-drafts";
 
 export type DemoCoverageGap = {
@@ -90,7 +90,7 @@ function isDemoRecordTimelineValue(value: unknown): value is DemoRecordTimeline 
     !isNonBlankString(value.patientId) ||
     !isIsoTimestamp(value.defaultReturnStartAt) ||
     !Array.isArray(value.snapshots) ||
-    value.snapshots.length === 0 ||
+    value.snapshots.length !== 8 ||
     !value.snapshots.every(isDemoPatientRecord) ||
     !Array.isArray(value.coverageGaps) ||
     !value.coverageGaps.every(isCoverageGap)
@@ -101,6 +101,11 @@ function isDemoRecordTimelineValue(value: unknown): value is DemoRecordTimeline 
   const snapshots = value.snapshots as DemoPatientRecord[];
   if (snapshots.some((snapshot) => snapshot.patient_id !== value.patientId)) return false;
   if (!snapshots.some((snapshot) => snapshot.updated_at === value.defaultReturnStartAt)) return false;
+  const currentPair = demoRecordPairs[value.patientId];
+  const finalSnapshot = snapshots.at(-1);
+  if (!currentPair || !finalSnapshot || JSON.stringify(finalSnapshot) !== JSON.stringify(currentPair.current)) {
+    return false;
+  }
   return snapshots.every((snapshot, index) => {
     const previous = snapshots[index - 1];
     return !previous || Date.parse(previous.updated_at) < Date.parse(snapshot.updated_at);

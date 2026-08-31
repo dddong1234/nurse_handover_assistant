@@ -23,12 +23,21 @@ function isAbortError(error: unknown): boolean {
   return isRecord(error) && error.name === "AbortError";
 }
 
-function expectedPatientId(records: ReadonlyArray<HandoverRecord>): string | undefined {
-  const patientIds = records
-    .map((record) => record.patient_id)
-    .filter((patientId): patientId is string => typeof patientId === "string" && patientId.trim().length > 0);
-  if (patientIds.length === 0 || patientIds.some((patientId) => patientId !== patientIds[0])) return undefined;
-  return patientIds[0];
+function patientIdFromRecords(records: ReadonlyArray<HandoverRecord>): string | undefined {
+  if (records.length === 0) return undefined;
+  const firstPatientId = records[0]?.patient_id;
+  if (typeof firstPatientId !== "string" || firstPatientId.trim().length === 0) return undefined;
+  if (
+    records.some(
+      (record) =>
+        typeof record.patient_id !== "string" ||
+        record.patient_id.trim().length === 0 ||
+        record.patient_id !== firstPatientId,
+    )
+  ) {
+    return undefined;
+  }
+  return firstPatientId;
 }
 
 /**
@@ -42,6 +51,8 @@ export async function requestHandoverPeriodComparison(
 ): Promise<HandoverPeriodApiResponse> {
   const signal = options.signal;
   if (signal?.aborted) throw new HandoverApiError("ABORTED");
+  const patientId = patientIdFromRecords(input.records);
+  if (!patientId) throw new HandoverApiError("REQUEST_SERIALIZATION");
 
   let body: string;
   try {
@@ -76,7 +87,10 @@ export async function requestHandoverPeriodComparison(
   let payload: unknown;
   try {
     payload = await response.json();
-  } catch {
+  } catch (error) {
+    if (signal?.aborted || isAbortError(error)) {
+      throw new HandoverApiError("ABORTED");
+    }
     throw new HandoverApiError("MALFORMED_RESPONSE");
   }
 
@@ -89,8 +103,7 @@ export async function requestHandoverPeriodComparison(
     throw new HandoverApiError("INVALID_RESPONSE");
   }
 
-  const patientId = expectedPatientId(input.records);
-  if (patientId && parsed.patient.id !== patientId) {
+  if (parsed.patient.id !== patientId) {
     throw new HandoverApiError("PATIENT_MISMATCH");
   }
 
