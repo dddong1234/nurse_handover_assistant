@@ -2043,6 +2043,88 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(window.sessionStorage.getItem(RECORD_DRAFTS_STORAGE_KEY)).not.toContain("period-2");
   });
 
+  it("opens evidence against the last successful period timeline after an edited period request fails", async () => {
+    const response = buildDemoWorkspaceData()[0];
+    const pair = demoRecordPairs.P001;
+    if (!response || !pair) throw new Error("P001 데모 데이터가 없습니다.");
+    const periodResponse = makePeriodResponse("P001", getDemoTimeline("P001").defaultReturnStartAt, "stable-before-edit");
+    const periodEvent = periodResponse.events[0]!;
+    periodEvent.change.category = "vitals";
+    periodEvent.change.label = "체온";
+    periodEvent.change.previousValue = 37.9;
+    periodEvent.change.currentValue = 38.2;
+    periodEvent.change.evidence.fieldPath = "vitals.body_temperature";
+    periodResponse.reviewGroups.current[0]!.category = "vitals";
+    periodResponse.reviewGroups.current[0]!.label = "체온";
+    let periodRequestCount = 0;
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/handover/period-compare") {
+        periodRequestCount += 1;
+        if (periodRequestCount === 1) return Promise.resolve(responseWith(periodResponse));
+        return Promise.reject(new Error("period refresh failed"));
+      }
+      return Promise.resolve(responseWith(response));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={[response]} recordPairs={{ P001: pair }} />);
+    await waitFor(() => expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument());
+    await user.click(screen.getByRole("tab", { name: "휴무 복귀" }));
+    await waitFor(() => expect(screen.getByText("기간 결과 stable-before-edit")).toBeInTheDocument());
+
+    await user.click(screen.getByRole("tab", { name: "원본 기록" }));
+    const recordPanel = screen.getByRole("tabpanel", { name: "원본 기록" });
+    await user.click(within(recordPanel).getByRole("tab", { name: /현재 기록/ }));
+    const temperature = within(recordPanel).getByRole("spinbutton", { name: "체온" });
+    await user.clear(temperature);
+    await user.type(temperature, "39.1");
+    await user.click(within(recordPanel).getByRole("button", { name: "변경사항 비교" }));
+
+    await waitFor(() => expect(screen.getByRole("alert", { name: "기간 비교 상태" })).toHaveTextContent("불러오지 못했습니다"));
+    expect(screen.getByText("기간 결과 stable-before-edit")).toBeInTheDocument();
+    await user.click(screen.getAllByRole("button", { name: "근거 보기" })[0]!);
+
+    const evidencePanel = screen.getByRole("tabpanel", { name: "원본 기록" });
+    await user.click(within(evidencePanel).getByRole("tab", { name: /현재 기록/ }));
+    expect(within(evidencePanel).getByRole("spinbutton", { name: "체온" })).toHaveValue(38.2);
+  });
+
+  it("rejects an edited current timestamp that would move before the preceding return snapshot", async () => {
+    const response = buildDemoWorkspaceData()[0];
+    const pair = demoRecordPairs.P001;
+    if (!response || !pair) throw new Error("P001 데모 데이터가 없습니다.");
+    let periodRequestCount = 0;
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/handover/period-compare") {
+        periodRequestCount += 1;
+        const body = requestBody([url, options]);
+        return Promise.resolve(responseWith(makePeriodResponse("P001", body.reviewStartAt, "timestamp-guard")));
+      }
+      return Promise.resolve(responseWith(response));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={[response]} recordPairs={{ P001: pair }} />);
+    await waitFor(() => expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument());
+    await user.click(screen.getByRole("tab", { name: "휴무 복귀" }));
+    await waitFor(() => expect(screen.getByText("기간 결과 timestamp-guard")).toBeInTheDocument());
+    await user.click(screen.getByRole("tab", { name: "원본 기록" }));
+    const recordPanel = screen.getByRole("tabpanel", { name: "원본 기록" });
+    await user.click(within(recordPanel).getByRole("tab", { name: /현재 기록/ }));
+
+    const timestamp = within(recordPanel).getByLabelText("기록 시간");
+    fireEvent.change(timestamp, { target: { value: "2026-06-29T14:00" } });
+    expect(timestamp).toHaveValue("2026-06-29T14:00");
+    await user.click(within(recordPanel).getByRole("button", { name: "변경사항 비교" }));
+
+    expect(within(recordPanel).getByRole("alert")).toHaveTextContent("기간의 직전 기록보다 빠를 수 없습니다");
+    expect(timestamp).toHaveValue("2026-06-29T14:00");
+    expect(fetchMock.mock.calls.filter(([url]) => url === "/api/handover/compare")).toHaveLength(1);
+    expect(periodRequestCount).toBe(1);
+  });
+
   it("restores the prior pair-mode review session after returning from period mode", async () => {
     const response = buildDemoWorkspaceData()[0];
     const pair = demoRecordPairs.P001;
@@ -2092,7 +2174,7 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(within(context).getByText("06/29 15:00")).toBeInTheDocument();
     expect(within(context).getByText("07/02 09:00")).toBeInTheDocument();
 
-    const evidenceButton = screen.getByRole("button", { name: "근거 보기" });
+    const evidenceButton = screen.getAllByRole("button", { name: "근거 보기" })[0]!;
     await user.click(evidenceButton);
 
     const recordPanel = screen.getByRole("tabpanel", { name: "원본 기록" });
@@ -2157,7 +2239,7 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     await waitFor(() => expect(screen.queryByText("서버 요약을 불러오는 중입니다.")).not.toBeInTheDocument());
     await user.click(screen.getByRole("tab", { name: "휴무 복귀" }));
     await waitFor(() => expect(screen.getByText("기간 결과 historical")).toBeInTheDocument());
-    await user.click(screen.getByRole("button", { name: "근거 보기" }));
+    await user.click(screen.getAllByRole("button", { name: "근거 보기" })[0]!);
 
     const recordPanel = screen.getByRole("tabpanel", { name: "원본 기록" });
     await user.click(within(recordPanel).getByRole("tab", { name: /현재 기록/ }));
@@ -2184,7 +2266,7 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     render(<HandoverWorkspace data={[response]} />);
     await user.click(screen.getByRole("tab", { name: "휴무 복귀" }));
     await waitFor(() => expect(screen.getByText("기간 결과 missing")).toBeInTheDocument());
-    await user.click(screen.getByRole("button", { name: "근거 보기" }));
+    await user.click(screen.getAllByRole("button", { name: "근거 보기" })[0]!);
 
     expect(screen.getByRole("alert")).toHaveTextContent("정확한 원본 기록 구간을 찾지 못했습니다");
     expect(screen.getByRole("tabpanel", { name: "인수인계 비교" })).not.toHaveAttribute("hidden");

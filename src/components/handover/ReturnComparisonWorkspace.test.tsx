@@ -164,9 +164,35 @@ describe("ReturnComparisonWorkspace", () => {
     expect(screen.queryByText('diagnosis["hypertension"]', { exact: true })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /event-diagnosis/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /event-diagnosis/ })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /^근거 보기/ })).toHaveLength(7);
+    expect(screen.getAllByRole("button", { name: /^근거 보기/ })).toHaveLength(13);
 
     await user.click(screen.getAllByRole("button", { name: /^근거 보기/ })[0]!);
+    expect(onOpenEvidence).toHaveBeenCalledWith("event-diagnosis");
+  });
+
+  it("keeps every compact full-timeline row independently legible and evidence-linked", async () => {
+    const user = userEvent.setup();
+    const onOpenEvidence = vi.fn();
+    const response = createResponse();
+    render(<ReturnComparisonWorkspace response={response} onOpenEvidence={onOpenEvidence} />);
+
+    const timeline = screen.getByRole("heading", { name: "전체 타임라인" }).closest("section");
+    if (!(timeline instanceof HTMLElement)) throw new Error("전체 타임라인 섹션이 없습니다.");
+    const compactRows = within(timeline)
+      .getAllByRole("listitem")
+      .filter((row) => row.classList.contains("return-timeline-row"));
+    expect(compactRows).toHaveLength(response.events.filter((event) => event.classification !== "record_event").length);
+
+    const diagnosisRow = compactRows.find((row) => row.getAttribute("data-event-id") === "event-diagnosis");
+    if (!diagnosisRow) throw new Error("진단 타임라인 행이 없습니다.");
+    expect(diagnosisRow).toHaveTextContent("진단");
+    expect(diagnosisRow).toHaveTextContent("기록 없음");
+    expect(diagnosisRow).toHaveTextContent("hypertension");
+    expect(within(diagnosisRow).getByRole("button", { name: "근거 보기" })).toBeInTheDocument();
+
+    const timelineEvidenceButtons = within(timeline).getAllByRole("button", { name: "근거 보기" });
+    expect(timelineEvidenceButtons).toHaveLength(response.events.length);
+    await user.click(within(diagnosisRow).getByRole("button", { name: "근거 보기" }));
     expect(onOpenEvidence).toHaveBeenCalledWith("event-diagnosis");
   });
 

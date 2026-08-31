@@ -15,6 +15,7 @@ _PRIORITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 _GROUP_NAMES = ("current", "periodOnly", "trends", "recordEvents")
 _RECOMMENDATION = "간호사가 확인할 후속 항목을 입력하세요."
 _MISSING = object()
+_MEDICATION_FIELDS = ("name", "route", "frequency")
 
 
 def _timestamp_error(field: str) -> ValueError:
@@ -142,6 +143,77 @@ def _validate_coverage_gaps(
     return warnings
 
 
+def _is_complete_medication(value: Any) -> bool:
+    return (
+        isinstance(value, dict)
+        and set(value) == set(_MEDICATION_FIELDS)
+        and all(
+            isinstance(value.get(field), str) and value[field].strip()
+            for field in _MEDICATION_FIELDS
+        )
+    )
+
+
+def _medication_warnings(side: str, record: dict[str, Any]) -> list[str]:
+    medications = record.get("medications", [])
+    if not isinstance(medications, list):
+        return []
+
+    warnings: list[str] = []
+    expected_fields = set(_MEDICATION_FIELDS)
+    for index, medication in enumerate(medications):
+        path = f"{side}.medications[{index}]"
+        if not isinstance(medication, dict):
+            warnings.append(path)
+            continue
+        for field in _MEDICATION_FIELDS:
+            value = medication.get(field)
+            if not isinstance(value, str) or not value.strip():
+                warnings.append(f"{path}.{field}")
+        for field in sorted(set(medication) - expected_fields, key=str):
+            warnings.append(f"{path}.{field}")
+    return warnings
+
+
+def _invalid_medication_names(record: dict[str, Any]) -> set[str]:
+    medications = record.get("medications", [])
+    if not isinstance(medications, list):
+        return set()
+    return {
+        medication["name"]
+        for medication in medications
+        if isinstance(medication, dict)
+        and isinstance(medication.get("name"), str)
+        and medication["name"].strip()
+        and not _is_complete_medication(medication)
+    }
+
+
+def _is_period_safe_change(
+    change: dict[str, Any],
+    invalid_medication_names: set[str],
+) -> bool:
+    if change.get("category") != "medications":
+        return True
+    if str(change.get("label", "")) in invalid_medication_names:
+        return False
+    return all(
+        value is None or _is_complete_medication(value)
+        for value in (change.get("previousValue"), change.get("currentValue"))
+    )
+
+
+def _period_comparable_record(record: dict[str, Any]) -> dict[str, Any]:
+    medications = record.get("medications")
+    if not isinstance(medications, list):
+        return record
+    comparable = dict(record)
+    comparable["medications"] = [
+        medication for medication in medications if _is_complete_medication(medication)
+    ]
+    return comparable
+
+
 def _medication_map(record: dict[str, Any]) -> dict[Any, dict[str, Any]]:
     medications = record.get("medications", [])
     if not isinstance(medications, list):
@@ -149,7 +221,7 @@ def _medication_map(record: dict[str, Any]) -> dict[Any, dict[str, Any]]:
     return {
         str(medication.get("name")): medication
         for medication in medications
-        if isinstance(medication, dict) and medication.get("name")
+        if _is_complete_medication(medication)
     }
 
 
@@ -398,10 +470,21 @@ def build_handover_period_comparison(
 
     raw_events: list[dict[str, Any]] = []
     for previous, current in zip(included_records, included_records[1:]):
-        pair_result = build_handover_comparison(previous, current)
+        invalid_medication_names = (
+            _invalid_medication_names(previous)
+            | _invalid_medication_names(current)
+        )
+        pair_result = build_handover_comparison(
+            _period_comparable_record(previous),
+            _period_comparable_record(current),
+        )
         warnings.extend(pair_result.get("dataWarnings", []))
+        warnings.extend(_medication_warnings("previous", previous))
+        warnings.extend(_medication_warnings("current", current))
         for change in pair_result.get("changes", []):
             if not isinstance(change, dict):
+                continue
+            if not _is_period_safe_change(change, invalid_medication_names):
                 continue
             change_copy = deepcopy(change)
             detected_at = str(current.get("updated_at"))
@@ -416,8 +499,15 @@ def build_handover_period_comparison(
                 }
             )
 
+    if len(included_records) < 2:
+        warnings.extend(_medication_warnings("current", current_record))
+
     base_ids = [
-        _event_base_id(current_record.get("patient_id", ""), raw_event["change"], raw_event["detectedAt"])
+        _event_base_id(
+            current_record.get("patient_id", ""),
+            raw_event["change"],
+            raw_event["detectedAt"],
+        )
         for raw_event in raw_events
     ]
     base_counts: dict[str, int] = defaultdict(int)

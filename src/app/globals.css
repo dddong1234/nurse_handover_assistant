@@ -5174,27 +5174,84 @@ summary:focus-visible {
 .return-timeline-row {
   display: grid;
   min-width: 0;
-  grid-template-columns: 120px max-content minmax(0, 1fr);
+  grid-template-columns: minmax(170px, 0.7fr) minmax(0, 1.8fr) max-content;
   align-items: center;
   gap: 9px;
-  min-height: 35px;
-  padding: 0 9px;
+  min-height: 48px;
+  padding: 7px 9px;
   border: 1px solid var(--line);
   background: var(--canvas);
   font-size: 11px;
+}
+
+.return-timeline-row-meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 7px;
 }
 
 .return-timeline-row time {
   color: var(--secondary);
 }
 
-.return-timeline-row a {
+.return-timeline-row-content {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.return-timeline-row-label {
   overflow: hidden;
   color: var(--primary);
   font-size: 12px;
   font-weight: 750;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.return-timeline-row-values {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.return-timeline-row-value {
+  display: inline-flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.return-timeline-row-value > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.return-timeline-row-value strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.return-timeline-row-value-current strong {
+  color: var(--primary);
+}
+
+.return-timeline-row-arrow {
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.return-timeline-evidence-button {
+  min-height: 32px;
+  padding: 0 9px;
 }
 
 .return-timeline-event .return-event-row {
@@ -5600,13 +5657,19 @@ summary:focus-visible {
   }
 
   .return-timeline-row {
-    grid-template-columns: 95px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 5px;
     padding: 5px 7px;
   }
 
-  .return-timeline-row a {
+  .return-timeline-row-meta,
+  .return-timeline-row-content,
+  .return-timeline-evidence-button {
     grid-column: 1 / -1;
+  }
+
+  .return-timeline-evidence-button {
+    width: 100%;
   }
 
   .return-summary-metrics {

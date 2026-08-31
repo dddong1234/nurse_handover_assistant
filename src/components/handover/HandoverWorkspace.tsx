@@ -32,6 +32,7 @@ import { type WorkspaceMode, WorkspaceModeTabs } from "./WorkspaceModeTabs";
 
 const API_FALLBACK_MESSAGE = "서버 요약을 불러오지 못해 검증된 데모 결과를 표시합니다.";
 const RECORD_COMPARE_ERROR = "비교하지 못했습니다. 기록을 확인한 뒤 다시 시도하세요.";
+const RETURN_TIMESTAMP_ORDER_ERROR = "현재 기록 시각은 기간의 직전 기록보다 빠를 수 없습니다.";
 
 export type HandoverRecordPair = {
   previous: HandoverRecord | null;
@@ -64,6 +65,11 @@ type ReturnEvidenceState = {
   patientId: string;
   pair: DemoRecordPair;
   editableCurrent: boolean;
+};
+
+type ReturnResultSnapshot = {
+  response: HandoverPeriodApiResponse;
+  records: DemoPatientRecord[];
 };
 
 const DEMO_IDENTITY_KEYS = ["patient_id", "name", "room_no", "age", "sex"] as const;
@@ -114,6 +120,18 @@ function readDemoTimeline(patientId: string) {
   }
 }
 
+function hasOrderedReturnCurrentTimestamp(
+  timeline: ReturnType<typeof readDemoTimeline>,
+  timestamp: string,
+) {
+  const previousSnapshot = timeline?.snapshots.at(-2);
+  if (!previousSnapshot) return true;
+
+  const previousTime = Date.parse(previousSnapshot.updated_at);
+  const currentTime = Date.parse(timestamp);
+  return Number.isFinite(previousTime) && Number.isFinite(currentTime) && currentTime > previousTime;
+}
+
 export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps) {
   const validResponses = useMemo(
     () => data.filter((response) => Boolean(response?.comparison?.patient?.id && response.comparison.patient.name)),
@@ -135,7 +153,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("comparison");
   const [handoverScope, setHandoverScope] = useState<ReturnHandoverScope>("shift");
   const [returnStartAtByPatient, setReturnStartAtByPatient] = useState<Record<string, string>>({});
-  const [returnResponsesByPatient, setReturnResponsesByPatient] = useState<Record<string, HandoverPeriodApiResponse>>({});
+  const [returnResultsByPatient, setReturnResultsByPatient] = useState<Record<string, ReturnResultSnapshot>>({});
   const [returnSessions, setReturnSessions] = useState<PatientReviewSessions>({});
   const [returnAppliedKeys, setReturnAppliedKeys] = useState<Record<string, string>>({});
   const [returnEvidenceState, setReturnEvidenceState] = useState<ReturnEvidenceState | null>(null);
@@ -188,16 +206,23 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const activeRecordPair = activePatientId
     ? recordPairOverrides[activePatientId] ?? recordPairs?.[activePatientId]
     : undefined;
+  const activeRecordPairCurrent = activeRecordPair?.current;
+  const activeRecordPairPrevious = activeRecordPair?.previous;
   const activeReturnTimeline = useMemo(() => readDemoTimeline(activePatientId), [activePatientId]);
-  const returnRecords = (() => {
+  const returnRecords = useMemo(() => {
     if (!activeReturnTimeline) return [];
 
     const snapshots = activeReturnTimeline.snapshots.map(cloneDemoRecord);
-    if (isCompleteDemoRecordPair(activeRecordPair) && snapshots.length > 0) {
-      snapshots[snapshots.length - 1] = cloneDemoRecord(activeRecordPair.current);
+    const hasCompleteActivePair =
+      isDemoPatientRecord(activeRecordPairCurrent) &&
+      (activeRecordPairPrevious === null ||
+        (isDemoPatientRecord(activeRecordPairPrevious) &&
+          hasSameDemoPatientIdentity(activeRecordPairPrevious, activeRecordPairCurrent)));
+    if (hasCompleteActivePair && snapshots.length > 0) {
+      snapshots[snapshots.length - 1] = cloneDemoRecord(activeRecordPairCurrent);
     }
     return snapshots;
-  })();
+  }, [activeRecordPairCurrent, activeRecordPairPrevious, activeReturnTimeline]);
   const returnStartAt = activePatientId
     ? returnStartAtByPatient[activePatientId] ?? activeReturnTimeline?.defaultReturnStartAt ?? ""
     : "";
@@ -228,8 +253,8 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
       !returnHandover.response ||
       returnHandover.response.patient.id !== activePatientId ||
       returnHandover.response.period.requestedStartAt !== returnStartAt ||
-      (returnResponsesByPatient[activePatientId] &&
-        returnHandover.response === returnResponsesByPatient[activePatientId] &&
+      (returnResultsByPatient[activePatientId] &&
+        returnHandover.response === returnResultsByPatient[activePatientId].response &&
         returnAppliedKeysRef.current[activePatientId] !== returnHandoverKey) ||
       returnAppliedKeysRef.current[activePatientId] === returnHandoverKey
     ) {
@@ -242,14 +267,20 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
       [activePatientId]: returnHandoverKey,
     };
     setReturnAppliedKeys((current) => ({ ...current, [activePatientId]: returnHandoverKey }));
-    setReturnResponsesByPatient((current) => ({ ...current, [activePatientId]: response }));
+    setReturnResultsByPatient((current) => ({
+      ...current,
+      [activePatientId]: {
+        response,
+        records: returnRecords.map(cloneDemoRecord),
+      },
+    }));
     setReturnSessions((current) => ({
       ...current,
       [activePatientId]: createReturnReviewSession(response),
     }));
     setReturnEvidenceState(null);
     setReturnEvidenceError(null);
-  }, [activePatientId, handoverScope, returnHandover.response, returnHandover.status, returnHandoverKey, returnStartAt, returnResponsesByPatient]);
+  }, [activePatientId, handoverScope, returnHandover.response, returnHandover.status, returnHandoverKey, returnRecords, returnResultsByPatient, returnStartAt]);
 
   function setPatientApiState(patientId: string, pair: HandoverRecordPair, status: PatientApiStatus) {
     const current = apiStateRef.current;
@@ -399,7 +430,9 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const baseRecordPair = recordPairs?.[patientId];
   const activePair = recordPairOverrides[patientId] ?? baseRecordPair;
   const patientApiState = apiStateByPatient[patientId];
-  const returnResponse = returnResponsesByPatient[patientId];
+  const returnResult = returnResultsByPatient[patientId];
+  const returnResponse = returnResult?.response;
+  const returnResponseRecords = returnResult?.records ?? [];
   const activeReturnEvidence = returnEvidenceState?.patientId === patientId ? returnEvidenceState : null;
   const drawerPair = activeReturnEvidence?.pair ?? (isCompleteDemoRecordPair(activePair) ? activePair : null);
   const drawerEditableCurrent = activeReturnEvidence ? activeReturnEvidence.editableCurrent : true;
@@ -505,8 +538,8 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
       return;
     }
 
-    const previous = returnRecords.find((record) => record.updated_at === event.interval.previousRecordedAt);
-    const current = returnRecords.find((record) => record.updated_at === event.interval.currentRecordedAt);
+    const previous = returnResponseRecords.find((record) => record.updated_at === event.interval.previousRecordedAt);
+    const current = returnResponseRecords.find((record) => record.updated_at === event.interval.currentRecordedAt);
     if (!previous || !current) {
       setReturnEvidenceError("정확한 원본 기록 구간을 찾지 못했습니다. 가까운 기록으로 대체하지 않았습니다.");
       return;
@@ -524,7 +557,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
         previous: cloneDemoRecord(previous),
         current: cloneDemoRecord(current),
       },
-      editableCurrent: current.updated_at === returnRecords.at(-1)?.updated_at,
+      editableCurrent: current.updated_at === returnResponseRecords.at(-1)?.updated_at,
     });
     setWorkspaceMode("record");
   }
@@ -557,6 +590,11 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   async function handleRecordCompare(current: DemoPatientRecord) {
     if (recordDrawerBusyRef.current || !isCompleteDemoRecordPair(baseRecordPair)) return;
     if (current.patient_id !== patientId) return;
+    if (handoverScope === "return" && !hasOrderedReturnCurrentTimestamp(activeReturnTimeline, current.updated_at)) {
+      setRecordDrawerError(RETURN_TIMESTAMP_ORDER_ERROR);
+      setWorkspaceMode("record");
+      return;
+    }
 
     recordDrawerBusyRef.current = true;
     setRecordDrawerBusy(true);

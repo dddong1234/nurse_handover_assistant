@@ -187,6 +187,64 @@ class HandoverPeriodApiTests(unittest.TestCase):
         self.assertTrue(partial_body["dataWarnings"])
         self.assertEqual(partial_body["summary"]["warnings"], partial_body["dataWarnings"])
 
+    def test_nested_incomplete_medication_returns_safe_partial_api_contract(self):
+        baseline = {
+            "patient_id": "TEST-PERIOD-MED-001",
+            "name": "가상 환자",
+            "room_no": "101",
+            "age": 44,
+            "sex": "F",
+            "diagnosis": ["sample diagnosis"],
+            "vitals": {
+                "systolic": 120,
+                "diastolic": 80,
+                "heartrate": 72,
+                "respiratory": 16,
+                "saturation": 98,
+                "body_temperature": 36.7,
+            },
+            "medications": [],
+            "notes": ["이전 기록"],
+            "updated_at": "2026-08-28T07:00:00+09:00",
+        }
+        current = deepcopy(baseline)
+        current["medications"] = [
+            {"name": "유효 추가 약", "route": "IV", "frequency": "BID"},
+            {"name": "이름 누락 약", "route": "PO", "frequency": ""},
+        ]
+        current["updated_at"] = "2026-08-28T09:00:00+09:00"
+
+        response = _client().post(
+            "/api/handover/period-compare",
+            json={
+                "reviewStartAt": baseline["updated_at"],
+                "records": [baseline, current],
+                "summaryMode": "deterministic",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["period"]["status"], "partial")
+        self.assertEqual(
+            body["dataWarnings"],
+            ["current.medications[1].frequency"],
+        )
+        self.assertEqual(body["period"]["eventCount"], len(body["events"]))
+        self.assertEqual(len(body["events"]), 1)
+        for event in body["events"]:
+            change = event["change"]
+            for key in ("previousValue", "currentValue"):
+                value = change[key]
+                if change["category"] == "medications" and value is not None:
+                    self.assertEqual(set(value), {"name", "route", "frequency"})
+                    self.assertTrue(
+                        all(
+                            isinstance(value[field], str) and value[field].strip()
+                            for field in value
+                        )
+                    )
+
     def test_existing_pair_compare_contract_is_unchanged(self):
         previous = {
             "patient_id": "TEST-PAIR-001",

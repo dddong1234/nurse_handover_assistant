@@ -154,6 +154,72 @@ class HandoverPeriodValidationTests(unittest.TestCase):
         )
         self.assertEqual(no_gap_result["period"]["status"], "no_events")
 
+    def test_incomplete_nested_medication_makes_period_partial_without_invalid_events(self):
+        baseline = _record(
+            medications=[],
+            updated_at="2026-06-29T15:00:00+09:00",
+        )
+        current = _record(
+            medications=[
+                {"name": "유효 추가 약", "route": "IV", "frequency": "BID"},
+                {"name": "빈도 누락 약", "route": "PO", "frequency": ""},
+            ],
+            updated_at="2026-06-29T23:00:00+09:00",
+        )
+
+        result = build_handover_period_comparison(
+            [baseline, current],
+            "2026-06-29T15:00:00+09:00",
+        )
+
+        self.assertEqual(result["period"]["status"], "partial")
+        self.assertEqual(
+            result["dataWarnings"],
+            ["current.medications[1].frequency"],
+        )
+        self.assertEqual(result["period"]["eventCount"], 1)
+        self.assertEqual(len(result["events"]), 1)
+        event = result["events"][0]
+        self.assertEqual(event["change"]["label"], "유효 추가 약")
+        self.assertEqual(
+            event["change"]["currentValue"],
+            {"name": "유효 추가 약", "route": "IV", "frequency": "BID"},
+        )
+        for returned_event in result["events"]:
+            for key in ("previousValue", "currentValue"):
+                value = returned_event["change"][key]
+                if value is not None and returned_event["change"]["category"] == "medications":
+                    self.assertEqual(set(value), {"name", "route", "frequency"})
+                    self.assertTrue(
+                        all(
+                            isinstance(value[field], str) and value[field].strip()
+                            for field in value
+                        )
+                    )
+
+    def test_unhashable_incomplete_medication_does_not_abort_period_comparison(self):
+        baseline = _record(
+            medications=[],
+            updated_at="2026-06-29T15:00:00+09:00",
+        )
+        current = _record(
+            medications=[
+                {"name": ["비문자 약명"], "route": "PO", "frequency": "QD"},
+                {"name": "유효 추가 약", "route": "IV", "frequency": "BID"},
+            ],
+            updated_at="2026-06-29T23:00:00+09:00",
+        )
+
+        result = build_handover_period_comparison(
+            [baseline, current],
+            "2026-06-29T15:00:00+09:00",
+        )
+
+        self.assertEqual(result["period"]["status"], "partial")
+        self.assertEqual(result["dataWarnings"], ["current.medications[0].name"])
+        self.assertEqual(result["period"]["eventCount"], 1)
+        self.assertEqual(result["events"][0]["change"]["label"], "유효 추가 약")
+
 
 class HandoverPeriodLifecycleTests(unittest.TestCase):
     def test_p001_produces_exactly_24_stable_events(self):

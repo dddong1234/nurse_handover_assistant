@@ -218,11 +218,9 @@ function GroupSection({
 
 function TimelineSection({
   events,
-  eventsById,
   onOpenEvidence,
 }: {
   events: PeriodEvent[];
-  eventsById: ReadonlyMap<string, PeriodEvent>;
   onOpenEvidence: (eventId: string) => void;
 }) {
   const orderedEvents = [...events].sort((left, right) => {
@@ -246,7 +244,7 @@ function TimelineSection({
         </div>
         <span className="return-section-count mono">{orderedEvents.length.toString().padStart(2, "0")}건</span>
       </header>
-      <p className="return-section-helper">날짜와 기록 시각 순서 · 각 항목의 근거는 위 변화 카드에서 엽니다.</p>
+      <p className="return-section-helper">날짜와 기록 시각 순서 · 각 행에서 이전·현재 값과 근거를 확인합니다.</p>
       {orderedEvents.length ? (
         <div className="return-timeline-list">
           {[...grouped.entries()].map(([date, dayEvents]) => (
@@ -260,9 +258,28 @@ function TimelineSection({
                     </li>
                   ) : (
                     <li className="return-timeline-row" data-event-id={event.id} key={event.id}>
-                      <time className="mono" dateTime={event.detectedAt} title={event.detectedAt}>{formatTimestamp(event.detectedAt)}</time>
-                      <span className={`return-event-status return-event-status-${event.classification}`}>{classificationLabel(event.classification)}</span>
-                      <a href={`#return-event-${event.id}`}>{eventsById.get(event.id)?.change.label ?? "연결된 원본 기록"}</a>
+                      <div className="return-timeline-row-meta">
+                        <time className="mono" dateTime={event.detectedAt} title={event.detectedAt}>{formatTimestamp(event.detectedAt)}</time>
+                        <span className="return-event-category">{CATEGORY_LABELS[event.change.category]}</span>
+                        <span className={`return-event-status return-event-status-${event.classification}`}>{classificationLabel(event.classification)}</span>
+                      </div>
+                      <div className="return-timeline-row-content">
+                        <strong className="return-timeline-row-label">{event.change.label}</strong>
+                        <div className="return-timeline-row-values" aria-label={`${event.change.label} 이전과 현재 값`}>
+                          <span className="return-timeline-row-value">
+                            <span>이전</span>
+                            <strong className="mono">{formatValue(event.change.previousValue)}</strong>
+                          </span>
+                          <span className="return-timeline-row-arrow" aria-hidden="true">→</span>
+                          <span className="return-timeline-row-value return-timeline-row-value-current">
+                            <span>현재</span>
+                            <strong className="mono">{formatValue(event.change.currentValue)}</strong>
+                          </span>
+                        </div>
+                      </div>
+                      <button type="button" className="return-evidence-button return-timeline-evidence-button" onClick={() => onOpenEvidence(event.id)}>
+                        근거 보기
+                      </button>
                     </li>
                   )
                 ))}
@@ -349,7 +366,7 @@ export function ReturnComparisonWorkspace({
             onOpenEvidence={onOpenEvidence}
           />
         ))}
-        <TimelineSection events={response.events} eventsById={eventsById} onOpenEvidence={onOpenEvidence} />
+        <TimelineSection events={response.events} onOpenEvidence={onOpenEvidence} />
       </div>
     </section>
   );
