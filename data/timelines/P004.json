@@ -1,0 +1,291 @@
+{
+  "patientId": "P004",
+  "defaultReturnStartAt": "2026-06-29T14:00:00+09:00",
+  "snapshots": [
+    {
+      "patient_id": "P004",
+      "name": "최수진",
+      "room_no": "205",
+      "age": 38,
+      "sex": "F",
+      "diagnosis": [
+        "post appendectomy"
+      ],
+      "vitals": {
+        "systolic": 124,
+        "diastolic": 78,
+        "heartrate": 92,
+        "respiratory": 20,
+        "saturation": 98,
+        "body_temperature": 37.1
+      },
+      "medications": [
+        {
+          "name": "세파졸린 1g",
+          "route": "IV",
+          "frequency": "TID"
+        },
+        {
+          "name": "트라마돌 50mg",
+          "route": "IV",
+          "frequency": "Q8H"
+        }
+      ],
+      "notes": [
+        "수술 후 통증 NRS 6"
+      ],
+      "updated_at": "2026-06-29T14:00:00+09:00"
+    },
+    {
+      "patient_id": "P004",
+      "name": "최수진",
+      "room_no": "205",
+      "age": 38,
+      "sex": "F",
+      "diagnosis": [
+        "post appendectomy"
+      ],
+      "vitals": {
+        "systolic": 124,
+        "diastolic": 78,
+        "heartrate": 92,
+        "respiratory": 20,
+        "saturation": 98,
+        "body_temperature": 37.1
+      },
+      "medications": [
+        {
+          "name": "세파졸린 1g",
+          "route": "IV",
+          "frequency": "TID"
+        },
+        {
+          "name": "케토롤락 30mg",
+          "route": "IV",
+          "frequency": "QD"
+        },
+        {
+          "name": "트라마돌 50mg",
+          "route": "IV",
+          "frequency": "Q8H"
+        }
+      ],
+      "notes": [
+        "수술 후 통증 NRS 6"
+      ],
+      "updated_at": "2026-06-29T22:00:00+09:00"
+    },
+    {
+      "patient_id": "P004",
+      "name": "최수진",
+      "room_no": "205",
+      "age": 38,
+      "sex": "F",
+      "diagnosis": [
+        "post appendectomy"
+      ],
+      "vitals": {
+        "systolic": 130,
+        "diastolic": 82,
+        "heartrate": 98,
+        "respiratory": 22,
+        "saturation": 97,
+        "body_temperature": 37.8
+      },
+      "medications": [
+        {
+          "name": "세파졸린 1g",
+          "route": "IV",
+          "frequency": "TID"
+        },
+        {
+          "name": "케토롤락 30mg",
+          "route": "IV",
+          "frequency": "QD"
+        },
+        {
+          "name": "트라마돌 50mg",
+          "route": "IV",
+          "frequency": "BID"
+        }
+      ],
+      "notes": [
+        "수술 후 통증 NRS 6"
+      ],
+      "updated_at": "2026-06-30T06:00:00+09:00"
+    },
+    {
+      "patient_id": "P004",
+      "name": "최수진",
+      "room_no": "205",
+      "age": 38,
+      "sex": "F",
+      "diagnosis": [
+        "post appendectomy"
+      ],
+      "vitals": {
+        "systolic": 124,
+        "diastolic": 78,
+        "heartrate": 92,
+        "respiratory": 20,
+        "saturation": 98,
+        "body_temperature": 37.1
+      },
+      "medications": [
+        {
+          "name": "세파졸린 1g",
+          "route": "IV",
+          "frequency": "TID"
+        },
+        {
+          "name": "트라마돌 50mg",
+          "route": "IV",
+          "frequency": "Q8H"
+        }
+      ],
+      "notes": [
+        "수술 후 통증 NRS 6"
+      ],
+      "updated_at": "2026-06-30T14:00:00+09:00"
+    },
+    {
+      "patient_id": "P004",
+      "name": "최수진",
+      "room_no": "205",
+      "age": 38,
+      "sex": "F",
+      "diagnosis": [
+        "post appendectomy"
+      ],
+      "vitals": {
+        "systolic": 124,
+        "diastolic": 78,
+        "heartrate": 92,
+        "respiratory": 20,
+        "saturation": 98,
+        "body_temperature": 37.1
+      },
+      "medications": [
+        {
+          "name": "세파졸린 1g",
+          "route": "IV",
+          "frequency": "TID"
+        },
+        {
+          "name": "트라마돌 50mg",
+          "route": "IV",
+          "frequency": "Q8H"
+        }
+      ],
+      "notes": [
+        "수술 후 통증 NRS 6"
+      ],
+      "updated_at": "2026-07-01T06:00:00+09:00"
+    },
+    {
+      "patient_id": "P004",
+      "name": "최수진",
+      "room_no": "205",
+      "age": 38,
+      "sex": "F",
+      "diagnosis": [
+        "post appendectomy"
+      ],
+      "vitals": {
+        "systolic": 124,
+        "diastolic": 78,
+        "heartrate": 92,
+        "respiratory": 20,
+        "saturation": 98,
+        "body_temperature": 37.1
+      },
+      "medications": [
+        {
+          "name": "세파졸린 1g",
+          "route": "IV",
+          "frequency": "TID"
+        },
+        {
+          "name": "트라마돌 50mg",
+          "route": "IV",
+          "frequency": "Q8H"
+        }
+      ],
+      "notes": [
+        "수술 후 통증 NRS 6"
+      ],
+      "updated_at": "2026-07-01T18:00:00+09:00"
+    },
+    {
+      "patient_id": "P004",
+      "name": "최수진",
+      "room_no": "205",
+      "age": 38,
+      "sex": "F",
+      "diagnosis": [
+        "post appendectomy"
+      ],
+      "vitals": {
+        "systolic": 120,
+        "diastolic": 74,
+        "heartrate": 84,
+        "respiratory": 18,
+        "saturation": 99,
+        "body_temperature": 36.8
+      },
+      "medications": [
+        {
+          "name": "세파졸린 1g",
+          "route": "IV",
+          "frequency": "TID"
+        },
+        {
+          "name": "트라마돌 50mg",
+          "route": "IV",
+          "frequency": "PRN"
+        }
+      ],
+      "notes": [
+        "통증 감소",
+        "침상 가장자리 앉기 시행"
+      ],
+      "updated_at": "2026-07-02T06:00:00+09:00"
+    },
+    {
+      "patient_id": "P004",
+      "name": "최수진",
+      "room_no": "205",
+      "age": 38,
+      "sex": "F",
+      "diagnosis": [
+        "post appendectomy"
+      ],
+      "vitals": {
+        "systolic": 118,
+        "diastolic": 72,
+        "heartrate": 76,
+        "respiratory": 18,
+        "saturation": 99,
+        "body_temperature": 36.5
+      },
+      "medications": [
+        {
+          "name": "세파졸린 1g",
+          "route": "IV",
+          "frequency": "TID"
+        },
+        {
+          "name": "트라마돌 50mg",
+          "route": "IV",
+          "frequency": "PRN"
+        }
+      ],
+      "notes": [
+        "복강경 수술 후 통증 감소",
+        "보행 시작"
+      ],
+      "updated_at": "2026-07-02T08:40:00+09:00"
+    }
+  ],
+  "coverageGaps": []
+}

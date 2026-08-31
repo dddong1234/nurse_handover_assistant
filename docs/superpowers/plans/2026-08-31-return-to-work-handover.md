@@ -104,10 +104,10 @@ P001 timestamps and intended adjacent changes are binding:
 | 4 | 2026-06-30 15:00 | remove saline; temperature 38.0→37.5 |
 | 5 | 2026-07-01 07:00 | ibuprofen TID→BID; temperature 37.5→37.4 |
 | 6 | 2026-07-01 21:00 | reuse the existing historical record state; no new clinical change from #5 |
-| 7 | 2026-07-02 07:00 | reuse existing historical record; expected 9 adjacent events |
+| 7 | 2026-07-02 07:00 | reuse existing historical record; expected 8 adjacent events |
 | 8 | 2026-07-02 09:00 | exact `data/patients/P001.json`; expected 9 adjacent events |
 
-This produces 25 deterministic P001 events once Task 2 uses the existing comparator. P002/P004/P005 must each exercise at least two categories. P003 alone carries one explicit `coverageGaps` entry whose bounds sit inside the requested period.
+This produces 24 deterministic P001 events once Task 2 uses the existing comparator. P002/P004/P005 must each exercise at least two categories. P003 alone carries one explicit `coverageGaps` entry whose bounds sit inside the requested period.
 
 - [ ] **Step 4: Run focused and existing fixture tests**
 
@@ -121,7 +121,7 @@ Expected: existing 60 tests plus new fixture tests PASS.
 
 - [ ] **Step 5: Report for supervisor review**
 
-Stop and report if any current patient fixture cannot be represented as the eighth snapshot without changing it, if a timestamp is naive, or if P001 cannot preserve the 25-event setup. Do not reinterpret clinical meaning silently.
+Stop and report if any current patient fixture cannot be represented as the eighth snapshot without changing it, if a timestamp is naive, or if P001 cannot preserve the 24-event setup. Do not reinterpret clinical meaning silently.
 
 - [ ] **Step 6: Supervisor-only commit after independent review**
 
@@ -171,15 +171,15 @@ Assert offset-aware ISO timestamps, same patient identity, independently sorted 
 - [ ] **Step 2: Write lifecycle and single-source RED tests**
 
 ```python
-def test_p001_produces_exactly_25_stable_events(self):
+def test_p001_produces_exactly_24_stable_events(self):
     timeline = load_timeline("P001")
     result = build_handover_period_comparison(
         timeline["snapshots"],
         timeline["defaultReturnStartAt"],
         timeline["coverageGaps"],
     )
-    self.assertEqual(25, result["period"]["eventCount"])
-    self.assertEqual(25, len(result["events"]))
+    self.assertEqual(24, result["period"]["eventCount"])
+    self.assertEqual(24, len(result["events"]))
 ```
 
 Add separate literal cases named `test_transient_saline_add_and_remove_are_period_only`, `test_reverted_ibuprofen_frequency_keeps_each_event_and_links_history`, `test_current_removed_item_is_classified_current`, and `test_review_items_reference_existing_event_ids_only`.
@@ -296,7 +296,7 @@ Response includes `patient`, `period`, `dataWarnings`, `events`, `reviewGroups`,
 
 - [ ] **Step 1: Write endpoint RED tests**
 
-Create five named cases: `test_period_compare_returns_deterministic_p001_response`, `test_unsorted_records_are_sorted_and_duplicate_times_return_422`, `test_mixed_patient_or_invalid_current_record_returns_422`, `test_no_baseline_and_partial_are_successful_domain_states`, and `test_existing_pair_compare_contract_is_unchanged`. Use P001 for the 25-event response, reverse a copy of its records for sorting, duplicate its first timestamp for the 422 case, and call the existing pair fixture for the regression assertion.
+Create five named cases: `test_period_compare_returns_deterministic_p001_response`, `test_unsorted_records_are_sorted_and_duplicate_times_return_422`, `test_mixed_patient_or_invalid_current_record_returns_422`, `test_no_baseline_and_partial_are_successful_domain_states`, and `test_existing_pair_compare_contract_is_unchanged`. Use P001 for the 24-event response, reverse a copy of its records for sorting, duplicate its first timestamp for the 422 case, and call the existing pair fixture for the regression assertion.
 
 Assert exact P001 event count, the four review group keys, actual interval values, evidence coverage, and no leaked API key.
 
@@ -650,7 +650,7 @@ feat: add return handover clinical workspace
 The test must:
 
 1. Select P001 and `휴무 복귀`.
-2. Confirm default three-day baseline and 25 events.
+2. Confirm default three-day baseline and 24 events.
 3. Find transient saline and reverted ibuprofen history.
 4. Open one event's evidence and assert exact two timestamps/read-only history.
 5. Edit the current record, save, wait for a successful recomparison, and assert only then that review/recommendation resets.
@@ -761,7 +761,7 @@ Push `codex/0.8.0-return-to-work-handover`, create/update the PR, wait for check
 
 - [ ] **Step 6: Verify Vercel production**
 
-Confirm deployment reaches Ready for the merged commit. Smoke-test `/api/health`, `/api/handover/compare`, and `/api/handover/period-compare`; then run the P001 return-handover browser path against production. Verify no server filesystem persistence, no browser-exposed `OPENAI_API_KEY`, exact 25-event result, transient event visibility, and exact evidence timestamps.
+Confirm deployment reaches Ready for the merged commit. Smoke-test `/api/health`, `/api/handover/compare`, and `/api/handover/period-compare`; then run the P001 return-handover browser path against production. Verify no server filesystem persistence, no browser-exposed `OPENAI_API_KEY`, exact 24-event result, transient event visibility, and exact evidence timestamps.
 
 - [ ] **Step 7: Final user handoff**
 

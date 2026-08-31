@@ -1,0 +1,303 @@
+{
+  "patientId": "P003",
+  "defaultReturnStartAt": "2026-06-29T15:00:00+09:00",
+  "snapshots": [
+    {
+      "patient_id": "P003",
+      "name": "박민수",
+      "room_no": "401",
+      "age": 72,
+      "sex": "M",
+      "diagnosis": [
+        "acute decompensated heart failure"
+      ],
+      "vitals": {
+        "systolic": 114,
+        "diastolic": 68,
+        "heartrate": 118,
+        "respiratory": 24,
+        "saturation": 93,
+        "body_temperature": 36.8
+      },
+      "medications": [
+        {
+          "name": "푸로세미드 20mg",
+          "route": "IV",
+          "frequency": "QD"
+        },
+        {
+          "name": "와파린 3mg",
+          "route": "PO",
+          "frequency": "QD"
+        }
+      ],
+      "notes": [
+        "야간 호흡곤란 호소"
+      ],
+      "updated_at": "2026-06-29T15:00:00+09:00"
+    },
+    {
+      "patient_id": "P003",
+      "name": "박민수",
+      "room_no": "401",
+      "age": 72,
+      "sex": "M",
+      "diagnosis": [
+        "acute decompensated heart failure"
+      ],
+      "vitals": {
+        "systolic": 114,
+        "diastolic": 68,
+        "heartrate": 118,
+        "respiratory": 24,
+        "saturation": 93,
+        "body_temperature": 36.8
+      },
+      "medications": [
+        {
+          "name": "스피로놀락톤 25mg",
+          "route": "PO",
+          "frequency": "QD"
+        },
+        {
+          "name": "푸로세미드 20mg",
+          "route": "IV",
+          "frequency": "QD"
+        },
+        {
+          "name": "와파린 3mg",
+          "route": "PO",
+          "frequency": "QD"
+        }
+      ],
+      "notes": [
+        "야간 호흡곤란 호소"
+      ],
+      "updated_at": "2026-06-29T23:00:00+09:00"
+    },
+    {
+      "patient_id": "P003",
+      "name": "박민수",
+      "room_no": "401",
+      "age": 72,
+      "sex": "M",
+      "diagnosis": [
+        "acute decompensated heart failure"
+      ],
+      "vitals": {
+        "systolic": 118,
+        "diastolic": 70,
+        "heartrate": 120,
+        "respiratory": 26,
+        "saturation": 92,
+        "body_temperature": 37.0
+      },
+      "medications": [
+        {
+          "name": "스피로놀락톤 25mg",
+          "route": "PO",
+          "frequency": "QD"
+        },
+        {
+          "name": "푸로세미드 20mg",
+          "route": "IV",
+          "frequency": "BID"
+        },
+        {
+          "name": "와파린 3mg",
+          "route": "PO",
+          "frequency": "QD"
+        }
+      ],
+      "notes": [
+        "야간 호흡곤란 호소"
+      ],
+      "updated_at": "2026-06-30T07:00:00+09:00"
+    },
+    {
+      "patient_id": "P003",
+      "name": "박민수",
+      "room_no": "401",
+      "age": 72,
+      "sex": "M",
+      "diagnosis": [
+        "acute decompensated heart failure"
+      ],
+      "vitals": {
+        "systolic": 114,
+        "diastolic": 68,
+        "heartrate": 118,
+        "respiratory": 24,
+        "saturation": 93,
+        "body_temperature": 36.8
+      },
+      "medications": [
+        {
+          "name": "푸로세미드 20mg",
+          "route": "IV",
+          "frequency": "QD"
+        },
+        {
+          "name": "와파린 3mg",
+          "route": "PO",
+          "frequency": "QD"
+        }
+      ],
+      "notes": [
+        "야간 호흡곤란 호소"
+      ],
+      "updated_at": "2026-06-30T15:00:00+09:00"
+    },
+    {
+      "patient_id": "P003",
+      "name": "박민수",
+      "room_no": "401",
+      "age": 72,
+      "sex": "M",
+      "diagnosis": [
+        "acute decompensated heart failure"
+      ],
+      "vitals": {
+        "systolic": 114,
+        "diastolic": 68,
+        "heartrate": 118,
+        "respiratory": 24,
+        "saturation": 93,
+        "body_temperature": 36.8
+      },
+      "medications": [
+        {
+          "name": "푸로세미드 20mg",
+          "route": "IV",
+          "frequency": "QD"
+        },
+        {
+          "name": "와파린 3mg",
+          "route": "PO",
+          "frequency": "QD"
+        }
+      ],
+      "notes": [
+        "야간 호흡곤란 호소"
+      ],
+      "updated_at": "2026-07-01T07:00:00+09:00"
+    },
+    {
+      "patient_id": "P003",
+      "name": "박민수",
+      "room_no": "401",
+      "age": 72,
+      "sex": "M",
+      "diagnosis": [
+        "acute decompensated heart failure"
+      ],
+      "vitals": {
+        "systolic": 114,
+        "diastolic": 68,
+        "heartrate": 118,
+        "respiratory": 24,
+        "saturation": 93,
+        "body_temperature": 36.8
+      },
+      "medications": [
+        {
+          "name": "푸로세미드 20mg",
+          "route": "IV",
+          "frequency": "QD"
+        },
+        {
+          "name": "와파린 3mg",
+          "route": "PO",
+          "frequency": "QD"
+        }
+      ],
+      "notes": [
+        "야간 호흡곤란 호소"
+      ],
+      "updated_at": "2026-07-01T22:00:00+09:00"
+    },
+    {
+      "patient_id": "P003",
+      "name": "박민수",
+      "room_no": "401",
+      "age": 72,
+      "sex": "M",
+      "diagnosis": [
+        "acute decompensated heart failure"
+      ],
+      "vitals": {
+        "systolic": 108,
+        "diastolic": 66,
+        "heartrate": 112,
+        "respiratory": 22,
+        "saturation": 94,
+        "body_temperature": 36.7
+      },
+      "medications": [
+        {
+          "name": "푸로세미드 20mg",
+          "route": "IV",
+          "frequency": "BID"
+        },
+        {
+          "name": "와파린 3mg",
+          "route": "PO",
+          "frequency": "QD"
+        }
+      ],
+      "notes": [
+        "야간 호흡곤란 호소",
+        "소변량 증가"
+      ],
+      "updated_at": "2026-07-02T06:00:00+09:00"
+    },
+    {
+      "patient_id": "P003",
+      "name": "박민수",
+      "room_no": "401",
+      "age": 72,
+      "sex": "M",
+      "diagnosis": [
+        "acute decompensated heart failure",
+        "atrial fibrillation"
+      ],
+      "vitals": {
+        "systolic": 104,
+        "diastolic": 64,
+        "heartrate": 108,
+        "respiratory": 20,
+        "saturation": 95,
+        "body_temperature": 36.7
+      },
+      "medications": [
+        {
+          "name": "푸로세미드 20mg",
+          "route": "IV",
+          "frequency": "BID"
+        },
+        {
+          "name": "디곡신 0.125mg",
+          "route": "PO",
+          "frequency": "QD"
+        },
+        {
+          "name": "와파린 3mg",
+          "route": "PO",
+          "frequency": "QD"
+        }
+      ],
+      "notes": [
+        "야간 호흡곤란 호소",
+        "하지 부종 관찰"
+      ],
+      "updated_at": "2026-07-02T09:20:00+09:00"
+    }
+  ],
+  "coverageGaps": [
+    {
+      "from": "2026-06-30T18:00:00+09:00",
+      "to": "2026-07-01T00:00:00+09:00",
+      "code": "source_unavailable"
+    }
+  ]
+}
