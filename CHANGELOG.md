@@ -20,6 +20,8 @@
 - 2544·1600·1440·1279·1024·960·390px에서 기존 3레일 기하, 수평 overflow 없음, 그룹 표면 3종 이상, 그룹 제목이 사건 제목보다 최소 3px 큰 계약을 확인
 - 1440px 전체 화면을 검토해 환자 레일 → 복귀 기간 → 네 검토 그룹 → SBAR 레일의 읽기 순서와 조밀한 타임라인 유지 확인
 - 독립 Luna Max 리뷰에서 Critical/Important/Minor 0건, 병합 가능 판정
+- PR #9 병합 후 main Harness checks와 Vercel Production 배포 통과; 공개 루트 200·health `ok`·기존 비교 `ready` 9/9·기간 비교 `ready` 24/24 확인
+- Production 브라우저에서 2544·1600·1440·1279·1024·960·390px containment와 새 그룹·SBAR 계층 계약 8/8 통과
 
 ### Known limits
 
