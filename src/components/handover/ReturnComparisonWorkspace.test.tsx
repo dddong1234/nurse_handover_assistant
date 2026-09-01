@@ -147,13 +147,33 @@ function createResponse(overrides: Partial<HandoverPeriodApiResponse> = {}): Han
 describe("ReturnComparisonWorkspace", () => {
   afterEach(() => cleanup());
 
+  it("exposes four named review groups with explicit clinical tone hooks", () => {
+    render(<ReturnComparisonWorkspace response={createResponse()} onOpenEvidence={vi.fn()} />);
+
+    const expectedGroups = [
+      ["현재 확인", "current", "primary"],
+      ["기간 중 변경", "period-only", "watch"],
+      ["활력징후 추세", "trends", "neutral"],
+      ["전체 타임라인", "record-events", "tertiary"],
+    ] as const;
+
+    for (const [title, key, tone] of expectedGroups) {
+      const heading = screen.getByRole("heading", { name: title });
+      const group = heading.closest("section");
+      if (!(group instanceof HTMLElement)) throw new Error(`${title} 그룹이 없습니다.`);
+      expect(group).toHaveClass("return-review-group", `return-review-group-${key}`, `return-review-group-tone-${tone}`);
+      expect(group).toHaveAttribute("data-review-group", key);
+      expect(group).toHaveAttribute("data-tone", tone);
+    }
+  });
+
   it("renders all four clinical sections and binds every row to an event evidence action", async () => {
     const user = userEvent.setup();
     const onOpenEvidence = vi.fn();
     render(<ReturnComparisonWorkspace response={createResponse()} onOpenEvidence={onOpenEvidence} />);
 
-    expect(screen.getByRole("heading", { name: "현재도 유효한 변화" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "기간 중 발생 후 변경된 사항" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "현재 확인" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "기간 중 변경" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "활력징후 추세" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "전체 타임라인" })).toBeVisible();
     expect(screen.getAllByText("생리식염주 500mL")).not.toHaveLength(0);

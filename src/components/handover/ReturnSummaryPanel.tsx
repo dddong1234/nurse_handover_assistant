@@ -186,7 +186,8 @@ function SummarySection({
   const recommendation = section === "recommendation";
   return (
     <section
-      className={`return-summary-section return-summary-${section}`}
+      className={`return-summary-section return-summary-block return-summary-block-${section} return-summary-${section}`}
+      data-summary-section={section}
       data-testid={section === "situation" ? "return-period-response" : undefined}
       aria-labelledby={`return-summary-section-${section}`}
     >
