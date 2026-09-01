@@ -23,15 +23,20 @@ const CATEGORY_LABELS: Record<PeriodEvent["change"]["category"], string> = {
   notes: "간호 메모",
 };
 
+type ReturnReviewGroupKey = "current" | "period-only" | "trends" | "record-events";
+type ReturnReviewGroupTone = "primary" | "watch" | "neutral" | "tertiary";
+
 const SECTION_DEFINITIONS: ReadonlyArray<{
   key: "current" | "periodOnly" | "trends" | "recordEvents";
+  groupKey: ReturnReviewGroupKey;
+  tone: ReturnReviewGroupTone;
   title: string;
   helper: string;
 }> = [
-  { key: "current", title: "현재도 유효한 변화", helper: "현재 기록에 남아 있는 변화" },
-  { key: "periodOnly", title: "기간 중 발생 후 변경된 사항", helper: "기간 중 기록되었으나 현재 기록에는 남아 있지 않은 변화" },
-  { key: "trends", title: "활력징후 추세", helper: "시간순 기록값" },
-  { key: "recordEvents", title: "전체 타임라인", helper: "날짜와 기록 시각 순서" },
+  { key: "current", groupKey: "current", tone: "primary", title: "현재 확인", helper: "현재 기록에 남아 있는 변화" },
+  { key: "periodOnly", groupKey: "period-only", tone: "watch", title: "기간 중 변경", helper: "기간 중 기록되었으나 현재 기록에는 남아 있지 않은 변화" },
+  { key: "trends", groupKey: "trends", tone: "neutral", title: "활력징후 추세", helper: "시간순 기록값" },
+  { key: "recordEvents", groupKey: "record-events", tone: "tertiary", title: "전체 타임라인", helper: "날짜와 기록 시각 순서" },
 ];
 
 function formatValue(value: HandoverChangeValue): string {
@@ -180,12 +185,16 @@ function EventRow({ event, onOpenEvidence }: { event: PeriodEvent; onOpenEvidenc
 }
 
 function GroupSection({
+  groupKey,
+  tone,
   title,
   helper,
   items,
   eventsById,
   onOpenEvidence,
 }: {
+  groupKey: ReturnReviewGroupKey;
+  tone: ReturnReviewGroupTone;
   title: string;
   helper: string;
   items: PeriodReviewItem[];
@@ -196,7 +205,12 @@ function GroupSection({
   const titleId = `return-section-${title.replace(/\s+/g, "-")}`;
 
   return (
-    <section className="return-clinical-section" aria-labelledby={titleId}>
+    <section
+      className={`return-clinical-section return-review-group return-review-group-${groupKey} return-review-group-tone-${tone}`}
+      data-review-group={groupKey}
+      data-tone={tone}
+      aria-labelledby={titleId}
+    >
       <header className="return-section-heading">
         <div>
           <p className="eyebrow">PERIOD REVIEW</p>
@@ -236,7 +250,12 @@ function TimelineSection({
   }, new Map());
 
   return (
-    <section className="return-clinical-section return-timeline-section" aria-labelledby="return-section-timeline">
+    <section
+      className="return-clinical-section return-review-group return-review-group-record-events return-review-group-tone-tertiary return-timeline-section"
+      data-review-group="record-events"
+      data-tone="tertiary"
+      aria-labelledby="return-section-timeline"
+    >
       <header className="return-section-heading">
         <div>
           <p className="eyebrow">EVENT INDEX</p>
@@ -356,9 +375,11 @@ export function ReturnComparisonWorkspace({
       ) : null}
 
       <div className="return-clinical-sections">
-        {SECTION_DEFINITIONS.slice(0, 3).map(({ key, title, helper }) => (
+        {SECTION_DEFINITIONS.slice(0, 3).map(({ key, groupKey, tone, title, helper }) => (
           <GroupSection
             key={key}
+            groupKey={groupKey}
+            tone={tone}
             title={title}
             helper={helper}
             items={response.reviewGroups[key]}

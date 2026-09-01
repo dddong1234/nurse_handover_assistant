@@ -138,6 +138,19 @@ describe("ReturnSummaryPanel", () => {
     expect(document.querySelector(".return-summary-warnings")).toHaveTextContent("AI 연결 정보가 없어 규칙 요약을 표시합니다.");
   });
 
+  it("gives each SBAR section its own visible review-block hook", () => {
+    const response = createResponse();
+    render(<ReturnSummaryPanel {...props(response)} />);
+
+    for (const section of ["situation", "background", "assessment", "recommendation"] as const) {
+      const heading = screen.getByRole("heading", { name: section[0]!.toUpperCase() + section.slice(1) });
+      const block = heading.closest("section");
+      if (!(block instanceof HTMLElement)) throw new Error(`${section} 블록이 없습니다.`);
+      expect(block).toHaveClass("return-summary-block", `return-summary-block-${section}`);
+      expect(block).toHaveAttribute("data-summary-section", section);
+    }
+  });
+
   it("maps unknown warning codes to one neutral message without exposing the raw code", () => {
     const response = createResponse();
     const unknownCode = "unexpected.warning.code";

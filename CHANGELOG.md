@@ -4,6 +4,29 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-09-01
+
+### Changed
+
+- 복귀 인계 중앙 영역을 `현재 확인`·`기간 중 변경`·`활력징후 추세`·`전체 타임라인`의 네 임상 검토 그룹으로 명확히 구분하고, 그룹 제목·사건 카드·현재 값·근거 조작의 3단계 시각 위계를 적용
+- 기존 primary·watch·secondary 토큰과 제목·건수·좌측 임상 우선순위 선을 함께 사용해 색상만으로 의미를 전달하지 않도록 개선
+- 우측 검토 레일의 Situation·Background·Assessment·Recommendation을 독립된 경계와 표면을 가진 블록으로 정리하면서 근거 펼치기·Recommendation 입력·원본 확인·검토 완료 흐름은 유지
+
+### Verification
+
+- TDD에서 그룹 tone hook과 SBAR block hook 부재로 focused Vitest 2건 RED를 확인한 뒤 20/20 GREEN
+- 감독 재검증에서 Python unittest 112/112, frontend Vitest 173/173, Playwright 43/43 통과
+- ESLint, TypeScript no-emit, Next production build, harness와 `git diff --check` 통과
+- 2544·1600·1440·1279·1024·960·390px에서 기존 3레일 기하, 수평 overflow 없음, 그룹 표면 3종 이상, 그룹 제목이 사건 제목보다 최소 3px 큰 계약을 확인
+- 1440px 전체 화면을 검토해 환자 레일 → 복귀 기간 → 네 검토 그룹 → SBAR 레일의 읽기 순서와 조밀한 타임라인 유지 확인
+- 독립 Luna Max 리뷰에서 Critical/Important/Minor 0건, 병합 가능 판정
+
+### Known limits
+
+- 이번 변경은 가상 데이터 기반 복귀 인계 화면의 시각 위계만 다루며 임상 분류, 사건 순서, 요약 문구 생성, API·세션 경계는 변경하지 않는다.
+- 전체 24건 사건을 한 화면에서 제공하므로 데스크톱에서도 페이지 길이는 길다. 정보 누락 없이 그룹과 조밀한 타임라인으로 탐색 부담만 낮춘 상태이다.
+- OpenAI provider 크레딧 문제로 성공 AI 문장화는 실 API에서 미검증이며 deterministic 규칙 요약을 기본 안전 경로로 유지한다.
+
 ## [0.8.0] - 2026-09-01
 
 ### Added

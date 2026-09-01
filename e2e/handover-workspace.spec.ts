@@ -354,6 +354,56 @@ for (const viewport of returnViewportMatrix) {
   });
 }
 
+test("return handover hierarchy separates group surfaces and SBAR blocks across desktop and narrow viewports", async ({ page }) => {
+  await mockP001ReturnApi(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await p001Patient(page).click();
+  await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "복귀 기간 변화" })).toBeVisible();
+
+  const desktopMetrics = await page.evaluate(() => {
+    const groups = Array.from(document.querySelectorAll<HTMLElement>("[data-review-group]"));
+    const firstEventTitle = document.querySelector<HTMLElement>("[data-review-group] .return-event-main h3");
+    if (groups.length !== 4 || !firstEventTitle) throw new Error("복귀 계층 측정 대상이 없습니다.");
+    const groupHeadings = groups.map((group) => group.querySelector<HTMLElement>(".return-section-heading h2"));
+    if (groupHeadings.some((heading) => !heading)) throw new Error("복귀 그룹 제목이 없습니다.");
+    const styleOf = (element: HTMLElement) => {
+      const style = getComputedStyle(element);
+      return {
+        background: style.backgroundColor,
+        borderLeftWidth: style.borderLeftWidth,
+        borderLeftStyle: style.borderLeftStyle,
+        headingSize: Number.parseFloat(style.fontSize),
+      };
+    };
+    const sbarBlocks = Array.from(document.querySelectorAll<HTMLElement>("[data-summary-section]"));
+    return {
+      groupStyles: groups.map(styleOf),
+      groupHeadingSizes: groupHeadings.map((heading) => Number.parseFloat(getComputedStyle(heading!).fontSize)),
+      eventTitleSize: Number.parseFloat(getComputedStyle(firstEventTitle).fontSize),
+      sbarBoundaries: sbarBlocks.map((block) => {
+        const style = getComputedStyle(block);
+        return { border: style.borderLeftWidth, background: style.backgroundColor };
+      }),
+      count: sbarBlocks.length,
+    };
+  });
+
+  expect(desktopMetrics.groupStyles).toHaveLength(4);
+  expect(new Set(desktopMetrics.groupStyles.map(({ background }) => background)).size).toBeGreaterThanOrEqual(3);
+  expect(desktopMetrics.groupStyles.every(({ borderLeftWidth, borderLeftStyle }) => borderLeftStyle !== "none" && Number.parseFloat(borderLeftWidth) >= 3)).toBe(true);
+  expect(Math.min(...desktopMetrics.groupHeadingSizes)).toBeGreaterThanOrEqual(desktopMetrics.eventTitleSize + 3);
+  expect(desktopMetrics.count).toBe(4);
+  expect(desktopMetrics.sbarBoundaries.every(({ border, background }) => Number.parseFloat(border) >= 1 && background !== "rgba(0, 0, 0, 0)")).toBe(true);
+
+  for (const width of [1024, 390] as const) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 768 });
+    const overflow = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth);
+    expect(overflow, `${width}px hierarchy overflow`).toBeLessThanOrEqual(1);
+  }
+});
+
 test("return handover exposes keyboard scope, landmarks, text status, and exact evidence focus return", async ({ page }) => {
   await mockP001ReturnApi(page);
   const ready = cloneP001ReturnFixture("ready");
@@ -388,7 +438,7 @@ test("return handover exposes keyboard scope, landmarks, text status, and exact 
   await expect(page.getByRole("main")).toBeVisible();
   await expect(page.getByRole("region", { name: "환자 컨텍스트" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "복귀 기간 변화" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "현재도 유효한 변화" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "현재 확인" })).toBeVisible();
   await expect(page.getByRole("complementary", { name: "복귀 인계 검토" })).toBeVisible();
 
   const returnWorkspace = page.getByTestId("return-comparison-workspace");

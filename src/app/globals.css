@@ -4915,13 +4915,44 @@ summary:focus-visible {
   display: grid;
   width: 100%;
   min-width: 0;
-  gap: 22px;
+  gap: 28px;
 }
 
 .return-clinical-section {
   min-width: 0;
   padding-top: 4px;
   border-top: 1px solid var(--line);
+}
+
+.return-review-group {
+  padding: 14px 16px 16px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--primary);
+  background: var(--primary-soft);
+}
+
+.return-review-group-tone-primary {
+  border-left-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.return-review-group-tone-watch {
+  border-left-color: var(--watch);
+  background: var(--watch-soft);
+}
+
+.return-review-group-tone-neutral {
+  border-left-color: var(--secondary);
+  background: var(--canvas);
+}
+
+.return-review-group-tone-tertiary {
+  border-left-color: var(--muted);
+  background: var(--surface);
+}
+
+.return-review-group .return-section-heading {
+  padding-top: 0;
 }
 
 .return-section-heading {
@@ -4936,7 +4967,7 @@ summary:focus-visible {
 .return-section-heading h2 {
   margin-top: 4px;
   color: var(--ink);
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 800;
   letter-spacing: -0.04em;
 }
@@ -4985,7 +5016,7 @@ summary:focus-visible {
 }
 
 .return-event-trend {
-  border-left-color: var(--primary);
+  border-left-color: var(--secondary);
 }
 
 .return-event-record_event {
@@ -5096,6 +5127,7 @@ summary:focus-visible {
 
 .return-event-value-current strong {
   color: var(--primary);
+  font-size: 13px;
 }
 
 .return-event-arrow {
@@ -5137,7 +5169,9 @@ summary:focus-visible {
 
 .return-evidence-button {
   flex: 0 0 auto;
+  min-height: 36px;
   padding: 0 11px;
+  background: var(--primary-soft);
 }
 
 .return-evidence-button:hover,
@@ -5332,13 +5366,40 @@ summary:focus-visible {
 .return-summary-body {
   display: grid;
   min-width: 0;
-  gap: 13px;
+  gap: 8px;
 }
 
 .return-summary-section {
   min-width: 0;
   padding-top: 9px;
   border-top: 1px solid var(--line);
+}
+
+.return-summary-block {
+  padding: 10px 10px 11px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--secondary);
+  background: var(--surface);
+}
+
+.return-summary-block-situation {
+  border-left-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.return-summary-block-background {
+  border-left-color: var(--secondary);
+  background: var(--canvas);
+}
+
+.return-summary-block-assessment {
+  border-left-color: var(--secondary);
+  background: var(--surface);
+}
+
+.return-summary-block-recommendation {
+  border-left-color: var(--watch);
+  background: var(--watch-soft);
 }
 
 .return-summary-section-heading {
