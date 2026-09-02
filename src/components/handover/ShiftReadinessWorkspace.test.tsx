@@ -112,6 +112,15 @@ describe("ShiftReadinessWorkspace", () => {
     );
   });
 
+  it("gives each stable item anchor a programmatic focus target", () => {
+    render(<ShiftReadinessWorkspace {...props(createValidShiftReadinessResponse())} />);
+
+    const item = document.getElementById("shift-readiness-item-P001-investigation-CBC-new-result");
+    expect(item).toBeInstanceOf(HTMLElement);
+    item?.focus();
+    expect(item).toHaveFocus();
+  });
+
   it("uses text statuses and renders empty domains without inventing items", () => {
     render(<ShiftReadinessWorkspace {...props(emptyResponse())} />);
 
@@ -170,6 +179,19 @@ describe("ShiftReadinessWorkspace", () => {
     expect(screen.getByRole("article", { name: /CBC 결과 확인/ })).toBeVisible();
     expect(screen.getByRole("alert")).toHaveTextContent("새 결과를 불러오지 못했습니다.");
     expect(screen.getByRole("button", { name: "다시 시도" })).toBeVisible();
+  });
+
+  it("keeps one live status region while refreshing a prior partial response", () => {
+    render(
+      <ShiftReadinessWorkspace
+        {...props(responseWithStatus("partial"))}
+        status="loading"
+      />,
+    );
+
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.getByRole("status")).toHaveTextContent("불러오는 중");
+    expect(screen.getByRole("status")).toHaveTextContent("부분 결과");
   });
 
   it("keeps evidence opening and acknowledgement independent", async () => {

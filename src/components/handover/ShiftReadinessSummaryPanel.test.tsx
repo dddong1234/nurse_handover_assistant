@@ -103,6 +103,8 @@ describe("ShiftReadinessSummaryPanel", () => {
     );
     expect(screen.getByRole("status")).toHaveTextContent("불러오는 중");
     expect(screen.getByRole("textbox", { name: "인계 메모" })).toHaveValue("세션 메모");
+    expect(screen.queryByText("0/0")).not.toBeInTheDocument();
+    expect(screen.queryByText("미확인 0건")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "다시 시도" })).not.toBeInTheDocument();
 
     rerender(
@@ -116,6 +118,8 @@ describe("ShiftReadinessSummaryPanel", () => {
     );
     expect(screen.getByRole("alert")).toHaveTextContent("불러오지 못했습니다");
     expect(screen.getByRole("textbox", { name: "인계 메모" })).toHaveValue("세션 메모");
+    expect(screen.queryByText("0/0")).not.toBeInTheDocument();
+    expect(screen.queryByText("미확인 0건")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "다시 시도" }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
@@ -131,9 +135,27 @@ describe("ShiftReadinessSummaryPanel", () => {
     );
 
     expect(screen.getByRole("heading", { name: "복귀 기간 요약" })).toBeVisible();
+    expect(screen.getByText("0/7")).toBeVisible();
+    expect(screen.getByText("미확인 7건")).toBeVisible();
     expect(within(screen.getByRole("region", { name: "기록 기반 요약" })).getByText("CBC 결과 확인", { exact: true })).toBeVisible();
     expect(screen.getByRole("alert")).toHaveTextContent("새 결과를 불러오지 못했습니다.");
     expect(screen.getByRole("textbox", { name: "인계 메모" })).toHaveValue("세션 메모");
+  });
+
+  it("keeps one live status region while refreshing a prior partial response", () => {
+    const response = createValidShiftReadinessResponse();
+    response.status = "partial";
+    response.dataWarnings = ["일부 항목은 확인할 수 없습니다."];
+    render(
+      <ShiftReadinessSummaryPanel
+        {...summaryProps(response, [])}
+        status="loading"
+      />,
+    );
+
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.getByRole("status")).toHaveTextContent("불러오는 중");
+    expect(screen.getByRole("status")).toHaveTextContent("부분 결과");
   });
 
   it("keeps a no-items response explicit and does not call it completion", () => {
@@ -162,6 +184,8 @@ describe("ShiftReadinessSummaryPanel", () => {
     };
     render(<ShiftReadinessSummaryPanel {...summaryProps(response, [])} />);
 
+    expect(screen.getByText("0/0")).toBeVisible();
+    expect(screen.getByText("미확인 0건")).toBeVisible();
     expect(within(screen.getByRole("region", { name: "기록 기반 요약" })).getByText("이번 근무에 표시할 항목 없음")).toBeVisible();
     expect(screen.queryByText(/완료|검토 완료|안전|악화|보고 필요/)).not.toBeInTheDocument();
   });

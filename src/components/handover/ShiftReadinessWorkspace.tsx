@@ -201,6 +201,7 @@ function ItemRow({
   return (
     <article
       id={itemDomId(item.id)}
+      tabIndex={-1}
       className="shift-readiness-item"
       data-item-id={item.id}
       data-domain={item.domain}
@@ -371,13 +372,19 @@ export function ShiftReadinessWorkspace({
         >
           <strong>{announcement.title}</strong>
           <span>{announcement.message}</span>
+          {responseAnnouncement ? (
+            <span className="shift-readiness-retained-response-state">
+              <strong>{responseAnnouncement.title}</strong>
+              <span>{responseAnnouncement.message}</span>
+            </span>
+          ) : null}
           {announcement.role === "alert" ? (
             <button type="button" className="shift-readiness-retry" onClick={onRetry}>다시 시도</button>
           ) : null}
         </div>
       ) : null}
 
-      {responseAnnouncement ? (
+      {!announcement && responseAnnouncement ? (
         <div
           className={`shift-readiness-status shift-readiness-status-${responseAnnouncement.tone}`}
           role={responseAnnouncement.role}

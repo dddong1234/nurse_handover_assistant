@@ -94,11 +94,13 @@ function ProgressSection({
   response: ShiftReadinessResponse | null;
   acknowledgedItemIds: readonly string[];
 }) {
-  const total = response?.metrics.itemCount ?? 0;
+  const total = response?.metrics.itemCount ?? null;
   const acknowledged = response
     ? response.items.filter((item) => acknowledgedItemIds.includes(item.id)).length
-    : 0;
-  const unacknowledged = Math.max(0, total - acknowledged);
+    : null;
+  const unacknowledged = response && total !== null && acknowledged !== null
+    ? Math.max(0, total - acknowledged)
+    : null;
 
   return (
     <section className="shift-readiness-summary-progress" aria-labelledby="shift-readiness-progress-title">
@@ -106,25 +108,30 @@ function ProgressSection({
         <h3 id="shift-readiness-progress-title">검토 진행</h3>
         <span className="shift-readiness-summary-progress-label">항목별 확인 표시</span>
       </header>
-      <div className="shift-readiness-summary-progress-value" aria-label={`확인함 ${acknowledged}개 중 ${total}개`}>
-        <strong className="mono">{acknowledged}/{total}</strong>
+      <div
+        className="shift-readiness-summary-progress-value"
+        aria-label={response ? `확인함 ${acknowledged}개 중 ${total}개` : "검토 진행 정보를 사용할 수 없습니다."}
+      >
+        <strong className="mono">{response ? `${acknowledged}/${total}` : "—"}</strong>
         <span>확인함</span>
       </div>
       <p className="shift-readiness-summary-unreviewed" data-testid="shift-readiness-unreviewed-count">
-        미확인 {unacknowledged}건
+        {response ? `미확인 ${unacknowledged}건` : "검토 진행 정보 없음"}
       </p>
       <div className="shift-readiness-summary-progress-track" aria-hidden="true">
-        <span style={{ width: `${total ? Math.min(100, (acknowledged / total) * 100) : 0}%` }} />
+        <span style={{ width: response && total ? `${Math.min(100, ((acknowledged ?? 0) / total) * 100)}%` : "0%" }} />
       </div>
     </section>
   );
 }
 
-function Metric({ label, value, tone }: { label: string; value: number; tone: string }) {
+function Metric({ label, value, tone }: { label: string; value: number | null; tone: string }) {
   return (
     <div className={`shift-readiness-summary-metric shift-readiness-summary-metric-${tone}`}>
       <span>{label}</span>
-      <strong className="mono" aria-label={`${label} ${value}건`}>{value}건</strong>
+      <strong className="mono" aria-label={value === null ? `${label} 데이터를 기다리는 중` : `${label} ${value}건`}>
+        {value === null ? "—" : `${value}건`}
+      </strong>
     </div>
   );
 }
@@ -138,9 +145,9 @@ function MetricsSection({ response }: { response: ShiftReadinessResponse | null 
         <span className="shift-readiness-summary-metrics-helper">응답에 기록된 수</span>
       </header>
       <div className="shift-readiness-summary-metric-list">
-        <Metric label="새 결과" value={metrics?.newResultCount ?? 0} tone="new-result" />
-        <Metric label="이번 근무 예정" value={metrics?.scheduledThisShiftCount ?? 0} tone="scheduled" />
-        <Metric label="결과 대기" value={metrics?.pendingResultCount ?? 0} tone="pending" />
+        <Metric label="새 결과" value={metrics?.newResultCount ?? null} tone="new-result" />
+        <Metric label="이번 근무 예정" value={metrics?.scheduledThisShiftCount ?? null} tone="scheduled" />
+        <Metric label="결과 대기" value={metrics?.pendingResultCount ?? null} tone="pending" />
       </div>
     </section>
   );
@@ -260,13 +267,19 @@ export function ShiftReadinessSummaryPanel({
         >
           <strong>{requestAnnouncement.title}</strong>
           <span>{requestAnnouncement.message}</span>
+          {responseAnnouncement ? (
+            <span className="shift-readiness-summary-retained-response-state">
+              <strong>{responseAnnouncement.title}</strong>
+              <span>{responseAnnouncement.message}</span>
+            </span>
+          ) : null}
           {requestAnnouncement.role === "alert" ? (
             <button type="button" className="shift-readiness-summary-retry" onClick={onRetry}>다시 시도</button>
           ) : null}
         </div>
       ) : null}
 
-      {responseAnnouncement ? (
+      {!requestAnnouncement && responseAnnouncement ? (
         <div
           className={`shift-readiness-summary-status shift-readiness-summary-status-${responseAnnouncement.tone}`}
           role={responseAnnouncement.role}
