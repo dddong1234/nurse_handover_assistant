@@ -2,17 +2,20 @@ from __future__ import annotations
 
 import copy
 import importlib
-import os
 import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
 from tests.test_handover_shift_readiness_service import (
+    BASELINE_REVIEW_START,
     REVIEW_START,
     SHIFT,
     minimal_record,
     p001_records,
+    records_with_medication_effective_and_period_change,
+    records_with_missing_source_collections,
+    records_with_scheduled_investigation,
 )
 
 
@@ -31,6 +34,31 @@ def _client() -> TestClient:
 
 
 class ShiftReadinessApiTests(unittest.TestCase):
+    def test_effective_medication_api_keeps_matching_period_evidence(self):
+        request = {
+            "reviewStartAt": BASELINE_REVIEW_START,
+            "shift": copy.deepcopy(SHIFT),
+            "records": records_with_medication_effective_and_period_change(),
+            "coverageGaps": [],
+        }
+        response = _client().post("/api/handover/shift-readiness", json=request)
+        self.assertEqual(200, response.status_code)
+        medication_items = [
+            item for item in response.json()["items"] if item["domain"] == "medication"
+        ]
+        self.assertEqual(1, len(medication_items))
+        self.assertEqual("MEDICATION_EFFECTIVE_SHIFT", medication_items[0]["ruleCode"])
+        self.assertEqual(
+            {
+                "event:P-TEST:medications:기존-처방:2026-07-02T09:00:00+09:00:modified"
+            },
+            {
+                ref["periodEventId"]
+                for ref in medication_items[0]["sourceRefs"]
+                if ref.get("periodEventId")
+            },
+        )
+
     def test_shift_readiness_endpoint_returns_p001_contract(self):
         response = _client().post("/api/handover/shift-readiness", json=p001_request())
         self.assertEqual(200, response.status_code)
@@ -78,7 +106,7 @@ class ShiftReadinessApiTests(unittest.TestCase):
         client = _client()
         record = minimal_record()
         request = {
-            "reviewStartAt": REVIEW_START,
+            "reviewStartAt": BASELINE_REVIEW_START,
             "shift": copy.deepcopy(SHIFT),
             "records": [record],
             "coverageGaps": [],
@@ -98,6 +126,65 @@ class ShiftReadinessApiTests(unittest.TestCase):
         response = client.post("/api/handover/shift-readiness", json=request)
         self.assertEqual(200, response.status_code)
         self.assertEqual("partial", response.json()["status"])
+
+    def test_available_status_is_explicit_for_baseline_with_a_valid_item(self):
+        request = {
+            "reviewStartAt": BASELINE_REVIEW_START,
+            "shift": copy.deepcopy(SHIFT),
+            "records": records_with_scheduled_investigation(),
+            "coverageGaps": [],
+        }
+        response = _client().post("/api/handover/shift-readiness", json=request)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("available", response.json()["status"])
+        self.assertGreater(response.json()["metrics"]["itemCount"], 0)
+
+    def test_no_baseline_status_is_explicit_without_prior_snapshot(self):
+        request = {
+            "reviewStartAt": BASELINE_REVIEW_START,
+            "shift": copy.deepcopy(SHIFT),
+            "records": [minimal_record(recorded_at="2026-07-02T09:00:00+09:00")],
+            "coverageGaps": [],
+        }
+        response = _client().post("/api/handover/shift-readiness", json=request)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("no_baseline", response.json()["status"])
+
+    def test_no_items_status_is_explicit_for_baseline_without_matching_rules(self):
+        baseline = minimal_record(recorded_at="2026-06-29T15:00:00+09:00")
+        current = copy.deepcopy(baseline)
+        current["updated_at"] = "2026-07-02T09:00:00+09:00"
+        request = {
+            "reviewStartAt": BASELINE_REVIEW_START,
+            "shift": copy.deepcopy(SHIFT),
+            "records": [baseline, current],
+            "coverageGaps": [],
+        }
+        response = _client().post("/api/handover/shift-readiness", json=request)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("no_items", response.json()["status"])
+        self.assertEqual(0, response.json()["metrics"]["itemCount"])
+
+    def test_partial_status_is_explicit_for_missing_source_collections(self):
+        request = {
+            "reviewStartAt": BASELINE_REVIEW_START,
+            "shift": copy.deepcopy(SHIFT),
+            "records": records_with_missing_source_collections(),
+            "coverageGaps": [],
+        }
+        response = _client().post("/api/handover/shift-readiness", json=request)
+        self.assertEqual(200, response.status_code)
+        body = response.json()
+        self.assertEqual("partial", body["status"])
+        self.assertEqual(0, body["metrics"]["itemCount"])
+        self.assertTrue(
+            {
+                "SHIFT_READINESS_INVALID_INVESTIGATIONS_ARRAY",
+                "SHIFT_READINESS_INVALID_DEVICES_ARRAY",
+                "SHIFT_READINESS_INVALID_MEDICATIONS_ARRAY",
+                "SHIFT_READINESS_INVALID_HANDOFF_REQUESTS_ARRAY",
+            }.issubset(set(body["dataWarnings"]))
+        )
 
     def test_route_does_not_mutate_request_or_fixture_payload(self):
         request = p001_request()

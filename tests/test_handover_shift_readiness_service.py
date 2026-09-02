@@ -11,6 +11,7 @@ from services.handover_shift_readiness_service import build_shift_readiness
 
 ROOT = Path(__file__).resolve().parents[1]
 REVIEW_START = "2026-06-28T09:00:00+09:00"
+BASELINE_REVIEW_START = "2026-07-01T00:00:00+09:00"
 SHIFT = {
     "startsAt": "2026-07-02T07:00:00+09:00",
     "endsAt": "2026-07-02T15:00:00+09:00",
@@ -58,6 +59,56 @@ def records_with_no_handoff_requests() -> list[dict]:
     return records
 
 
+def records_with_medication_effective_and_period_change() -> list[dict]:
+    baseline = minimal_record(recorded_at="2026-06-29T15:00:00+09:00")
+    current = copy.deepcopy(baseline)
+    current["updated_at"] = "2026-07-02T09:00:00+09:00"
+    current["medications"][0].update(
+        {
+            "frequency": "BID",
+            "effectiveFrom": "2026-07-02T09:00:00+09:00",
+            "effectiveTo": None,
+            "orderStatus": "active",
+        }
+    )
+    return [baseline, current]
+
+
+def records_with_missing_source_collections() -> list[dict]:
+    records = [
+        minimal_record(recorded_at="2026-06-29T15:00:00+09:00"),
+        minimal_record(recorded_at="2026-07-02T09:00:00+09:00"),
+    ]
+    for record in records:
+        for collection in (
+            "investigations",
+            "devices",
+            "medications",
+            "handoffRequests",
+        ):
+            record.pop(collection)
+    return records
+
+
+def records_with_scheduled_investigation() -> list[dict]:
+    baseline = minimal_record(recorded_at="2026-06-29T15:00:00+09:00")
+    current = copy.deepcopy(baseline)
+    current["updated_at"] = "2026-07-02T09:00:00+09:00"
+    current["investigations"] = [
+        {
+            "id": "INV-STATUS-1",
+            "kind": "lab",
+            "name": "Status test",
+            "orderedAt": "2026-07-02T07:00:00+09:00",
+            "scheduledAt": "2026-07-02T09:00:00+09:00",
+            "status": "scheduled",
+            "resultedAt": None,
+            "resultSummary": None,
+        }
+    ]
+    return [baseline, current]
+
+
 def minimal_record(
     *,
     recorded_at: str = "2026-07-02T08:00:00+09:00",
@@ -90,6 +141,37 @@ def minimal_record(
 
 
 class ShiftReadinessServiceTests(unittest.TestCase):
+    def test_effective_medication_keeps_matching_period_evidence(self):
+        response = build_shift_readiness(
+            records_with_medication_effective_and_period_change(),
+            REVIEW_START,
+            SHIFT,
+            [],
+        )
+        medication_items = [
+            item for item in response["items"] if item["domain"] == "medication"
+        ]
+        self.assertEqual(1, len(medication_items))
+        self.assertEqual("MEDICATION_EFFECTIVE_SHIFT", medication_items[0]["ruleCode"])
+        self.assertEqual(
+            {
+                "event:P-TEST:medications:기존-처방:2026-07-02T09:00:00+09:00:modified"
+            },
+            {
+                ref["periodEventId"]
+                for ref in medication_items[0]["sourceRefs"]
+                if ref.get("periodEventId")
+            },
+        )
+        self.assertIn(
+            "medications[name=%EA%B8%B0%EC%A1%B4%20%EC%B2%98%EB%B0%A9]",
+            {
+                ref["path"]
+                for ref in medication_items[0]["sourceRefs"]
+                if "periodEventId" not in ref
+            },
+        )
+
     def test_p001_emits_all_five_domains_without_clinical_inference(self):
         response = build_p001_response()
         self.assertEqual(
@@ -302,6 +384,47 @@ class ShiftReadinessServiceTests(unittest.TestCase):
         )
         self.assertEqual("partial", with_gap["status"])
         self.assertEqual(0, with_gap["metrics"]["itemCount"])
+
+    def test_available_status_is_explicit_for_baseline_with_a_valid_item(self):
+        response = build_shift_readiness(
+            records_with_scheduled_investigation(), BASELINE_REVIEW_START, SHIFT, []
+        )
+        self.assertEqual("available", response["status"])
+        self.assertGreater(response["metrics"]["itemCount"], 0)
+
+    def test_no_baseline_status_is_explicit_without_prior_snapshot(self):
+        response = build_shift_readiness(
+            [minimal_record(recorded_at="2026-07-02T09:00:00+09:00")],
+            BASELINE_REVIEW_START,
+            SHIFT,
+            [],
+        )
+        self.assertEqual("no_baseline", response["status"])
+
+    def test_no_items_status_is_explicit_for_baseline_without_matching_rules(self):
+        baseline = minimal_record(recorded_at="2026-06-29T15:00:00+09:00")
+        current = copy.deepcopy(baseline)
+        current["updated_at"] = "2026-07-02T09:00:00+09:00"
+        response = build_shift_readiness(
+            [baseline, current], BASELINE_REVIEW_START, SHIFT, []
+        )
+        self.assertEqual("no_items", response["status"])
+        self.assertEqual(0, response["metrics"]["itemCount"])
+
+    def test_partial_status_is_explicit_for_missing_source_collections(self):
+        response = build_shift_readiness(
+            records_with_missing_source_collections(), BASELINE_REVIEW_START, SHIFT, []
+        )
+        self.assertEqual("partial", response["status"])
+        self.assertEqual(0, response["metrics"]["itemCount"])
+        self.assertTrue(
+            {
+                "SHIFT_READINESS_INVALID_INVESTIGATIONS_ARRAY",
+                "SHIFT_READINESS_INVALID_DEVICES_ARRAY",
+                "SHIFT_READINESS_INVALID_MEDICATIONS_ARRAY",
+                "SHIFT_READINESS_INVALID_HANDOFF_REQUESTS_ARRAY",
+            }.issubset(set(response["dataWarnings"]))
+        )
 
     def test_operational_enum_and_duplicate_timestamp_validation_are_strict(self):
         record = minimal_record()

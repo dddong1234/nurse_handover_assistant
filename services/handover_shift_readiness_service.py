@@ -73,6 +73,7 @@ _PATIENT_ID_FRAGMENT_RE = re.compile(r"[^0-9A-Za-z가-힣]+")
 _WARNING_SOURCE_ARRAY = {
     "investigations": "SHIFT_READINESS_INVALID_INVESTIGATIONS_ARRAY",
     "devices": "SHIFT_READINESS_INVALID_DEVICES_ARRAY",
+    "medications": "SHIFT_READINESS_INVALID_MEDICATIONS_ARRAY",
     "handoffRequests": "SHIFT_READINESS_INVALID_HANDOFF_REQUESTS_ARRAY",
 }
 _WARNING_SOURCE_ITEM = {
@@ -206,9 +207,14 @@ def _source_array(
     field: str,
     warnings: set[str],
 ) -> list[Any]:
-    value = record.get(field, [])
-    if value is None:
+    if field not in record or record[field] is None:
+        warnings.add(
+            _WARNING_SOURCE_ARRAY.get(
+                field, f"SHIFT_READINESS_INVALID_{field.upper()}_ARRAY"
+            )
+        )
         return []
+    value = record[field]
     if not isinstance(value, list):
         warnings.add(_WARNING_SOURCE_ARRAY.get(field, f"SHIFT_READINESS_INVALID_{field.upper()}_ARRAY"))
         return []
@@ -218,7 +224,6 @@ def _source_array(
 def _optional_timestamp(
     source: dict[str, Any],
     field: str,
-    warning: str,
 ) -> tuple[datetime | None, bool]:
     value = source.get(field)
     if value is None:
@@ -288,10 +293,10 @@ def _collect_investigations(
             try:
                 ordered_at = _parse_timestamp(source.get("orderedAt"), "investigation.orderedAt")
                 scheduled_at, scheduled_ok = _optional_timestamp(
-                    source, "scheduledAt", _WARNING_SOURCE_ITEM["investigations"]
+                    source, "scheduledAt"
                 )
                 resulted_at, resulted_ok = _optional_timestamp(
-                    source, "resultedAt", _WARNING_SOURCE_ITEM["investigations"]
+                    source, "resultedAt"
                 )
             except ValueError:
                 scheduled_ok = resulted_ok = False
@@ -362,10 +367,10 @@ def _collect_devices(
             try:
                 inserted_at = _parse_timestamp(source.get("insertedAt"), "device.insertedAt")
                 change_due_at, due_ok = _optional_timestamp(
-                    source, "changeDueAt", _WARNING_SOURCE_ITEM["devices"]
+                    source, "changeDueAt"
                 )
                 removed_at, removed_ok = _optional_timestamp(
-                    source, "removedAt", _WARNING_SOURCE_ITEM["devices"]
+                    source, "removedAt"
                 )
             except ValueError:
                 inserted_at = None
@@ -397,12 +402,7 @@ def _collect_medications(
     by_name: dict[str, list[dict[str, Any]]] = defaultdict(list)
     invalid_current: set[str] = set()
     for record, recorded_dt in zip(records, recorded_times):
-        medications = record.get("medications", [])
-        if medications is None:
-            medications = []
-        if not isinstance(medications, list):
-            warnings.add(_WARNING_SOURCE_ARRAY.get("medications", "SHIFT_READINESS_INVALID_MEDICATIONS_ARRAY"))
-            continue
+        medications = _source_array(record, "medications", warnings)
         seen_names: set[str] = set()
         for source in medications:
             if not isinstance(source, dict):
@@ -424,10 +424,10 @@ def _collect_medications(
                     invalid_current.add(name)
                 continue
             effective_from, from_ok = _optional_timestamp(
-                source, "effectiveFrom", _WARNING_SOURCE_ITEM["medications"]
+                source, "effectiveFrom"
             )
             effective_to, to_ok = _optional_timestamp(
-                source, "effectiveTo", _WARNING_SOURCE_ITEM["medications"]
+                source, "effectiveTo"
             )
             order_status = source.get("orderStatus")
             if order_status is not None and order_status not in _MEDICATION_ORDER_STATUSES:
@@ -492,7 +492,7 @@ def _collect_handoff_requests(
             try:
                 requested_at = _parse_timestamp(source.get("requestedAt"), "handoffRequest.requestedAt")
                 due_by, due_ok = _optional_timestamp(
-                    source, "dueBy", _WARNING_SOURCE_ITEM["handoffRequests"]
+                    source, "dueBy"
                 )
             except ValueError:
                 requested_at = None
@@ -914,7 +914,7 @@ def _build_device_items(
         elif recent_candidates:
             fact_status = "recent_change"
             rule_code = "DEVICE_RECENT_CHANGE"
-            latest_recent, relevant_at = max(
+            _, relevant_at = max(
                 recent_candidates,
                 key=lambda candidate: (candidate[0], candidate[1] or ""),
             )
@@ -992,7 +992,7 @@ def _build_medication_items(
         else:
             continue
         refs = _source_refs(entries, "medications", "name", name, name)
-        if recent_change and not effective_shift:
+        if recent_change:
             refs.extend(
                 ref
                 for event in matched_events
