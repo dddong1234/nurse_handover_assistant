@@ -4,6 +4,8 @@ import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { demoRecordPairs } from "@/lib/demo-records";
+import { buildShiftReadinessRecords } from "@/lib/demo-shift-readiness";
+import { getDemoTimeline } from "@/lib/demo-timelines";
 
 import { PatientRecordWorkspace, type PatientRecordWorkspaceProps } from "./PatientRecordWorkspace";
 
@@ -198,5 +200,33 @@ describe("PatientRecordWorkspace", () => {
     expect(within(workspace).getByRole("spinbutton", { name: "체온" })).toBeDisabled();
     expect(within(workspace).getByRole("button", { name: "초기화" })).toBeDisabled();
     expect(within(workspace).getByRole("button", { name: "비교 중" })).toBeDisabled();
+  });
+
+  it("renders operational source sections read-only and focuses an exact source", async () => {
+    const readinessRecord = buildShiftReadinessRecords(
+      "P001",
+      getDemoTimeline("P001").snapshots,
+    ).at(-1);
+    if (!readinessRecord) throw new Error("P001 근무 준비 기록이 없습니다.");
+
+    render(
+      <PatientRecordWorkspace
+        {...createBaseProps({
+          readinessRecord,
+          focusedSourcePath: "investigations[id=INV-P001-CBC]",
+          focusRequestId: 1,
+        })}
+      />,
+    );
+
+    const workspace = getRecordWorkspace();
+    expect(within(workspace).getByRole("heading", { name: "검사·결과" })).toBeVisible();
+    expect(within(workspace).getByRole("heading", { name: "Line·Device" })).toBeVisible();
+    expect(within(workspace).getByRole("heading", { name: "투약 적용 정보" })).toBeVisible();
+    expect(within(workspace).getByRole("heading", { name: "전달 요청 원본" })).toBeVisible();
+    const source = within(workspace).getByText("WBC 12.1 ×10³/μL");
+    expect(source).toHaveAttribute("data-evidence-active", "true");
+    expect(within(workspace).queryByDisplayValue("WBC 12.1 ×10³/μL")).not.toBeInTheDocument();
+    expect(within(workspace).getByRole("button", { name: "변경사항 비교" })).toBeInTheDocument();
   });
 });
