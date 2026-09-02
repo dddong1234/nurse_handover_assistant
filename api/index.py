@@ -19,6 +19,7 @@ from services.handover_period_service import (
     build_deterministic_period_summary,
     build_handover_period_comparison,
 )
+from services.handover_shift_readiness_service import build_shift_readiness
 from services.openai_service import rewrite_handover_summary
 from services.openai_period_service import rewrite_handover_period_summary
 
@@ -42,6 +43,22 @@ class HandoverPeriodCompareRequest(BaseModel):
     records: list[dict[str, Any]]
     coverageGaps: list[CoverageGap] = Field(default_factory=list)
     summaryMode: Literal["deterministic", "ai"] = "deterministic"
+
+
+class ShiftWindow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    startsAt: str
+    endsAt: str
+
+
+class ShiftReadinessRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reviewStartAt: str
+    shift: ShiftWindow
+    records: list[dict[str, Any]]
+    coverageGaps: list[CoverageGap] = Field(default_factory=list)
 
 
 app = FastAPI(title="Nurse Handover Assistant API")
@@ -149,3 +166,23 @@ def compare_handover_period(request: HandoverPeriodCompareRequest) -> dict[str, 
         "reviewGroups": comparison["reviewGroups"],
         "summary": summary,
     }
+
+
+@app.post("/api/handover/shift-readiness")
+def compare_handover_shift_readiness(
+    request: ShiftReadinessRequest,
+) -> dict[str, Any]:
+    try:
+        return build_shift_readiness(
+            request.records,
+            request.reviewStartAt,
+            request.shift.model_dump(),
+            [gap.model_dump(by_alias=True) for gap in request.coverageGaps],
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Shift Readiness 처리 중 오류가 발생했습니다",
+        ) from None
