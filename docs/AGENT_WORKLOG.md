@@ -37,6 +37,24 @@
 | 2026-09-01 | 휴무 복귀 다중 시점 인수인계 | core-logic + frontend (Luna Max), supervisor | 1.2.0 | PASSED | 5×8 가상 타임라인, 기간 비교·AI fallback·FastAPI, 복귀 모드·원본 근거·검토 세션, 반응형 E2E, `0.8.0` | 각 단계 독립 review와 수정 재검토 완료; supervisor Python 112/112·Vitest 171/171·Playwright 42/42·lint·typecheck·build·harness·diff-check 통과; P001 기간 사건 24건·근거 24/24, 불완전 투약 partial, 편집 중 근거 snapshot, 7개 viewport와 pair-mode 회귀 확인; main CI·Production root/health·pair 9/9·period 24/24·실제 근거 이동 통과 | 6 | PR #7·main `c7a6600`; 공개 주소 `https://nurse-handover-assistant.vercel.app`. 실제 EMR·근무표·인증·공유 영속 저장은 비범위. OpenAI 성공 문장화는 provider 크레딧 문제로 실 API 미검증이며 deterministic fallback 유지 |
 | 2026-09-01 | 복귀 인계 임상 계층 강화 | frontend (Luna Max) + supervisor | 1.2.0 | PASSED | 네 검토 그룹의 clinical-priority spine·tone 표면·제목 위계, 사건 현재 값·근거 조작, 우측 SBAR 독립 블록, `0.8.1` | TDD RED 2건 후 focused 20/20; supervisor Python 112/112·Vitest 173/173·Playwright 43/43·lint·typecheck·build·harness·diff-check 통과; 390–2544px overflow 0, 1440px 화면 직접 검토; 독립 review Critical/Important/Minor 0; main CI·Production root/health·pair 9/9·period 24/24·공개 화면 계층 8/8 통과 | 0 | PR #9·main `afb894a`; 공개 주소 `https://nurse-handover-assistant.vercel.app`. 기능·데이터·사건 순서·API·세션 경계 변경 없음. 초기 Playwright 기본 3000 포트 정체는 격리 포트로 재검증해 해소 |
 | 2026-09-02 | 복귀 간호사 Shift Readiness 제품 설계 | supervisor | 1.2.0 | PASSED | 현직자 피드백을 반영한 Task First 근무 준비 보드, 5개 도메인, 별도 deterministic API·세션 확인·원본 추적·안전 경계 명세와 구현 계획 | 사용자에게 아키텍처·데이터 계약·화면 흐름·오류/테스트·서면 명세를 단계별 승인받음; 기준선 harness 통과·Python 112/112·Vitest 173/173; placeholder·모호성·범위·diff 자체 검토; Luna Max 독립 계획 review 1차 Important 10건·재감사 6건 수정 후 최종 Critical/Important 0 PASS | 0 | 단일 비공식 인터뷰는 정성 가설로만 사용; 기존 record 계약 보존을 위해 timestamp sidecar→API 논리 snapshot 병합으로 저장 경계 구체화 |
+| 2026-09-02 | Shift Readiness 0.9.0 구현·검증 | core-logic + frontend (Luna Max), supervisor | 1.2.0 | PASSED | 5명 sidecar, 9개 deterministic 규칙·별도 API, TS 계약·세션 상태, 5도메인 보드, 기존 workbench·원본 근거 통합, 반응형 E2E, 릴리스 문서 | 최종 Python 155/155·Vitest 274/274·Playwright 64/64, lint·typecheck·build·py_compile·harness·diff-check 통과; P001 16항목·5도메인·근거 100%; 독립 최종 재리뷰 Critical/Important/Minor 0 | 7 | 최종 리뷰의 유효 Important 2건(no_items 진행 의미, timestamp parser parity) 수정. 근거 포커스·API 422/500 후보는 binding 테스트/계약으로 기각. 실제 EMR·영속 공유·임상 판단은 비범위 |
+
+## 0.9.0 Shift Readiness 단계별 하네스 기록
+
+모든 구현 작업은 `HARNESS_ACK: 1.2.0`과 역할·소유 파일·비범위를 확인한 뒤 통합했다. 하네스 응답이 누락된 Task 3과 Task 8 timestamp 수정은 takeover 에이전트가 기존 diff를 감사하고 binding ACK를 제출한 뒤 감독자가 검증했다.
+
+| Task | 역할·소유 범위 | TDD·감독 검증 | 독립 검토·수정 |
+|---:|---|---|---|
+| 1 | core-logic · `data/shift-readiness/P001–P005.json`, fixture test | missing sidecar RED 11건 → focused 11/11, Python 123/123 | 수정 0, 승인 |
+| 2 | core-logic · projector/API와 관련 Python test | 초기 focused 21/21; 보완 후 31/31, Python 154/154 | medication period source·부분 상태·4상태 계약 수정 1회, 승인 |
+| 3 | frontend · TS adapter/contracts/client와 test | focused 27/27, Vitest 200/200 | takeover ACK, Critical/Important 0 |
+| 4 | frontend · fetch/cache/review hook 4파일 | 보완 RED 5건 → focused 20/20, Vitest 220/220 | exact-key cache·review key·identity 수정 1회, 승인 |
+| 5 | frontend · Shift Readiness board/summary presentational 4파일 | missing module RED → focused 24/24, Vitest 244/244 | item focus·null progress·live region 수정 1회, 승인 |
+| 6 | frontend · workbench/queue/evidence 통합 7파일 | 보완 RED 6건 → focused 119/119, Vitest 274/274 | queue sort·cross-key state·field path·read-only/focus 수정 1회, 이중 리뷰 승인 |
+| 7 | frontend · `globals.css`, Playwright E2E | focused 21/21, full 64/64; 2544·1440·1024·960·390 직접 화면 검토 | 모바일 순서·요청/근거/상태/접근성·occlusion 수정 2회, 승인 |
+| 8 | supervisor + scoped takeover · 최종 계약/문서/배포 | UI RED 1 → 9/9; timestamp RED → Python focused 20/20; 최종 Python 155/155·Vitest 274/274·Playwright 64/64 | 유효 Important 2건 수정 1회, 최종 Critical/Important/Minor 0 승인 |
+
+Figma checkpoint는 Task 5 전에 node `39:3`의 디자인 토큰·임상 제품 맥락만 재확인했다. 화면 구성은 승인된 Task First 5도메인 흐름을 따랐고 Figma 원본의 차팅 구성은 복제하지 않았다.
 
 ## 마일스톤 게이트
 
@@ -47,7 +65,7 @@
 | Figma 기반 UI 통합 | `0.5.0` | PASSED | MCP 설계 대조, 주요 화면 시각 검증, 상태별 UI 확인 |
 | 통합 임상 워크벤치 | `0.7.0` | PASSED | 중앙 모듈 전환, 3레일 기하, 원본 기록 성공·실패 경계, 390·960·1024·1279·1440 회귀 검증 |
 | 휴무 복귀 인계 | `0.8.0` | PASSED | 5×8 기간 데이터, 인접 변화·생명주기 보존, 근거 100%, pair-mode 회귀, 390–2544px·배포 검증 |
-| Shift Readiness 근무 준비 보드 | `0.9.0` | PLANNED | 5개 업무 도메인, 근거 100%, 사실·확인 상태 분리, no-items/오류 구분, 기존 비교 회귀, 390–2544px 검증 |
+| Shift Readiness 근무 준비 보드 | `0.9.0` | PASSED | 5개 업무 도메인, 근거 100%, 사실·확인 상태 분리, no-items/오류 구분, 기존 비교 회귀, 390–2544px 검증 |
 | 근거 제한 AI 요약 | `0.6.0` | PLANNED | 오프라인 fallback, API 통합 테스트, 환각·누락 평가 |
 | 포트폴리오 안정판 | `1.0.0` | PLANNED | 전체 시연 시나리오, 회귀 테스트, 문서·영상 준비 |
 
