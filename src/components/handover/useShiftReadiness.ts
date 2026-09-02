@@ -49,6 +49,14 @@ type SharedRequest = {
 
 const inFlightRequests = new Map<ShiftReadinessKey, SharedRequest>();
 
+function hasMatchingPatientRecords(input: ShiftReadinessHookInput): boolean {
+  if (!Array.isArray(input.records) || input.records.length === 0) return false;
+  return input.records.every((record) => {
+    if (typeof record !== "object" || record === null || Array.isArray(record)) return false;
+    return "patient_id" in record && record.patient_id === input.patientId;
+  });
+}
+
 function cacheResponse(key: ShiftReadinessKey, response: ShiftReadinessResponse): void {
   responseCache.delete(key);
   responseCache.set(key, response);
@@ -223,16 +231,22 @@ export function useShiftReadiness(
   );
   const [internal, setInternal] = useState(() => initialState(key));
   const inputRef = useRef(input);
+  const internalRef = useRef(internal);
   const generationRef = useRef(0);
   const [retryRequest, setRetryRequest] = useState<{
     key: ShiftReadinessKey;
     version: number;
   } | null>(null);
   const handledRetryVersionRef = useRef(0);
+  const requestIdentityValid = hasMatchingPatientRecords(input);
 
   useEffect(() => {
     inputRef.current = input;
   }, [input]);
+
+  useEffect(() => {
+    internalRef.current = internal;
+  }, [internal]);
 
   useEffect(() => {
     const generation = generationRef.current + 1;
@@ -253,7 +267,23 @@ export function useShiftReadiness(
       };
     }
 
-    const previousResponse = cachedResponse(key);
+    if (!requestIdentityValid || !hasMatchingPatientRecords(requestInput)) {
+      setInternal({
+        key,
+        state: {
+          status: "error",
+          response: null,
+          error: new HandoverApiError("PATIENT_MISMATCH"),
+        },
+      });
+      return () => {
+        if (generationRef.current === generation) generationRef.current += 1;
+      };
+    }
+
+    const previousResponse =
+      cachedResponse(key) ??
+      (internalRef.current.key === key ? internalRef.current.state.response : null);
     if (previousResponse && !forceRefresh && !inFlightRequests.has(key)) {
       setInternal({ key, state: { status: "success", response: previousResponse, error: null } });
       return () => {
@@ -287,7 +317,7 @@ export function useShiftReadiness(
       release();
       if (generationRef.current === generation) generationRef.current += 1;
     };
-  }, [enabled, key, retryRequest]);
+  }, [enabled, key, requestIdentityValid, retryRequest]);
 
   const retry = useCallback(() => {
     if (!enabled) return;
@@ -300,6 +330,12 @@ export function useShiftReadiness(
   let visibleState: ShiftReadinessState;
   if (!enabled) {
     visibleState = { status: "idle", response: null, error: null };
+  } else if (!hasMatchingPatientRecords(input)) {
+    visibleState = {
+      status: "error",
+      response: null,
+      error: new HandoverApiError("PATIENT_MISMATCH"),
+    };
   } else if (internal.key !== key) {
     const response = responseCache.get(key) ?? null;
     visibleState = response
@@ -366,7 +402,10 @@ export function useShiftReadinessRoster(
 } {
   const targets = useMemo(() => uniqueRosterTargets(inputs, enabled), [enabled, inputs]);
   const targetSignature = useMemo(
-    () => JSON.stringify(targets.map(({ patientId, key }) => [patientId, key])),
+    () =>
+      JSON.stringify(
+        targets.map((target) => [target.patientId, target.key, hasMatchingPatientRecords(target.input)]),
+      ),
     [targets],
   );
   const targetsRef = useRef(targets);
@@ -433,6 +472,20 @@ export function useShiftReadinessRoster(
       if (forceRefresh) forceRefreshPatientsRef.current.delete(target.patientId);
 
       const existingSubscription = subscriptionsRef.current.get(target.patientId);
+      if (!hasMatchingPatientRecords(target.input)) {
+        if (existingSubscription) {
+          existingSubscription.release();
+          subscriptionsRef.current.delete(target.patientId);
+        }
+        const generation = nextGeneration(target.patientId);
+        setRosterEntry(
+          target.patientId,
+          target.key,
+          generation,
+          rosterState("error", null, new HandoverApiError("PATIENT_MISMATCH")),
+        );
+        continue;
+      }
       if (existingSubscription && existingSubscription.key === target.key && !forceRefresh) continue;
 
       const existingEntry = entriesRef.current.get(target.patientId);
@@ -446,7 +499,9 @@ export function useShiftReadinessRoster(
       }
 
       const generation = nextGeneration(target.patientId);
-      const previousResponse = cachedResponse(target.key);
+      const previousResponse =
+        cachedResponse(target.key) ??
+        (existingEntry?.key === target.key ? existingEntry.response : null);
       if (previousResponse && !forceRefresh) {
         setRosterEntry(
           target.patientId,
@@ -504,6 +559,13 @@ export function useShiftReadinessRoster(
 
     const visible = new Map<string, ShiftReadinessRosterEntry>();
     for (const target of targets) {
+      if (!hasMatchingPatientRecords(target.input)) {
+        visible.set(target.patientId, {
+          key: target.key,
+          ...rosterState("error", null, new HandoverApiError("PATIENT_MISMATCH")),
+        });
+        continue;
+      }
       const entry = entries.get(target.patientId);
       if (entry?.key === target.key) {
         visible.set(target.patientId, entry);

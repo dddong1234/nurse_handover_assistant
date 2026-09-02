@@ -131,4 +131,53 @@ describe("Shift Readiness session review storage", () => {
       manualHandoverNote: "keep",
     });
   });
+
+  it("rejects raw or non-canonical review keys without disturbing canonical entries", async () => {
+    const {
+      SHIFT_READINESS_REVIEW_STORAGE_KEY,
+      loadShiftReadinessReview,
+      persistShiftReadinessReview,
+      removeShiftReadinessReview,
+    } = await loadReviewModule();
+    const storage = createMemoryStorage();
+    persistShiftReadinessReview(storage, REVIEW_KEY, {
+      acknowledgedItemIds: ["valid"],
+      manualHandoverNote: "보존 메모",
+    });
+    const beforeInvalidWrite = storage.getItem(SHIFT_READINESS_REVIEW_STORAGE_KEY);
+    const rawKey = "P001:2026-06-28T09:00:00+09:00";
+    const upperCaseKey = "sr:0123ABCD";
+    persistShiftReadinessReview(storage, rawKey, {
+      acknowledgedItemIds: ["raw"],
+      manualHandoverNote: "저장 금지",
+    });
+    persistShiftReadinessReview(storage, upperCaseKey, {
+      acknowledgedItemIds: ["upper"],
+      manualHandoverNote: "저장 금지",
+    });
+    removeShiftReadinessReview(storage, rawKey);
+    expect(storage.getItem(SHIFT_READINESS_REVIEW_STORAGE_KEY)).toBe(beforeInvalidWrite);
+    expect(loadShiftReadinessReview(storage, rawKey, new Set(["raw"]))).toEqual({
+      acknowledgedItemIds: [],
+      manualHandoverNote: "",
+    });
+
+    storage.setItem(
+      SHIFT_READINESS_REVIEW_STORAGE_KEY,
+      JSON.stringify({
+        [rawKey]: { acknowledgedItemIds: ["raw"], manualHandoverNote: "raw" },
+        [REVIEW_KEY]: { acknowledgedItemIds: ["valid"], manualHandoverNote: "보존 메모" },
+      }),
+    );
+    expect(loadShiftReadinessReview(storage, REVIEW_KEY, new Set(["valid"]))).toEqual({
+      acknowledgedItemIds: ["valid"],
+      manualHandoverNote: "보존 메모",
+    });
+    persistShiftReadinessReview(storage, REVIEW_KEY, {
+      acknowledgedItemIds: ["valid"],
+      manualHandoverNote: "보존 메모",
+    });
+    expect(storage.getItem(SHIFT_READINESS_REVIEW_STORAGE_KEY)).not.toContain(rawKey);
+    expect(storage.getItem(SHIFT_READINESS_REVIEW_STORAGE_KEY)).toContain(REVIEW_KEY);
+  });
 });

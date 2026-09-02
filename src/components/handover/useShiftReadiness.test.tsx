@@ -105,7 +105,14 @@ describe("Shift Readiness request state", () => {
     for (const raw of ["P001", REVIEW_START_AT, SHIFT.startsAt, SHIFT.endsAt, fingerprint]) {
       expect(key).not.toContain(raw);
     }
-    expect(key).toBe(createShiftReadinessKey("P001", REVIEW_START_AT, { ...SHIFT }, fingerprint));
+    expect(key).toBe(
+      createShiftReadinessKey(
+        "P001",
+        REVIEW_START_AT,
+        { endsAt: SHIFT.endsAt, startsAt: SHIFT.startsAt },
+        fingerprint,
+      ),
+    );
     expect(key).not.toBe(createShiftReadinessKey("P002", REVIEW_START_AT, SHIFT, fingerprint));
     expect(key).not.toBe(createShiftReadinessKey("P001", "2026-06-29T09:00:00+09:00", SHIFT, fingerprint));
     expect(key).not.toBe(
@@ -209,6 +216,66 @@ describe("Shift Readiness request state", () => {
     await waitFor(() => expect(requestMock).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(result.current.status).toBe("success"));
   });
+
+  it("keeps an active exact-key response after cache eviction when retry fails", async () => {
+    const { HandoverApiError } = await import("@/lib/shift-readiness-api");
+    const { useShiftReadiness } = await loadHookModule();
+    const original = responseFor("P001");
+    requestMock.mockResolvedValueOnce(original);
+    const active = renderHook(() => useShiftReadiness(p001Input), { reactStrictMode: false });
+    await waitFor(() => expect(active.result.current.status).toBe("success"));
+    await waitFor(() => expect(active.result.current.response).toBe(original));
+
+    for (let index = 0; index < 24; index += 1) {
+      const patientId = `P${String(index + 101).padStart(3, "0")}`;
+      requestMock.mockResolvedValueOnce(responseFor(patientId));
+      const other = renderHook(() => useShiftReadiness(inputFor(patientId)), {
+        reactStrictMode: false,
+      });
+      await waitFor(() => expect(other.result.current.status).toBe("success"));
+      other.unmount();
+    }
+
+    requestMock.mockRejectedValueOnce(new HandoverApiError("NETWORK_ERROR"));
+    active.result.current.retry();
+    await waitFor(() => expect(active.result.current.status).toBe("error"));
+    expect(active.result.current.response).toBe(original);
+    expect(active.result.current.error?.code).toBe("NETWORK_ERROR");
+    active.unmount();
+  });
+
+  it("rejects a patient/record identity mismatch before requesting or exposing cache", async () => {
+    const { useShiftReadiness } = await loadHookModule();
+    const mismatchedInput: HookInput = {
+      ...p001Input,
+      records: p001Input.records.map((record) => ({ ...record, patient_id: "P002" })),
+    };
+    const { result } = renderHook(() => useShiftReadiness(mismatchedInput), {
+      reactStrictMode: false,
+    });
+    await waitFor(() => expect(result.current.status).toBe("error"));
+    expect(result.current.error?.code).toBe("PATIENT_MISMATCH");
+    expect(result.current.response).toBeNull();
+    expect(requestMock).not.toHaveBeenCalled();
+  });
+
+  it("retains a seeded cache while disabled and reuses it when re-enabled", async () => {
+    const { useShiftReadiness } = await loadHookModule();
+    const original = responseFor("P001");
+    requestMock.mockResolvedValueOnce(original);
+    const { result, rerender } = renderHook((props: HookInput) => useShiftReadiness(props), {
+      initialProps: p001Input,
+      reactStrictMode: false,
+    });
+    await waitFor(() => expect(result.current.status).toBe("success"));
+    rerender({ ...p001Input, enabled: false });
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+    expect(result.current.response).toBeNull();
+    rerender(p001Input);
+    await waitFor(() => expect(result.current.status).toBe("success"));
+    expect(result.current.response).toBe(original);
+    expect(requestMock).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("Shift Readiness roster state", () => {
@@ -262,6 +329,7 @@ describe("Shift Readiness roster state", () => {
     );
     await waitFor(() => expect(requestMock).toHaveBeenCalledTimes(3));
     await waitFor(() => expect(result.current.entriesByPatient.get("P002")?.status).toBe("success"));
+    const p002KeyBefore = result.current.entriesByPatient.get("P002")?.key;
     const changed = [
       inputFor("P001", createCurrentRecordFingerprint({ patientId: "P001", version: 2 })),
       ...initial.slice(1),
@@ -269,9 +337,7 @@ describe("Shift Readiness roster state", () => {
     rerender({ inputs: changed });
     await waitFor(() => expect(requestMock).toHaveBeenCalledTimes(4));
     await waitFor(() => expect(result.current.entriesByPatient.get("P001")?.status).toBe("success"));
-    expect(result.current.entriesByPatient.get("P002")?.key).toBe(
-      result.current.entriesByPatient.get("P002")?.key,
-    );
+    expect(result.current.entriesByPatient.get("P002")?.key).toBe(p002KeyBefore);
     expect(result.current.entriesByPatient.get("P003")?.status).toBe("success");
   });
 
@@ -286,11 +352,63 @@ describe("Shift Readiness roster state", () => {
     await waitFor(() => expect(result.current.entriesByPatient.get("P002")?.status).toBe("error"));
     expect(result.current.entriesByPatient.get("P001")?.status).toBe("loading");
     const changedP001 = inputFor("P001", createCurrentRecordFingerprint({ patientId: "P001", version: 3 }));
-    requestMock.mockResolvedValueOnce(responseFor("P001"));
+    const latestP001Response = responseFor("P001");
+    requestMock.mockResolvedValueOnce(latestP001Response);
     rerender({ inputs: [changedP001, p002Input] });
     await waitFor(() => expect(result.current.entriesByPatient.get("P001")?.status).toBe("success"));
+    const latestP001Key = result.current.entriesByPatient.get("P001")?.key;
+    expect(result.current.entriesByPatient.get("P001")?.response).toBe(latestP001Response);
     first.resolve(responseFor("P001"));
-    await waitFor(() => expect(result.current.entriesByPatient.get("P001")?.key).toMatch(/^sr:/));
+    await waitFor(() => expect(result.current.entriesByPatient.get("P001")?.key).toBe(latestP001Key));
+    expect(result.current.entriesByPatient.get("P001")?.response).toBe(latestP001Response);
     expect(result.current.entriesByPatient.get("P002")?.status).toBe("error");
+  });
+
+  it("keeps a roster entry's exact response after cache eviction when retry fails", async () => {
+    const { HandoverApiError } = await import("@/lib/shift-readiness-api");
+    const { useShiftReadiness, useShiftReadinessRoster } = await loadHookModule();
+    const original = responseFor("P001");
+    requestMock.mockResolvedValueOnce(original);
+    const roster = renderHook(() => useShiftReadinessRoster([p001Input], true), {
+      reactStrictMode: false,
+    });
+    await waitFor(() => expect(roster.result.current.entriesByPatient.get("P001")?.status).toBe("success"));
+    await waitFor(() => expect(roster.result.current.entriesByPatient.get("P001")?.response).toBe(original));
+
+    for (let index = 0; index < 24; index += 1) {
+      const patientId = `P${String(index + 201).padStart(3, "0")}`;
+      requestMock.mockResolvedValueOnce(responseFor(patientId));
+      const other = renderHook(() => useShiftReadiness(inputFor(patientId)), {
+        reactStrictMode: false,
+      });
+      await waitFor(() => expect(other.result.current.status).toBe("success"));
+      other.unmount();
+    }
+
+    requestMock.mockRejectedValueOnce(new HandoverApiError("NETWORK_ERROR"));
+    roster.result.current.retry("P001");
+    await waitFor(() => expect(roster.result.current.entriesByPatient.get("P001")?.status).toBe("error"));
+    expect(roster.result.current.entriesByPatient.get("P001")?.response).toBe(original);
+    expect(roster.result.current.entriesByPatient.get("P001")?.error?.code).toBe("NETWORK_ERROR");
+    roster.unmount();
+  });
+
+  it("isolates a roster patient/record identity mismatch from valid patients", async () => {
+    const { useShiftReadinessRoster } = await loadHookModule();
+    const mismatchedP001: HookInput = {
+      ...p001Input,
+      records: p001Input.records.map((record) => ({ ...record, patient_id: "P002" })),
+    };
+    requestMock.mockResolvedValueOnce(responseFor("P002"));
+    const { result } = renderHook(
+      () => useShiftReadinessRoster([mismatchedP001, p002Input], true),
+      { reactStrictMode: false },
+    );
+    await waitFor(() => expect(result.current.entriesByPatient.get("P001")?.status).toBe("error"));
+    await waitFor(() => expect(result.current.entriesByPatient.get("P002")?.status).toBe("success"));
+    expect(result.current.entriesByPatient.get("P001")?.error?.code).toBe("PATIENT_MISMATCH");
+    expect(result.current.entriesByPatient.get("P001")?.response).toBeNull();
+    expect(result.current.entriesByPatient.get("P002")?.response?.patient.id).toBe("P002");
+    expect(requestMock).toHaveBeenCalledTimes(1);
   });
 });

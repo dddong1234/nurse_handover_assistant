@@ -1,3 +1,5 @@
+import type { ShiftReadinessKey } from "@/components/handover/useShiftReadiness";
+
 export const SHIFT_READINESS_REVIEW_STORAGE_KEY = "nurse-handover:shift-readiness-review:v1";
 
 export type ShiftReadinessReview = {
@@ -12,6 +14,11 @@ export type ShiftReadinessReviewStorage = Pick<
 
 type CurrentItemIds = ReadonlySet<string> | readonly string[] | undefined;
 type UnknownRecord = Record<string, unknown>;
+const CANONICAL_REVIEW_KEY = /^sr:[0-9a-f]{8}$/;
+
+function isCanonicalReviewKey(value: unknown): value is ShiftReadinessKey {
+  return typeof value === "string" && CANONICAL_REVIEW_KEY.test(value);
+}
 
 function isPlainObject(value: unknown): value is UnknownRecord {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
@@ -35,7 +42,12 @@ function normalizedIds(value: unknown): string[] {
 
 function itemIdSet(value: CurrentItemIds): ReadonlySet<string> | null {
   if (value === undefined) return null;
-  return value instanceof Set ? value : new Set(value);
+  if (value instanceof Set) return value;
+  try {
+    return new Set(value);
+  } catch {
+    return new Set();
+  }
 }
 
 function normalizeReview(value: unknown, currentItemIds?: CurrentItemIds): ShiftReadinessReview {
@@ -64,7 +76,7 @@ function readStoredReviews(storage: ShiftReadinessReviewStorage): Record<string,
     const reviews: Record<string, ShiftReadinessReview> = {};
     for (const [reviewKey, value] of Object.entries(parsed)) {
       const review = normalizeReview(value);
-      if (isPlainObject(value)) reviews[reviewKey] = review;
+      if (isCanonicalReviewKey(reviewKey) && isPlainObject(value)) reviews[reviewKey] = review;
     }
     return reviews;
   } catch {
@@ -78,7 +90,7 @@ function writeStoredReviews(
 ): void {
   const sanitized: Record<string, ShiftReadinessReview> = {};
   for (const [reviewKey, review] of Object.entries(reviews)) {
-    sanitized[reviewKey] = normalizeReview(review);
+    if (isCanonicalReviewKey(reviewKey)) sanitized[reviewKey] = normalizeReview(review);
   }
   if (Object.keys(sanitized).length === 0) {
     try {
@@ -104,6 +116,7 @@ export function loadShiftReadinessReview(
   reviewKey: string,
   currentItemIds?: CurrentItemIds,
 ): ShiftReadinessReview {
+  if (!isCanonicalReviewKey(reviewKey)) return emptyShiftReadinessReview();
   const reviews = readStoredReviews(storage);
   return normalizeReview(reviews[reviewKey], currentItemIds);
 }
@@ -113,6 +126,7 @@ export function persistShiftReadinessReview(
   reviewKey: string,
   review: ShiftReadinessReview,
 ): void {
+  if (!isCanonicalReviewKey(reviewKey)) return;
   const reviews = readStoredReviews(storage);
   reviews[reviewKey] = normalizeReview(review);
   writeStoredReviews(storage, reviews);
@@ -135,6 +149,7 @@ export function removeShiftReadinessReview(
   storage: ShiftReadinessReviewStorage,
   reviewKey: string,
 ): void {
+  if (!isCanonicalReviewKey(reviewKey)) return;
   const reviews = readStoredReviews(storage);
   delete reviews[reviewKey];
   writeStoredReviews(storage, reviews);
