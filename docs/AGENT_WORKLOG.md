@@ -36,7 +36,7 @@
 | 2026-08-31 | 2544px 와이드 화면 임상 가독성 개선 | frontend (Luna Max) + supervisor | 1.2.0 | PASSED | 1600px 이상 전용 레일 기하, 역할별 타이포그래피, 근거 조작 높이, 2544px 계산 스타일 회귀 테스트, `0.7.2` | 기존 268px 레일로 RED 후 구현 GREEN; 독립 review Critical/Important/Minor 0. supervisor harness·Python 60/60·Vitest 86/86·Playwright 28/28·lint·typecheck·build·diff-check 통과; 2544px에서 좌/우 304/400px, 환자 15px, 변화 17px, 요약·근거 13px, 근거 컨트롤 30px·overflow 0 직접 확인 | 0 | `>=1600px`에서만 적용하며 1440 이하 디자인·기능·임상 데이터·비교 로직·API·세션 경계는 변경하지 않음 |
 | 2026-09-01 | 휴무 복귀 다중 시점 인수인계 | core-logic + frontend (Luna Max), supervisor | 1.2.0 | PASSED | 5×8 가상 타임라인, 기간 비교·AI fallback·FastAPI, 복귀 모드·원본 근거·검토 세션, 반응형 E2E, `0.8.0` | 각 단계 독립 review와 수정 재검토 완료; supervisor Python 112/112·Vitest 171/171·Playwright 42/42·lint·typecheck·build·harness·diff-check 통과; P001 기간 사건 24건·근거 24/24, 불완전 투약 partial, 편집 중 근거 snapshot, 7개 viewport와 pair-mode 회귀 확인; main CI·Production root/health·pair 9/9·period 24/24·실제 근거 이동 통과 | 6 | PR #7·main `c7a6600`; 공개 주소 `https://nurse-handover-assistant.vercel.app`. 실제 EMR·근무표·인증·공유 영속 저장은 비범위. OpenAI 성공 문장화는 provider 크레딧 문제로 실 API 미검증이며 deterministic fallback 유지 |
 | 2026-09-01 | 복귀 인계 임상 계층 강화 | frontend (Luna Max) + supervisor | 1.2.0 | PASSED | 네 검토 그룹의 clinical-priority spine·tone 표면·제목 위계, 사건 현재 값·근거 조작, 우측 SBAR 독립 블록, `0.8.1` | TDD RED 2건 후 focused 20/20; supervisor Python 112/112·Vitest 173/173·Playwright 43/43·lint·typecheck·build·harness·diff-check 통과; 390–2544px overflow 0, 1440px 화면 직접 검토; 독립 review Critical/Important/Minor 0; main CI·Production root/health·pair 9/9·period 24/24·공개 화면 계층 8/8 통과 | 0 | PR #9·main `afb894a`; 공개 주소 `https://nurse-handover-assistant.vercel.app`. 기능·데이터·사건 순서·API·세션 경계 변경 없음. 초기 Playwright 기본 3000 포트 정체는 격리 포트로 재검증해 해소 |
-| 2026-09-02 | 복귀 간호사 Shift Readiness 제품 설계 | supervisor | 1.2.0 | REVIEW | 현직자 피드백을 반영한 Task First 근무 준비 보드, 5개 도메인, 별도 deterministic API·세션 확인·원본 추적·안전 경계 명세 | 사용자에게 아키텍처·데이터 계약·화면 흐름·오류/테스트를 단계별 승인받음; 기준선 harness 통과·Python 112/112·Vitest 173/173; placeholder·모호성·범위·diff 자체 검토 | 0 | 단일 비공식 인터뷰는 정성 가설로만 사용; 구현·버전 변경 전 서면 명세 사용자 검토 대기 |
+| 2026-09-02 | 복귀 간호사 Shift Readiness 제품 설계 | supervisor | 1.2.0 | PASSED | 현직자 피드백을 반영한 Task First 근무 준비 보드, 5개 도메인, 별도 deterministic API·세션 확인·원본 추적·안전 경계 명세와 구현 계획 | 사용자에게 아키텍처·데이터 계약·화면 흐름·오류/테스트·서면 명세를 단계별 승인받음; 기준선 harness 통과·Python 112/112·Vitest 173/173; placeholder·모호성·범위·diff 자체 검토; Luna Max 독립 계획 review 1차 Important 10건·재감사 6건 수정 후 최종 Critical/Important 0 PASS | 0 | 단일 비공식 인터뷰는 정성 가설로만 사용; 기존 record 계약 보존을 위해 timestamp sidecar→API 논리 snapshot 병합으로 저장 경계 구체화 |
 
 ## 마일스톤 게이트
 
@@ -47,7 +47,7 @@
 | Figma 기반 UI 통합 | `0.5.0` | PASSED | MCP 설계 대조, 주요 화면 시각 검증, 상태별 UI 확인 |
 | 통합 임상 워크벤치 | `0.7.0` | PASSED | 중앙 모듈 전환, 3레일 기하, 원본 기록 성공·실패 경계, 390·960·1024·1279·1440 회귀 검증 |
 | 휴무 복귀 인계 | `0.8.0` | PASSED | 5×8 기간 데이터, 인접 변화·생명주기 보존, 근거 100%, pair-mode 회귀, 390–2544px·배포 검증 |
-| Shift Readiness 근무 준비 보드 | `0.9.0` | REVIEW | 5개 업무 도메인, 근거 100%, 사실·확인 상태 분리, no-items/오류 구분, 기존 비교 회귀, 390–2544px 검증 |
+| Shift Readiness 근무 준비 보드 | `0.9.0` | PLANNED | 5개 업무 도메인, 근거 100%, 사실·확인 상태 분리, no-items/오류 구분, 기존 비교 회귀, 390–2544px 검증 |
 | 근거 제한 AI 요약 | `0.6.0` | PLANNED | 오프라인 fallback, API 통합 테스트, 환각·누락 평가 |
 | 포트폴리오 안정판 | `1.0.0` | PLANNED | 전체 시연 시나리오, 회귀 테스트, 문서·영상 준비 |
 

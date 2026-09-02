@@ -1,6 +1,6 @@
 # 복귀 간호사 Shift Readiness 설계
 
-- 상태: 사용자 승인 설계 · 문서 검토 대기
+- 상태: 사용자 서면 승인 완료
 - 목표 버전: `0.9.0`
 - 기준 제품: Nurse Handover Assistant `0.8.1`
 - 적용 하네스: `1.2.0`
@@ -118,6 +118,8 @@
 ### 8.2 추가 구조화 필드
 
 기존 snapshot의 활력징후, 진단, 투약, 메모에 다음 배열을 추가한다.
+
+논리 snapshot은 아래 필드를 포함하지만 저장소의 기존 `data/patients`, `data/history`, `data/timelines` record를 직접 팽창시키지는 않는다. 편집·pair 비교 계약을 보존하기 위해 timestamp별 operational state를 `data/shift-readiness/P001.json`부터 `P005.json`까지 sidecar로 저장하고, 브라우저 adapter가 `/api/handover/shift-readiness` 요청 직전에 core snapshot과 병합한다. 새 endpoint가 받는 논리 record와 아래 판별 규칙은 동일하며 기존 pair·period endpoint에는 sidecar 필드를 보내지 않는다.
 
 ```text
 investigations[]
