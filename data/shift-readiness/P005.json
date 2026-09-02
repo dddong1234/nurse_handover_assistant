@@ -1,0 +1,129 @@
+{
+  "patientId": "P005",
+  "defaultShift": {
+    "startsAt": "2026-07-02T07:00:00+09:00",
+    "endsAt": "2026-07-02T15:00:00+09:00"
+  },
+  "states": {
+    "2026-06-29T15:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-29T23:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-30T07:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-30T15:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-01T07:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-01T19:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P005-CXR",
+          "kind": "imaging",
+          "name": "Right foot AP",
+          "orderedAt": "2026-07-01T18:45:00+09:00",
+          "scheduledAt": "2026-07-02T08:00:00+09:00",
+          "status": "ordered",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [
+        {
+          "id": "DEV-P005-PIV-1",
+          "type": "말초정맥관",
+          "site": "우측 전완",
+          "insertedAt": "2026-07-01T18:30:00+09:00",
+          "changeDueAt": null,
+          "status": "active",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-02T07:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P005-CXR",
+          "kind": "imaging",
+          "name": "Right foot AP",
+          "orderedAt": "2026-07-01T18:45:00+09:00",
+          "scheduledAt": "2026-07-02T08:00:00+09:00",
+          "status": "scheduled",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [
+        {
+          "id": "DEV-P005-PIV-1",
+          "type": "말초정맥관",
+          "site": "우측 전완",
+          "insertedAt": "2026-07-01T18:30:00+09:00",
+          "changeDueAt": null,
+          "status": "removal_ordered",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-02T09:30:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P005-CXR",
+          "kind": "imaging",
+          "name": "Right foot AP",
+          "orderedAt": "2026-07-01T18:45:00+09:00",
+          "scheduledAt": "2026-07-02T08:00:00+09:00",
+          "status": "resulted",
+          "resultedAt": "2026-07-02T08:30:00+09:00",
+          "resultSummary": "Right foot AP image report available"
+        }
+      ],
+      "devices": [
+        {
+          "id": "DEV-P005-PIV-1",
+          "type": "말초정맥관",
+          "site": "우측 전완",
+          "insertedAt": "2026-07-01T18:30:00+09:00",
+          "changeDueAt": null,
+          "status": "removal_ordered",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [],
+      "handoffRequests": [
+        {
+          "id": "REQ-P005-WOUND-1",
+          "topic": "족부 드레싱 상태 전달",
+          "requestedAt": "2026-07-02T07:30:00+09:00",
+          "dueBy": "2026-07-02T12:00:00+09:00",
+          "sourceType": "nursing_note",
+          "status": "cancelled"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "patientId": "P001",
+  "defaultShift": {
+    "startsAt": "2026-07-02T07:00:00+09:00",
+    "endsAt": "2026-07-02T15:00:00+09:00"
+  },
+  "states": {
+    "2026-06-29T15:00:00+09:00": {
+      "investigations": [],
+      "devices": [
+        {
+          "id": "DEV-P001-PIV-1",
+          "type": "말초정맥관",
+          "site": "좌측 전완",
+          "insertedAt": "2026-06-29T14:00:00+09:00",
+          "changeDueAt": "2026-07-02T14:00:00+09:00",
+          "status": "active",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-29T23:00:00+09:00": {
+      "investigations": [],
+      "devices": [
+        {
+          "id": "DEV-P001-PIV-1",
+          "type": "말초정맥관",
+          "site": "좌측 전완",
+          "insertedAt": "2026-06-29T14:00:00+09:00",
+          "changeDueAt": "2026-07-02T14:00:00+09:00",
+          "status": "active",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-30T07:00:00+09:00": {
+      "investigations": [],
+      "devices": [
+        {
+          "id": "DEV-P001-PIV-1",
+          "type": "말초정맥관",
+          "site": "좌측 전완",
+          "insertedAt": "2026-06-29T14:00:00+09:00",
+          "changeDueAt": "2026-07-02T14:00:00+09:00",
+          "status": "active",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-30T15:00:00+09:00": {
+      "investigations": [],
+      "devices": [
+        {
+          "id": "DEV-P001-PIV-1",
+          "type": "말초정맥관",
+          "site": "좌측 전완",
+          "insertedAt": "2026-06-29T14:00:00+09:00",
+          "changeDueAt": "2026-07-02T14:00:00+09:00",
+          "status": "active",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-01T07:00:00+09:00": {
+      "investigations": [],
+      "devices": [
+        {
+          "id": "DEV-P001-PIV-1",
+          "type": "말초정맥관",
+          "site": "좌측 전완",
+          "insertedAt": "2026-06-29T14:00:00+09:00",
+          "changeDueAt": "2026-07-02T14:00:00+09:00",
+          "status": "active",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-01T21:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P001-CBC",
+          "kind": "lab",
+          "name": "CBC",
+          "orderedAt": "2026-07-01T08:00:00+09:00",
+          "scheduledAt": null,
+          "status": "ordered",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [
+        {
+          "id": "DEV-P001-PIV-1",
+          "type": "말초정맥관",
+          "site": "좌측 전완",
+          "insertedAt": "2026-06-29T14:00:00+09:00",
+          "changeDueAt": "2026-07-02T14:00:00+09:00",
+          "status": "active",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-02T07:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P001-CBC",
+          "kind": "lab",
+          "name": "CBC",
+          "orderedAt": "2026-07-01T08:00:00+09:00",
+          "scheduledAt": null,
+          "status": "ordered",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [
+        {
+          "id": "DEV-P001-PIV-1",
+          "type": "말초정맥관",
+          "site": "좌측 전완",
+          "insertedAt": "2026-06-29T14:00:00+09:00",
+          "changeDueAt": "2026-07-02T14:00:00+09:00",
+          "status": "active",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-02T09:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P001-CBC",
+          "kind": "lab",
+          "name": "CBC",
+          "orderedAt": "2026-07-01T08:00:00+09:00",
+          "scheduledAt": null,
+          "status": "resulted",
+          "resultedAt": "2026-07-02T08:20:00+09:00",
+          "resultSummary": "WBC 12.1 ×10³/μL"
+        },
+        {
+          "id": "INV-P001-CXR",
+          "kind": "imaging",
+          "name": "Chest AP",
+          "orderedAt": "2026-07-02T07:30:00+09:00",
+          "scheduledAt": "2026-07-02T11:00:00+09:00",
+          "status": "scheduled",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [
+        {
+          "id": "DEV-P001-PIV-1",
+          "type": "말초정맥관",
+          "site": "좌측 전완",
+          "insertedAt": "2026-06-29T14:00:00+09:00",
+          "changeDueAt": "2026-07-02T14:00:00+09:00",
+          "status": "active",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [
+        {
+          "medicationName": "타세놀정 500mg",
+          "effectiveFrom": "2026-07-02T09:00:00+09:00",
+          "effectiveTo": null,
+          "orderStatus": "active"
+        }
+      ],
+      "handoffRequests": [
+        {
+          "id": "REQ-P001-ROUND-1",
+          "topic": "회진 전 발열 경과 전달",
+          "requestedAt": "2026-07-02T07:40:00+09:00",
+          "dueBy": "2026-07-02T10:30:00+09:00",
+          "sourceType": "physician_order",
+          "status": "open"
+        }
+      ]
+    }
+  }
+}

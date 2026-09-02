@@ -1,4 +1,9 @@
 import type { HandoverApiResponse, HandoverComparison } from "@/lib/contracts";
+import type { WorkspaceMode, WorkspaceScope } from "./WorkspaceModeTabs";
+
+export type PatientQueueProgress =
+  | { status: "loading" | "error" | "no_items" }
+  | { status: "available" | "partial" | "no_baseline"; acknowledged: number; total: number };
 
 export type PatientQueueProps = {
   responses: HandoverApiResponse[];
@@ -7,6 +12,9 @@ export type PatientQueueProps = {
   onSearchChange: (value: string) => void;
   onSelectPatient: (patientId: string) => void;
   reviewedPatientIds?: ReadonlySet<string> | readonly string[];
+  scope?: WorkspaceScope;
+  mode?: WorkspaceMode;
+  reviewProgressByPatient?: ReadonlyMap<string, PatientQueueProgress>;
 };
 
 function cannotCompare(comparison: HandoverComparison) {
@@ -61,6 +69,22 @@ function isReviewedPatient(
   return (reviewedPatientIds as ReadonlySet<string>).has(patientId);
 }
 
+function readinessProgressLabel(progress: PatientQueueProgress | undefined) {
+  if (!progress || progress.status === "loading") return "확인 —";
+  if (progress.status === "error") return "확인 오류";
+  if (progress.status === "no_items") return "표시 항목 없음";
+  if (progress.status === "partial") {
+    if (progress.total > 0) return `일부 자료 · 확인 ${progress.acknowledged}/${progress.total}`;
+    return "일부 자료 · 확인 항목 없음";
+  }
+  if (progress.status === "no_baseline") {
+    if (progress.total > 0) return `기준 없음 · 확인 ${progress.acknowledged}/${progress.total}`;
+    return "기준 없음 · 확인 항목 없음";
+  }
+  const countedProgress = progress as Extract<PatientQueueProgress, { acknowledged: number }>;
+  return `확인 ${countedProgress.acknowledged}/${countedProgress.total}`;
+}
+
 export function orderPatientResponses(
   responses: HandoverApiResponse[],
   reviewedPatientIds: ReadonlySet<string> | readonly string[] = [],
@@ -86,11 +110,15 @@ export function PatientQueue({
   onSearchChange,
   onSelectPatient,
   reviewedPatientIds = [],
+  scope = "shift",
+  mode = "comparison",
+  reviewProgressByPatient,
 }: PatientQueueProps) {
-  const filteredResponses = orderPatientResponses(
-    filterPatientResponses(responses, searchTerm),
-    reviewedPatientIds,
-  );
+  const readinessMode = scope === "return" && mode === "readiness";
+  const filteredResponses = filterPatientResponses(responses, searchTerm);
+  const visibleResponses = readinessMode
+    ? filteredResponses
+    : orderPatientResponses(filteredResponses, reviewedPatientIds);
 
   return (
     <aside className="patient-queue panel" aria-labelledby="patient-queue-title">
@@ -115,40 +143,54 @@ export function PatientQueue({
         <kbd className="search-shortcut" aria-hidden="true">/</kbd>
       </label>
 
-      <div className="queue-toolbar" aria-label="환자 큐 상태">
-        <span><i className="status-dot dot-watch" aria-hidden="true" />변화 검출</span>
-        <span><i className="status-dot dot-stable" aria-hidden="true" />변화 없음</span>
-      </div>
+      {readinessMode ? (
+        <div className="queue-toolbar queue-readiness-toolbar" aria-label="근무 준비 확인 상태">
+          <span>근무 준비 확인</span>
+          <span className="mono">5명</span>
+        </div>
+      ) : (
+        <div className="queue-toolbar" aria-label="환자 큐 상태">
+          <span><i className="status-dot dot-watch" aria-hidden="true" />변화 검출</span>
+          <span><i className="status-dot dot-stable" aria-hidden="true" />변화 없음</span>
+        </div>
+      )}
 
-      {filteredResponses.length === 0 ? (
+      {visibleResponses.length === 0 ? (
         <div className="queue-empty" role="status" aria-live="polite">
           <strong>검색 결과가 없습니다.</strong>
           <span>이름, ID 또는 병실 번호를 확인하세요.</span>
         </div>
       ) : (
         <div className="queue-list" role="list" aria-label="환자 목록">
-          {filteredResponses.map(({ comparison }) => {
+          {visibleResponses.map(({ comparison }) => {
             const highPriorityCount = comparison.changes.filter(
               (change) => change.reviewPriority === "high",
             ).length;
             const selected = comparison.patient.id === selectedPatientId;
             const { patient } = comparison;
             const reviewed = isReviewedPatient(reviewedPatientIds, patient.id);
+            const readinessProgress = readinessMode
+              ? readinessProgressLabel(reviewProgressByPatient?.get(patient.id))
+              : null;
 
             return (
               <div role="listitem" key={patient.id}>
                 <button
                   type="button"
-                  className={`queue-row ${selected ? "is-selected" : ""}`}
+                  className={`queue-row ${selected ? "is-selected" : ""} ${readinessMode ? "queue-row-readiness" : ""}`}
                   aria-current={selected ? "true" : undefined}
-                  aria-label={`${patient.name}, ${patient.id}, ${patient.room}호`}
+                  aria-label={`${patient.name}, ${patient.id}, ${patient.room}호${readinessProgress ? `, ${readinessProgress}` : ""}`}
                   onClick={() => onSelectPatient(patient.id)}
                 >
                   <span className="queue-row-top">
                     <span className="queue-room mono">{patient.room}호</span>
-                    <span className={`queue-status ${queueStatusTone(comparison, reviewed)}`}>
-                      {reviewed ? "검토 완료" : queueStatusLabel(comparison)}
-                    </span>
+                    {readinessProgress ? (
+                      <span className="queue-status queue-readiness-status">{readinessProgress}</span>
+                    ) : (
+                      <span className={`queue-status ${queueStatusTone(comparison, reviewed)}`}>
+                        {reviewed ? "검토 완료" : queueStatusLabel(comparison)}
+                      </span>
+                    )}
                   </span>
                   <span className="queue-patient-main">
                     <span className="queue-patient-name">{patient.name}</span>
@@ -156,18 +198,25 @@ export function PatientQueue({
                       {patient.diagnoses[0] ?? "진단 정보 없음"}
                     </span>
                   </span>
-                  <span className="queue-row-bottom">
-                    <span className="queue-id mono">{patient.id}</span>
-                    <span className="queue-change-count">
-                      {cannotCompare(comparison) ? null : (
-                        <strong className="mono">{comparison.changes.length}</strong>
-                      )}
-                      {queueChangeLabel(comparison)}
+                  {readinessMode ? (
+                    <span className="queue-row-bottom queue-row-readiness-bottom">
+                      <span className="queue-id mono">{patient.id}</span>
+                      <span className="queue-readiness-progress">{readinessProgress}</span>
                     </span>
-                    {highPriorityCount > 0 ? (
-                      <span className="queue-priority-count">중요 {highPriorityCount}</span>
-                    ) : null}
-                  </span>
+                  ) : (
+                    <span className="queue-row-bottom">
+                      <span className="queue-id mono">{patient.id}</span>
+                      <span className="queue-change-count">
+                        {cannotCompare(comparison) ? null : (
+                          <strong className="mono">{comparison.changes.length}</strong>
+                        )}
+                        {queueChangeLabel(comparison)}
+                      </span>
+                      {highPriorityCount > 0 ? (
+                        <span className="queue-priority-count">중요 {highPriorityCount}</span>
+                      ) : null}
+                    </span>
+                  )}
                 </button>
               </div>
             );

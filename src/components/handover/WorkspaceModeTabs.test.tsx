@@ -10,8 +10,10 @@ describe("WorkspaceModeTabs", () => {
   it("exposes selected state and panel relationships for both workspace modules", () => {
     render(
       <WorkspaceModeTabs
+        scope="shift"
         mode="comparison"
         recordAvailable
+        readinessPanelId="readiness-panel"
         comparisonPanelId="comparison-panel"
         recordPanelId="record-panel"
         onModeChange={vi.fn()}
@@ -35,8 +37,10 @@ describe("WorkspaceModeTabs", () => {
 
     render(
       <WorkspaceModeTabs
+        scope="shift"
         mode="comparison"
         recordAvailable
+        readinessPanelId="readiness-panel"
         comparisonPanelId="comparison-panel"
         recordPanelId="record-panel"
         onModeChange={onModeChange}
@@ -63,8 +67,10 @@ describe("WorkspaceModeTabs", () => {
 
     render(
       <WorkspaceModeTabs
+        scope="shift"
         mode="comparison"
         recordAvailable
+        readinessPanelId="readiness-panel"
         comparisonPanelId="comparison-panel"
         recordPanelId="record-panel"
         onModeChange={onModeChange}
@@ -91,8 +97,10 @@ describe("WorkspaceModeTabs", () => {
 
     render(
       <WorkspaceModeTabs
+        scope="shift"
         mode="comparison"
         recordAvailable={false}
+        readinessPanelId="readiness-panel"
         comparisonPanelId="comparison-panel"
         recordPanelId="record-panel"
         onModeChange={onModeChange}
@@ -109,5 +117,78 @@ describe("WorkspaceModeTabs", () => {
 
     expect(onModeChange).not.toHaveBeenCalled();
     expect(comparison).toHaveFocus();
+  });
+
+  it("uses the return-scope labels and three supplied panel relationships", () => {
+    render(
+      <WorkspaceModeTabs
+        scope="return"
+        mode="readiness"
+        recordAvailable
+        readinessPanelId="readiness-panel"
+        comparisonPanelId="comparison-panel"
+        recordPanelId="record-panel"
+        onModeChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("tab", { name: "근무 준비" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "근무 준비" })).toHaveAttribute("aria-controls", "readiness-panel");
+    expect(screen.getByRole("tab", { name: "변화 근거" })).toHaveAttribute("aria-controls", "comparison-panel");
+    expect(screen.getByRole("tab", { name: "원본 기록" })).toHaveAttribute("aria-controls", "record-panel");
+  });
+
+  it("cycles through enabled return tabs and skips a disabled record tab", async () => {
+    const user = userEvent.setup();
+    const onModeChange = vi.fn();
+
+    render(
+      <WorkspaceModeTabs
+        scope="return"
+        mode="readiness"
+        recordAvailable={false}
+        readinessPanelId="readiness-panel"
+        comparisonPanelId="comparison-panel"
+        recordPanelId="record-panel"
+        onModeChange={onModeChange}
+      />,
+    );
+
+    const readiness = screen.getByRole("tab", { name: "근무 준비" });
+    const comparison = screen.getByRole("tab", { name: "변화 근거" });
+    const record = screen.getByRole("tab", { name: "원본 기록" });
+    expect(record).toBeDisabled();
+
+    readiness.focus();
+    await user.keyboard("{ArrowLeft}");
+    expect(onModeChange).toHaveBeenLastCalledWith("comparison");
+    expect(comparison).toHaveFocus();
+
+    comparison.focus();
+    await user.keyboard("{ArrowRight}");
+    expect(onModeChange).toHaveBeenLastCalledWith("readiness");
+    expect(readiness).toHaveFocus();
+
+    comparison.focus();
+    await user.keyboard("{End}");
+    expect(onModeChange).toHaveBeenLastCalledWith("comparison");
+    expect(comparison).toHaveFocus();
+  });
+
+  it("never exposes readiness in shift scope", () => {
+    render(
+      <WorkspaceModeTabs
+        scope="shift"
+        mode="comparison"
+        recordAvailable
+        readinessPanelId="readiness-panel"
+        comparisonPanelId="comparison-panel"
+        recordPanelId="record-panel"
+        onModeChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("tab", { name: "근무 준비" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("tab")).toHaveLength(2);
   });
 });

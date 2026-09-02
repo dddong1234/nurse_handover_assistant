@@ -1,0 +1,96 @@
+{
+  "patientId": "P003",
+  "defaultShift": {
+    "startsAt": "2026-07-02T07:00:00+09:00",
+    "endsAt": "2026-07-02T15:00:00+09:00"
+  },
+  "states": {
+    "2026-06-29T15:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-29T23:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-30T07:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-30T15:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-01T07:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-01T22:00:00+09:00": {
+      "investigations": [],
+      "devices": [
+        {
+          "id": "DEV-P003-PIV-1",
+          "type": "말초정맥관",
+          "site": "우측 전완",
+          "insertedAt": "2026-07-01T21:30:00+09:00",
+          "changeDueAt": null,
+          "status": "active",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-02T06:00:00+09:00": {
+      "investigations": [],
+      "devices": [
+        {
+          "id": "DEV-P003-PIV-1",
+          "type": "말초정맥관",
+          "site": "우측 전완",
+          "insertedAt": "2026-07-01T21:30:00+09:00",
+          "changeDueAt": null,
+          "status": "active",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-02T09:20:00+09:00": {
+      "investigations": [],
+      "devices": [
+        {
+          "id": "DEV-P003-PIV-1",
+          "type": "말초정맥관",
+          "site": "우측 전완",
+          "insertedAt": "2026-07-01T21:30:00+09:00",
+          "changeDueAt": null,
+          "status": "removed",
+          "removedAt": "2026-07-02T08:00:00+09:00"
+        },
+        {
+          "id": "DEV-P003-PIV-2",
+          "type": "말초정맥관",
+          "site": "좌측 손등",
+          "insertedAt": "2026-07-02T08:15:00+09:00",
+          "changeDueAt": null,
+          "status": "active",
+          "removedAt": null
+        }
+      ],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    }
+  }
+}

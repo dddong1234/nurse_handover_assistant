@@ -2,11 +2,19 @@ import { expect, test, type Page } from "@playwright/test";
 
 import p001ReturnPeriodStates from "../data/contracts/P001_return_period_states.json";
 import { buildDemoWorkspaceData } from "../src/lib/demo-adapter";
+import { buildShiftReadinessRecords, getDemoShiftWindow } from "../src/lib/demo-shift-readiness";
 import { getDemoTimeline } from "../src/lib/demo-timelines";
 import {
   isHandoverPeriodApiResponse,
   type HandoverPeriodApiResponse,
 } from "../src/lib/handover-period-contracts";
+import {
+  createValidShiftReadinessResponse,
+} from "../src/test/shift-readiness-fixtures";
+import type {
+  ShiftReadinessResponse,
+  ShiftReadinessStatus,
+} from "../src/lib/shift-readiness-contracts";
 
 const FALLBACK_MESSAGE = "서버 요약을 불러오지 못해 검증된 데모 결과를 표시합니다.";
 const RETIRED_SAFETY_NOTICE = ["가상 데이터", "의사결정 보조가 아님"].join(" · ");
@@ -51,6 +59,283 @@ type ReturnPeriodStateHandler = (
   body: ReturnPeriodRequestBody,
   requestIndex: number,
 ) => ReturnResponseState | Promise<ReturnResponseState>;
+
+type ShiftReadinessRequestBody = {
+  reviewStartAt?: unknown;
+  shift?: unknown;
+  records?: unknown;
+  coverageGaps?: unknown;
+};
+
+type ValidShiftReadinessRequestBody = {
+  reviewStartAt: string;
+  shift: ShiftReadinessResponse["shift"];
+  records: Array<Record<string, unknown>>;
+  coverageGaps: Array<Record<string, unknown>>;
+};
+
+type ShiftReadinessStateHandler = (
+  body: ValidShiftReadinessRequestBody,
+  requestIndex: number,
+) => ShiftReadinessStatus | Promise<ShiftReadinessStatus>;
+
+const SHIFT_READINESS_STATES = ["available", "no_baseline", "no_items", "partial"] as const;
+
+function stringValue(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function isIsoTimestamp(value: unknown): value is string {
+  return typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value) &&
+    Number.isFinite(Date.parse(value));
+}
+
+function assertValidShiftReadinessRequestBody(
+  body: unknown,
+): asserts body is ValidShiftReadinessRequestBody {
+  if (!isPlainObject(body)) throw new Error("Shift Readiness request must be an object.");
+
+  const requestKeys = Object.keys(body).sort();
+  if (requestKeys.join(",") !== "coverageGaps,records,reviewStartAt,shift") {
+    throw new Error("Shift Readiness request must include exactly reviewStartAt, shift, records, and coverageGaps.");
+  }
+  if (!isIsoTimestamp(body.reviewStartAt)) {
+    throw new Error("Shift Readiness request reviewStartAt must be a nonempty ISO timestamp.");
+  }
+  if (!Array.isArray(body.records) || body.records.length === 0) {
+    throw new Error("Shift Readiness request records must be nonempty.");
+  }
+  if (!body.records.every(isPlainObject)) {
+    throw new Error("Shift Readiness request records must contain objects.");
+  }
+  const records = body.records;
+  const patientIds = records.map((record) => record.patient_id);
+  if (!patientIds.every((patientId): patientId is string => stringValue(patientId, "").length > 0)) {
+    throw new Error("Shift Readiness request records must identify a patient.");
+  }
+  const patientId = patientIds[0];
+  if (!patientId || patientIds.some((candidate) => candidate !== patientId)) {
+    throw new Error("Shift Readiness request records must use one consistent patient identity.");
+  }
+
+  let timeline: ReturnType<typeof getDemoTimeline>;
+  try {
+    timeline = getDemoTimeline(patientId);
+  } catch {
+    throw new Error(`Shift Readiness request patient ${patientId} is not a representative demo patient.`);
+  }
+  const canonicalTimestamps = timeline.snapshots.map((snapshot) => snapshot.updated_at);
+  if (!canonicalTimestamps.includes(body.reviewStartAt)) {
+    throw new Error("Shift Readiness request reviewStartAt must identify a known timeline slot.");
+  }
+  if (records.length !== canonicalTimestamps.length) {
+    throw new Error("Shift Readiness request records must include the complete timeline.");
+  }
+  records.forEach((record, index) => {
+    const expectedTimestamp = canonicalTimestamps[index];
+    if (!isIsoTimestamp(record.updated_at) || record.updated_at !== expectedTimestamp) {
+      throw new Error("Shift Readiness request records must preserve the canonical timeline timestamps.");
+    }
+  });
+  const currentRecord = records.at(-1);
+  const currentTimestamp = canonicalTimestamps.at(-1);
+  if (!currentRecord || currentRecord.patient_id !== patientId || currentRecord.updated_at !== currentTimestamp) {
+    throw new Error("Shift Readiness request must include the current record and its canonical timestamp.");
+  }
+
+  if (!isPlainObject(body.shift) ||
+      Object.keys(body.shift).sort().join(",") !== "endsAt,startsAt" ||
+      !isIsoTimestamp(body.shift.startsAt) ||
+      !isIsoTimestamp(body.shift.endsAt) ||
+      Date.parse(body.shift.startsAt) >= Date.parse(body.shift.endsAt)) {
+    throw new Error("Shift Readiness request shift must include an ordered startsAt/endsAt window.");
+  }
+  const expectedShift = getDemoShiftWindow(patientId);
+  if (body.shift.startsAt !== expectedShift.startsAt || body.shift.endsAt !== expectedShift.endsAt) {
+    throw new Error("Shift Readiness request shift does not match the representative patient window.");
+  }
+  if (!Array.isArray(body.coverageGaps) || !body.coverageGaps.every((gap) => {
+    return isPlainObject(gap) && isIsoTimestamp(gap.from) && isIsoTimestamp(gap.to);
+  })) {
+    throw new Error("Shift Readiness request coverageGaps must contain timestamped gaps.");
+  }
+}
+
+function parseShiftReadinessRequest(
+  request: { method(): string; postData(): string | null },
+): ValidShiftReadinessRequestBody {
+  if (request.method() !== "POST") throw new Error("Shift Readiness route requires POST.");
+  const payload = request.postData();
+  if (!payload) throw new Error("Shift Readiness POST body is required.");
+  let body: unknown;
+  try {
+    body = JSON.parse(payload);
+  } catch {
+    throw new Error("Shift Readiness POST body must be valid JSON.");
+  }
+  assertValidShiftReadinessRequestBody(body);
+  return body;
+}
+
+function validReadinessRequestBody(patientId = "P001"): ValidShiftReadinessRequestBody {
+  const timeline = getDemoTimeline(patientId);
+  return {
+    reviewStartAt: timeline.defaultReturnStartAt,
+    shift: getDemoShiftWindow(patientId),
+    records: buildShiftReadinessRecords(patientId, timeline.snapshots) as unknown as Array<Record<string, unknown>>,
+    coverageGaps: timeline.coverageGaps as unknown as Array<Record<string, unknown>>,
+  };
+}
+
+function readinessFixtureForRequest(
+  body: ShiftReadinessRequestBody,
+  state: ShiftReadinessStatus = "available",
+): ShiftReadinessResponse {
+  assertValidShiftReadinessRequestBody(body);
+  const response = structuredClone(createValidShiftReadinessResponse());
+  const firstRecord = body.records[0]!;
+  const currentRecord = body.records.at(-1)!;
+  const patientId = firstRecord.patient_id as string;
+  const currentRecordedAt = currentRecord.updated_at as string;
+  const baselineRecordedAt = firstRecord.updated_at as string;
+
+  response.patient = {
+    ...response.patient,
+    id: patientId,
+    name: stringValue(firstRecord.name, response.patient.name),
+    room: stringValue(firstRecord.room_no, response.patient.room),
+    age: typeof firstRecord.age === "number" ? firstRecord.age : response.patient.age,
+    sex: stringValue(firstRecord.sex, response.patient.sex),
+    diagnoses: Array.isArray(firstRecord.diagnosis)
+      ? firstRecord.diagnosis.filter((diagnosis): diagnosis is string => typeof diagnosis === "string")
+      : response.patient.diagnoses,
+  };
+  response.reviewPeriod = {
+    requestedStartAt: body.reviewStartAt,
+    baselineRecordedAt: state === "no_baseline" ? null : baselineRecordedAt,
+    currentRecordedAt,
+  };
+  response.shift = body.shift;
+  response.status = state;
+  response.dataWarnings = state === "partial"
+    ? ["명시된 데이터 공백이 있어 확인 가능한 항목만 표시합니다."]
+    : [];
+  if (patientId !== "P001") {
+    const representativeId = `${patientId}-patient-status-current`;
+    response.items = [{
+      id: representativeId,
+      patientId,
+      domain: "patient_status",
+      factStatus: "recent_change",
+      title: "현재 기록 변화",
+      detail: "현재 기록에서 확인할 변화가 있습니다.",
+      relevantAt: currentRecordedAt,
+      sourceRefs: [{
+        recordedAt: currentRecordedAt,
+        path: "vitals.body_temperature",
+        label: "현재 활력징후",
+        periodEventId: `period-event-${patientId}-vitals`,
+      }],
+      ruleCode: "STATUS_PERIOD_CHANGE",
+    }];
+    response.groups = {
+      patientStatus: [representativeId],
+      investigations: [],
+      lineDevices: [],
+      medications: [],
+      communications: [],
+    };
+    response.metrics = {
+      itemCount: 1,
+      newResultCount: 0,
+      scheduledThisShiftCount: 0,
+      pendingResultCount: 0,
+      domainCounts: {
+        patient_status: 1,
+        investigation: 0,
+        line_device: 0,
+        medication: 0,
+        communication: 0,
+      },
+    };
+  }
+  response.items = response.items.map((item) => ({
+    ...item,
+    patientId,
+    sourceRefs: item.sourceRefs.map((source) => ({ ...source, recordedAt: currentRecordedAt })),
+  }));
+
+  if (state === "no_items") {
+    response.items = [];
+    response.groups = {
+      patientStatus: [],
+      investigations: [],
+      lineDevices: [],
+      medications: [],
+      communications: [],
+    };
+    response.metrics = {
+      itemCount: 0,
+      newResultCount: 0,
+      scheduledThisShiftCount: 0,
+      pendingResultCount: 0,
+      domainCounts: {
+        patient_status: 0,
+        investigation: 0,
+        line_device: 0,
+        medication: 0,
+        communication: 0,
+      },
+    };
+  }
+  return response;
+}
+
+async function mockShiftReadinessApi(
+  page: Page,
+  state: ShiftReadinessStatus = "available",
+  handler?: ShiftReadinessStateHandler,
+) {
+  let requestIndex = 0;
+  await page.route("**/api/handover/shift-readiness", async (route) => {
+    const body = parseShiftReadinessRequest(route.request());
+    requestIndex += 1;
+    const selectedState = handler ? await handler(body, requestIndex) : state;
+    const response = readinessFixtureForRequest(body, selectedState);
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(response) });
+  });
+}
+
+test("shift readiness fixtures fail closed for missing or mismatched request fields", async () => {
+  const valid = validReadinessRequestBody();
+
+  expect(() => readinessFixtureForRequest({})).toThrow(/exactly reviewStartAt/);
+  expect(() => readinessFixtureForRequest({ ...valid, records: [] })).toThrow(/records must be nonempty/);
+  expect(() => readinessFixtureForRequest({ ...valid, reviewStartAt: "" })).toThrow(/reviewStartAt/);
+  expect(() => readinessFixtureForRequest({
+    ...valid,
+    shift: { startsAt: valid.shift.startsAt, endsAt: "2026-07-02T16:00:00+09:00" },
+  })).toThrow(/shift/);
+  expect(() => readinessFixtureForRequest({
+    ...valid,
+    records: valid.records.map((record, index) => index === 0 ? { ...record, patient_id: "P002" } : record),
+  })).toThrow(/consistent patient identity/);
+  expect(() => readinessFixtureForRequest({
+    ...valid,
+    records: valid.records.slice(0, -1),
+  })).toThrow(/complete timeline/);
+  expect(() => parseShiftReadinessRequest({
+    method: () => "GET",
+    postData: () => JSON.stringify(valid),
+  })).toThrow(/requires POST/);
+});
 
 const RETURN_PERIOD_FIXTURES = p001ReturnPeriodStates as unknown as Record<
   ReturnResponseState,
@@ -144,10 +429,12 @@ test("return handover P001 completes the 24-event evidence review workflow", asy
     }
     return "ready";
   });
+  await mockShiftReadinessApi(page);
 
   await page.goto("/");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+  await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
 
   const startSelector = page.getByRole("combobox", { name: "마지막 근무 시각" });
   await expect(startSelector).toHaveValue(ready.period.requestedStartAt);
@@ -244,7 +531,7 @@ test("return handover P001 completes the 24-event evidence review workflow", asy
   expect((submittedCurrent?.vitals as Record<string, unknown> | undefined)?.body_temperature).toBe(39.1);
 
   await expect(page.getByRole("status", { name: "기간 비교 상태" })).toContainText("불러오는 중");
-  await expect(page.getByRole("tab", { name: "인수인계 비교" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "변화 근거" })).toHaveAttribute("aria-selected", "true");
   await expect(recommendation).toHaveValue("다음 교대에서 원본 기록을 다시 확인합니다.");
   await expect(recommendation).toBeDisabled();
   await expect(sourceConfirmation).toBeChecked();
@@ -263,6 +550,516 @@ test("return handover P001 completes the 24-event evidence review workflow", asy
   await expect(p001Patient(page).getByText("검토 완료", { exact: true })).toBeVisible();
 });
 
+test("shift readiness P001 follows the task-first evidence journey and retains acknowledgement", async ({ page }) => {
+  await mockP001ReturnApi(page);
+  await mockShiftReadinessApi(page);
+  await page.goto("/");
+  await p001Patient(page).click();
+
+  await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "근무 준비", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("heading", { name: /환자 상태/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /검사·결과/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Line·Device/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /투약 변경/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /보고·확인/ })).toBeVisible();
+
+  const readiness = page.getByTestId("shift-readiness-workspace");
+  await expect(readiness.getByTestId("shift-readiness-item-title").filter({ hasText: "CBC 결과 확인" })).toBeVisible();
+  await expect(readiness.getByTestId("shift-readiness-item-title").filter({ hasText: "Chest AP 일정 확인" })).toBeVisible();
+  await expect(readiness.getByTestId("shift-readiness-item-title").filter({ hasText: "말초정맥관 일정 확인" })).toBeVisible();
+  await expect(readiness.getByTestId("shift-readiness-item-title").filter({ hasText: "타세놀정 500mg 적용 시점" })).toBeVisible();
+  await expect(readiness.getByTestId("shift-readiness-item-title").filter({ hasText: "회진 전 발열 경과 전달" })).toBeVisible();
+
+  const cbcRow = readiness.locator(".shift-readiness-item").filter({ hasText: "CBC 결과 확인" });
+  const cbcAcknowledgement = cbcRow.getByRole("checkbox", { name: "CBC 결과 확인 확인함" });
+  await cbcAcknowledgement.check();
+  await expect(cbcAcknowledgement).toBeChecked();
+  await expect(page.getByTestId("shift-readiness-summary-panel").getByText("1/7", { exact: true })).toBeVisible();
+  await expect(p001Patient(page)).toContainText("확인 1/7");
+
+  const cbcEvidence = cbcRow.getByRole("button", { name: /근거 보기/ });
+  await cbcEvidence.click();
+  const recordPanel = page.getByRole("tabpanel", { name: "원본 기록" });
+  await expect(recordPanel).toBeVisible();
+  await expect(recordPanel.getByText("CBC", { exact: true })).toBeVisible();
+  const cbcSource = recordPanel.locator('[data-source-path="investigations[id=INV-P001-CBC]"]');
+  await expect(cbcSource).toHaveAttribute("data-evidence-active", "true");
+  await expect(cbcSource.getByText("WBC 12.1 ×10³/μL", { exact: true })).toBeVisible();
+  await expect(recordPanel.locator(".record-source-interval time").nth(1)).toHaveText("2026-07-02T09:00:00+09:00");
+  await recordPanel.getByRole("tab", { name: /현재 기록/ }).click();
+  await expect(recordPanel.getByText("선택 사건의 현재 snapshot", { exact: true })).toBeVisible();
+  await expect(recordPanel.locator(".record-chart-time").last().getByText("2026-07-02T09:00:00+09:00", { exact: true })).toBeVisible();
+  await expect(recordPanel.getByText("READ ONLY", { exact: true }).first()).toBeVisible();
+  await recordPanel.getByRole("button", { name: "비교로 돌아가기" }).click();
+  await expect(cbcEvidence).toBeFocused();
+
+  await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "변화 근거", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("return-comparison-workspace")).toBeVisible();
+  await expect(page.getByTestId("return-summary-panel").getByText("24/24", { exact: true })).toBeVisible();
+
+  await page.getByRole("tab", { name: "근무 준비", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "근무 준비", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(readiness).toBeVisible();
+  await expect(cbcAcknowledgement).toBeChecked();
+  await expect(page.getByTestId("shift-readiness-summary-panel").getByText("1/7", { exact: true })).toBeVisible();
+});
+
+const readinessStateCases = [
+  {
+    state: "no_baseline" as const,
+    workspaceCopy: "기준 기록 없음",
+    summaryCopy: "기준 기록 없음",
+  },
+  {
+    state: "no_items" as const,
+    workspaceCopy: "이번 근무에 표시할 항목 없음",
+    summaryCopy: "이번 근무에 표시할 항목 없음",
+  },
+  {
+    state: "partial" as const,
+    workspaceCopy: "부분 결과",
+    summaryCopy: "부분 결과",
+  },
+] as const;
+
+for (const { state, workspaceCopy, summaryCopy } of readinessStateCases) {
+  test(`shift readiness announces the ${state} state distinctly while period evidence stays available`, async ({ page }) => {
+    await mockP001ReturnApi(page);
+    await mockShiftReadinessApi(page, state);
+    await page.goto("/");
+    await p001Patient(page).click();
+    await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+
+    const readiness = page.getByTestId("shift-readiness-workspace");
+    const summary = page.getByTestId("shift-readiness-summary-panel");
+    await expect(readiness.locator(".shift-readiness-status").filter({ hasText: workspaceCopy })).toBeVisible();
+    await expect(summary.locator(".shift-readiness-summary-status").filter({ hasText: summaryCopy })).toBeVisible();
+    await expect(readiness.locator("[aria-live]")).toHaveCount(1);
+    await expect(summary.locator("[aria-live]")).toHaveCount(1);
+    if (state === "partial") {
+      await expect(readiness.locator(".shift-readiness-status")).toContainText("명시된 데이터 공백");
+      await expect(summary.locator(".shift-readiness-summary-status")).toContainText("명시된 데이터 공백");
+    }
+    if (state === "no_items") {
+      await expect(readiness.locator(".shift-readiness-item")).toHaveCount(0);
+      await expect(readiness.locator(".shift-readiness-domain-empty")).toHaveCount(5);
+      await expect(summary.getByRole("heading", { name: "표시 항목 없음", exact: true })).toBeVisible();
+      await expect(summary.getByText("이번 근무에 표시 규칙에 해당하는 항목이 없습니다.", { exact: true })).toBeVisible();
+      await expect(summary.getByText("0/0", { exact: true })).toHaveCount(0);
+      await expect(summary.getByText("확인함", { exact: true })).toHaveCount(0);
+      await expect(summary.getByText("미확인 0건", { exact: true })).toHaveCount(0);
+      await expect(summary.locator(".shift-readiness-summary-progress-track")).toHaveCount(0);
+    }
+
+    const comparisonTab = page.getByRole("tab", { name: "변화 근거", exact: true });
+    await expect(comparisonTab).toBeEnabled();
+    await comparisonTab.click();
+    await expect(page.getByTestId("return-comparison-workspace")).toBeVisible();
+    await expect(page.getByTestId("return-summary-panel").getByText("24/24", { exact: true })).toBeVisible();
+  });
+}
+
+test("shift readiness isolates a failed P002 retry and retains exact-key P001 review state", async ({ page }) => {
+  await mockP001ReturnApi(page);
+  const requestCountByPatient = new Map<string, number>();
+  await page.route("**/api/handover/shift-readiness", async (route) => {
+    const body = parseShiftReadinessRequest(route.request());
+    const patientId = body.records[0]?.patient_id as string;
+    const count = (requestCountByPatient.get(patientId) ?? 0) + 1;
+    requestCountByPatient.set(patientId, count);
+    if (patientId === "P002" && count === 1) {
+      await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "readiness unavailable" }) });
+      return;
+    }
+    const response = readinessFixtureForRequest(body);
+    if (patientId !== "P001" && response.items[0]) {
+      response.items[0] = { ...response.items[0], title: `${patientId} 전용 준비 항목` };
+    }
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(response) });
+  });
+
+  await page.goto("/");
+  await p001Patient(page).click();
+  await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+  const readiness = page.getByTestId("shift-readiness-workspace");
+  await expect(readiness).toHaveAttribute("data-shift-readiness-status", "available");
+  const p001CbcRow = readiness.locator(".shift-readiness-item").filter({ hasText: "CBC 결과 확인" });
+  const p001CbcAcknowledgement = p001CbcRow.getByRole("checkbox", { name: "CBC 결과 확인 확인함" });
+  await p001CbcAcknowledgement.check();
+  const readinessNote = page.getByTestId("shift-readiness-summary-panel").getByRole("textbox", { name: "인계 메모" });
+  await readinessNote.fill("P001 교대 전 확인 메모");
+  await expect(p001CbcAcknowledgement).toBeChecked();
+  await expect(readinessNote).toHaveValue("P001 교대 전 확인 메모");
+
+  const p002Patient = page.getByRole("button", { name: /김영희, P002, 302호/ });
+  await p002Patient.click();
+  await expect(p002Patient).toHaveAttribute("aria-current", "true");
+  await expect(readiness.getByRole("alert", { name: "근무 준비 오류" })).toContainText("근무 준비 정보를 불러오지 못했습니다.");
+  await expect(readiness.getByText("CBC 결과 확인", { exact: true })).toHaveCount(0);
+  await expect(readiness.locator(".shift-readiness-item")).toHaveCount(0);
+  await expect(readiness.locator("[aria-live]")).toHaveCount(1);
+  await expect(readiness.locator("[aria-live]")).toHaveAttribute("role", "alert");
+  await expect(readiness.getByRole("button", { name: "검토 완료" })).toHaveCount(0);
+
+  await expect(page.getByRole("tab", { name: "변화 근거", exact: true })).toBeEnabled();
+  await expect(readiness.getByRole("button", { name: "다시 시도" })).toBeVisible();
+
+  await readiness.getByRole("button", { name: "다시 시도" }).click();
+  await expect(readiness.getByText("P002 전용 준비 항목", { exact: true })).toBeVisible();
+  await expect(readiness).toHaveAttribute("data-shift-readiness-status", "available");
+  await expect(readiness.getByText("CBC 결과 확인", { exact: true })).toHaveCount(0);
+
+  await p001Patient(page).click();
+  await expect(p001Patient(page)).toHaveAttribute("aria-current", "true");
+  await expect(readiness.getByText("CBC 결과 확인", { exact: true })).toBeVisible();
+  await expect(p001CbcAcknowledgement).toBeChecked();
+  await expect(readinessNote).toHaveValue("P001 교대 전 확인 메모");
+
+  await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
+  await expect(page.getByTestId("return-summary-panel").getByText("24/24", { exact: true })).toBeVisible();
+});
+
+test("shift readiness rejects malformed responses without hiding the period tab", async ({ page }) => {
+  await mockP001ReturnApi(page);
+  await page.route("**/api/handover/shift-readiness", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ status: "available" }) });
+  });
+
+  await page.goto("/");
+  await p001Patient(page).click();
+  await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+  const readiness = page.getByTestId("shift-readiness-workspace");
+  await expect(readiness.getByRole("alert", { name: "근무 준비 오류" })).toContainText("근무 준비 정보를 불러오지 못했습니다.");
+  await expect(readiness.getByRole("button", { name: "다시 시도" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "변화 근거", exact: true })).toBeEnabled();
+  await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
+  await expect(page.getByTestId("return-summary-panel").getByText("24/24", { exact: true })).toBeVisible();
+});
+
+test("shift readiness isolates a slow P001 response from a faster P002 selection", async ({ page }) => {
+  await mockP001ReturnApi(page);
+  const p001Gate = { resolve: null as (() => void) | null };
+  const p001Held = new Promise<void>((resolve) => { p001Gate.resolve = resolve; });
+  const p001Seen = new Promise<void>((resolve) => {
+    void page.waitForRequest((request) => {
+      const postData = request.postData() ?? "";
+      return request.url().includes("/api/handover/shift-readiness") && postData.includes('"P001"');
+    }).then(() => resolve());
+  });
+  await page.route("**/api/handover/shift-readiness", async (route) => {
+    const body = parseShiftReadinessRequest(route.request());
+    const patientId = body.records[0]?.patient_id as string;
+    const response = readinessFixtureForRequest(body);
+    response.items[0] = { ...response.items[0]!, title: `${patientId} 전용 준비 항목` };
+    if (patientId === "P001") {
+      await p001Seen;
+      await p001Held;
+    }
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(response) });
+  });
+
+  await page.goto("/");
+  await p001Patient(page).click();
+  await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+  await p001Seen;
+  const p001Readiness = page.getByTestId("shift-readiness-workspace");
+  await expect(p001Readiness).toHaveAttribute("data-shift-readiness-status", "loading");
+  await expect(p001Readiness.locator("[aria-live]")).toHaveCount(1);
+  await expect(p001Readiness.locator("[aria-live]")).toHaveAttribute("role", "status");
+
+  const p002Patient = page.getByRole("button", { name: /김영희, P002, 302호/ });
+  await p002Patient.click();
+  const readiness = page.getByTestId("shift-readiness-workspace");
+  await expect(page.getByRole("heading", { name: "김영희", exact: true })).toBeVisible();
+  await expect(readiness.getByText("P002 전용 준비 항목", { exact: true })).toBeVisible();
+
+  p001Gate.resolve?.();
+  await expect(readiness.getByText("P002 전용 준비 항목", { exact: true })).toBeVisible();
+  await expect(readiness.getByText("P001 전용 준비 항목", { exact: true })).toHaveCount(0);
+});
+
+test("shift readiness fails closed for a missing direct source and restores its trigger focus", async ({ page }) => {
+  await mockP001ReturnApi(page);
+  await page.route("**/api/handover/shift-readiness", async (route) => {
+    const body = parseShiftReadinessRequest(route.request());
+    const response = readinessFixtureForRequest(body);
+    if (body.records[0]?.patient_id === "P001") {
+      const cbc = response.items.find((item) => item.title === "CBC 결과 확인");
+      if (!cbc) throw new Error("CBC readiness item is unavailable.");
+      cbc.sourceRefs = cbc.sourceRefs.map((source) => ({ ...source, path: "investigations[id=INV-P001-MISSING]" }));
+    }
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(response) });
+  });
+
+  await page.goto("/");
+  await p001Patient(page).click();
+  await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+  const readiness = page.getByTestId("shift-readiness-workspace");
+  const cbcRow = readiness.locator(".shift-readiness-item").filter({ hasText: "CBC 결과 확인" });
+  const evidence = cbcRow.getByRole("button", { name: /근거 보기/ });
+  await evidence.click();
+  await expect(readiness.getByRole("alert", { name: "근무 준비 오류" })).toContainText("근거를 찾을 수 없습니다");
+  await expect(readiness).toBeVisible();
+  await expect(evidence).toBeFocused();
+  await expect(page.getByRole("tab", { name: "변화 근거", exact: true })).toBeEnabled();
+});
+
+test("shift readiness mode tabs, quick links, and keyboard evidence focus are accessible", async ({ page }) => {
+  await mockP001ReturnApi(page);
+  await mockShiftReadinessApi(page);
+  await page.goto("/");
+  await p001Patient(page).click();
+  await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+
+  const modeTablist = page.getByRole("tablist", { name: "환자 기록 모듈" });
+  const readinessTab = modeTablist.getByRole("tab", { name: "근무 준비", exact: true });
+  const comparisonTab = modeTablist.getByRole("tab", { name: "변화 근거", exact: true });
+  const recordTab = modeTablist.getByRole("tab", { name: "원본 기록", exact: true });
+  await readinessTab.focus();
+  await readinessTab.press("ArrowRight");
+  await expect(comparisonTab).toHaveAttribute("aria-selected", "true");
+  await expect(comparisonTab).toBeFocused();
+  await comparisonTab.press("ArrowRight");
+  await expect(recordTab).toHaveAttribute("aria-selected", "true");
+  await expect(recordTab).toBeFocused();
+  await readinessTab.press("End");
+  await expect(recordTab).toHaveAttribute("aria-selected", "true");
+  await expect(recordTab).toBeFocused();
+  await recordTab.press("Home");
+  await expect(readinessTab).toHaveAttribute("aria-selected", "true");
+  await expect(readinessTab).toBeFocused();
+
+  const readiness = page.getByTestId("shift-readiness-workspace");
+  const cbcItem = readiness.locator(".shift-readiness-item").filter({ hasText: "CBC 결과 확인" });
+  const cbcTitle = cbcItem.getByTestId("shift-readiness-item-title");
+  const cbcCheckbox = cbcItem.getByRole("checkbox");
+
+  const quickLink = page.getByTestId("shift-readiness-summary-panel").getByRole("button", { name: /CBC 결과 확인/ }).first();
+  await quickLink.click();
+  await expect(cbcTitle).toBeVisible();
+  await expect(page.locator("#shift-readiness-item-P001-investigation-CBC-new-result")).toBeFocused();
+
+  await cbcCheckbox.focus();
+  await cbcCheckbox.press("Space");
+  await expect(cbcCheckbox).toBeChecked();
+  await expect(cbcCheckbox).toBeFocused();
+  await expect(cbcCheckbox.evaluate((element) => element.matches(":focus-visible"))).resolves.toBe(true);
+
+  const cbcEvidence = cbcItem.getByRole("button", { name: /근거 보기/ });
+  await cbcEvidence.focus();
+  await cbcEvidence.press("Enter");
+  const recordPanel = page.getByRole("tabpanel", { name: "원본 기록" });
+  await expect(recordPanel).toBeVisible();
+  await recordPanel.getByRole("button", { name: "비교로 돌아가기" }).press("Enter");
+  await expect(cbcEvidence).toBeFocused();
+
+  const domainRegions = readiness.locator(".shift-readiness-domain[role=region]");
+  await expect(domainRegions).toHaveCount(5);
+  const relationships = await domainRegions.evaluateAll((regions) => regions.map((region) => {
+    const labelledBy = region.getAttribute("aria-labelledby");
+    const heading = labelledBy ? document.getElementById(labelledBy) : null;
+    return { labelledBy, headingText: heading?.textContent?.trim() ?? "" };
+  }));
+  expect(relationships.map(({ headingText }) => headingText)).toEqual(["환자 상태", "검사·결과", "Line·Device", "투약 변경", "보고·확인"]);
+  await expect(readiness.locator('[data-fact-status-label="new_result"]').first()).toHaveText("새 결과 있음");
+  await expect(readiness.locator('[aria-label="사실 상태: 새 결과 있음"]').first()).toBeVisible();
+});
+
+test("shift readiness uses a dense clinical hierarchy with visible fact-status treatment", async ({ page }) => {
+  await mockP001ReturnApi(page);
+  await mockShiftReadinessApi(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await p001Patient(page).click();
+  await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+  const readiness = page.getByTestId("shift-readiness-workspace");
+  await expect(readiness.getByRole("heading", { name: "근무 준비" })).toBeVisible();
+
+  const visualMetrics = await page.evaluate(() => {
+    const domains = Array.from(document.querySelectorAll<HTMLElement>(".shift-readiness-domain"));
+    const statuses = Array.from(document.querySelectorAll<HTMLElement>(".shift-readiness-fact-status"));
+    const header = document.querySelector<HTMLElement>(".shift-readiness-workspace-header h2");
+    const itemList = document.querySelector<HTMLElement>(".shift-readiness-item-list");
+    if (!domains.length || !statuses.length || !header || !itemList) throw new Error("근무 준비 시각 계층 대상이 없습니다.");
+    return {
+      domainBorders: domains.map((domain) => Number.parseFloat(getComputedStyle(domain).borderLeftWidth)),
+      domainBackgrounds: domains.map((domain) => getComputedStyle(domain).backgroundColor),
+      statusBackgrounds: statuses.map((status) => getComputedStyle(status).backgroundColor),
+      titleSize: Number.parseFloat(getComputedStyle(header).fontSize),
+      itemListGap: getComputedStyle(itemList).rowGap,
+    };
+  });
+
+  expect(visualMetrics.domainBorders.every((value) => value >= 3)).toBe(true);
+  expect(new Set(visualMetrics.domainBackgrounds).size).toBeGreaterThanOrEqual(2);
+  expect(visualMetrics.statusBackgrounds.every((value) => value !== "rgba(0, 0, 0, 0)")).toBe(true);
+  expect(visualMetrics.titleSize).toBeGreaterThanOrEqual(22);
+  expect(Number.parseFloat(visualMetrics.itemListGap)).toBeLessThanOrEqual(12);
+});
+
+const readinessViewportMatrix = [390, 960, 1019, 1024, 1279, 1440, 1600, 2544] as const;
+
+for (const viewportWidth of readinessViewportMatrix) {
+  test(`shift readiness viewport ${viewportWidth}px keeps clinical text and rails contained`, async ({ page }) => {
+    await mockP001ReturnApi(page);
+    await mockShiftReadinessApi(page);
+    await page.setViewportSize({ width: viewportWidth, height: viewportWidth === 390 ? 844 : 900 });
+    await page.goto("/");
+    await p001Patient(page).click();
+    await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+
+    const readiness = page.getByTestId("shift-readiness-workspace");
+    const clinicalText = readiness.getByTestId("shift-readiness-item-title").first();
+    const evidenceButton = readiness.getByRole("button", { name: /근거 보기/ }).first();
+    await expect(clinicalText).toBeVisible();
+    await expect(evidenceButton).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    expect(await clinicalText.evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(12);
+    expect(await evidenceButton.evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(12);
+
+    const metrics = await page.evaluate(() => {
+      const elements = [
+        document.querySelector<HTMLElement>(".patient-queue"),
+        document.querySelector<HTMLElement>(".comparison-workspace"),
+        document.querySelector<HTMLElement>(".shift-readiness-summary-panel"),
+      ];
+      if (elements.some((element) => !element)) throw new Error("근무 준비 레일을 찾을 수 없습니다.");
+      const overflow = (element: HTMLElement) => element.scrollWidth - element.clientWidth;
+      const center = elements[1]!;
+      const summary = elements[2]!;
+      const firstItem = document.querySelector<HTMLElement>(".shift-readiness-item");
+      const acknowledgement = firstItem?.querySelector<HTMLElement>(".shift-readiness-acknowledgement");
+      const evidence = firstItem?.querySelector<HTMLElement>(".shift-readiness-evidence");
+      const centerRect = center.getBoundingClientRect();
+      const summaryRect = summary.getBoundingClientRect();
+      const readinessDescendants = Array.from(document.querySelectorAll<HTMLElement>(
+        ".shift-readiness-item, .shift-readiness-item *",
+      )).map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          selector: element.className,
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom,
+          scrollWidth: element.scrollWidth,
+          clientWidth: element.clientWidth,
+        };
+      });
+      return {
+        railOverflow: elements.map((element) => overflow(element!)),
+        centerRight: center.getBoundingClientRect().right,
+        summaryLeft: summary.getBoundingClientRect().left,
+        centerLeft: centerRect.left,
+        summaryRight: summaryRect.right,
+        queueWidth: elements[0]!.getBoundingClientRect().width,
+        summaryWidth: summary.getBoundingClientRect().width,
+        pairedActions: Boolean(acknowledgement && evidence && Math.abs(evidence.getBoundingClientRect().top - acknowledgement.getBoundingClientRect().top) <= 1),
+        actionOverflow: firstItem ? overflow(firstItem) : 999,
+        readinessDescendants,
+      };
+    });
+    for (const railOverflow of metrics.railOverflow) expect(railOverflow).toBeLessThanOrEqual(1);
+    if (viewportWidth >= 960 && viewportWidth <= 1019) {
+      expect(metrics.centerRight).toBeLessThanOrEqual(metrics.summaryLeft + 1);
+      for (const descendant of metrics.readinessDescendants) {
+        expect(descendant.left, `${viewportWidth}px ${descendant.selector} left edge`).toBeGreaterThanOrEqual(metrics.centerLeft - 1);
+        expect(descendant.right, `${viewportWidth}px ${descendant.selector} right edge`).toBeLessThanOrEqual(metrics.centerRight + 1);
+        expect(descendant.right, `${viewportWidth}px ${descendant.selector} before summary rail`).toBeLessThanOrEqual(metrics.summaryLeft + 1);
+        expect(descendant.scrollWidth - descendant.clientWidth, `${viewportWidth}px ${descendant.selector} descendant overflow`).toBeLessThanOrEqual(1);
+      }
+    }
+    if (viewportWidth === 390) {
+      expect(metrics.pairedActions).toBe(true);
+      expect(metrics.actionOverflow).toBeLessThanOrEqual(1);
+    }
+    if (viewportWidth >= 1600) {
+      expect(Math.round(metrics.queueWidth)).toBe(304);
+      expect(Math.round(metrics.summaryWidth)).toBe(400);
+    }
+  });
+}
+
+test("shift readiness mobile order keeps the board before its summary rail", async ({ page }) => {
+  await mockP001ReturnApi(page);
+  await mockShiftReadinessApi(page);
+  await page.goto("/");
+  await p001Patient(page).click();
+  await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+  await expect(page.getByTestId("shift-readiness-workspace")).toBeVisible();
+
+  for (const width of [390, 959] as const) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+    const positions = await page.evaluate(() => {
+      const queue = document.querySelector<HTMLElement>(".patient-queue");
+      const center = document.querySelector<HTMLElement>(".comparison-workspace");
+      const summary = document.querySelector<HTMLElement>(".shift-readiness-summary-panel");
+      if (!queue || !center || !summary) throw new Error("모바일 근무 준비 순서 대상을 찾을 수 없습니다.");
+      return {
+        queueTop: queue.getBoundingClientRect().top,
+        centerTop: center.getBoundingClientRect().top,
+        summaryTop: summary.getBoundingClientRect().top,
+      };
+    });
+    expect(positions.queueTop, `${width}px queue should be first`).toBeLessThanOrEqual(positions.centerTop);
+    expect(positions.centerTop, `${width}px board should precede summary`).toBeLessThan(positions.summaryTop);
+  }
+});
+
+test("shift readiness narrow item rows pair time with status and acknowledgement with evidence", async ({ page }) => {
+  await mockP001ReturnApi(page);
+  await mockShiftReadinessApi(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await p001Patient(page).click();
+  await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+
+  const item = page.getByTestId("shift-readiness-workspace").locator(".shift-readiness-item").first();
+  const layout = await item.evaluate((element) => {
+    const child = (selector: string) => {
+      const target = element.querySelector<HTMLElement>(selector);
+      if (!target) throw new Error(`근무 준비 행의 ${selector} 대상이 없습니다.`);
+      const rect = target.getBoundingClientRect();
+      const style = getComputedStyle(target);
+      return {
+        area: style.gridArea,
+        top: rect.top,
+        bottom: rect.bottom,
+        left: rect.left,
+        right: rect.right,
+        scrollWidth: target.scrollWidth,
+        clientWidth: target.clientWidth,
+      };
+    };
+    return {
+      time: child(".shift-readiness-item-time-block"),
+      status: child(".shift-readiness-fact-status"),
+      content: child(".shift-readiness-item-content"),
+      acknowledgement: child(".shift-readiness-acknowledgement"),
+      evidence: child(".shift-readiness-evidence"),
+      itemScrollWidth: element.scrollWidth,
+      itemClientWidth: element.clientWidth,
+    };
+  });
+
+  expect(layout.time.area).toBe("time");
+  expect(layout.status.area).toBe("status");
+  expect(layout.content.area).toBe("content");
+  expect(layout.acknowledgement.area).toBe("ack");
+  expect(layout.evidence.area).toBe("evidence");
+  expect(Math.abs(layout.time.top - layout.status.top)).toBeLessThanOrEqual(1);
+  expect(layout.content.top).toBeGreaterThanOrEqual(layout.time.bottom - 1);
+  expect(Math.abs(layout.acknowledgement.top - layout.evidence.top)).toBeLessThanOrEqual(1);
+  expect(layout.itemScrollWidth - layout.itemClientWidth).toBeLessThanOrEqual(1);
+  for (const [name, metrics] of Object.entries(layout)) {
+    if (typeof metrics === "object" && metrics !== null && "scrollWidth" in metrics && "clientWidth" in metrics) {
+      expect(metrics.scrollWidth - metrics.clientWidth, `${name} overflow`).toBeLessThanOrEqual(1);
+    }
+  }
+});
+
 const returnViewportMatrix = [
   { width: 2544, height: 1258 },
   { width: 1600, height: 1000 },
@@ -276,11 +1073,13 @@ const returnViewportMatrix = [
 for (const viewport of returnViewportMatrix) {
   test(`return handover viewport ${viewport.width}x${viewport.height} stays readable and contained`, async ({ page }) => {
     await mockP001ReturnApi(page);
+    await mockShiftReadinessApi(page);
     const ready = cloneP001ReturnFixture("ready");
     await page.setViewportSize(viewport);
     await page.goto("/");
     await p001Patient(page).click();
     await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+    await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
     await expect(page.getByText(ready.summary.sections.situation[0]!.text, { exact: true })).toBeVisible();
     const evidenceDisclosure = page.getByTestId("return-summary-panel").locator("details.return-summary-evidence-disclosure").first();
     await expect(evidenceDisclosure).toBeVisible();
@@ -356,10 +1155,12 @@ for (const viewport of returnViewportMatrix) {
 
 test("return handover hierarchy separates group surfaces and SBAR blocks across desktop and narrow viewports", async ({ page }) => {
   await mockP001ReturnApi(page);
+  await mockShiftReadinessApi(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+  await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
   await expect(page.getByRole("heading", { name: "복귀 기간 변화" })).toBeVisible();
 
   const desktopMetrics = await page.evaluate(() => {
@@ -406,10 +1207,12 @@ test("return handover hierarchy separates group surfaces and SBAR blocks across 
 
 test("return handover exposes keyboard scope, landmarks, text status, and exact evidence focus return", async ({ page }) => {
   await mockP001ReturnApi(page);
+  await mockShiftReadinessApi(page);
   const ready = cloneP001ReturnFixture("ready");
   await page.goto("/");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+  await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
   await expect(page.getByText(ready.summary.sections.situation[0]!.text, { exact: true })).toBeVisible();
 
   const scopeTablist = page.getByRole("tablist", { name: "인수인계 범위" });
@@ -519,11 +1322,13 @@ for (const { state, visibleState, announcement, retentionOnly } of returnDomainS
           }
           return "ready";
         }
-        : undefined,
+      : undefined,
     );
+    await mockShiftReadinessApi(page);
     await page.goto("/");
     await p001Patient(page).click();
     await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+    await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
 
     const startSelector = page.getByRole("combobox", { name: "마지막 근무 시각" });
     await expect(startSelector.locator("option")).toHaveCount(P001_RETURN_START_OPTIONS.length);
@@ -607,10 +1412,12 @@ test("return handover keeps the fast newer period result when an older request f
     }
     throw new Error(`Unexpected return period start ${body.reviewStartAt ?? "<missing>"}.`);
   });
+  await mockShiftReadinessApi(page);
 
   await page.goto("/");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+  await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
   await expect(page.getByRole("combobox", { name: "마지막 근무 시각" })).toHaveValue(ready.period.requestedStartAt);
   await olderRequestSeenPromise;
 
@@ -628,18 +1435,26 @@ test("return handover keeps the fast newer period result when an older request f
 
 test("return handover keeps the prior result and user input after a replacement failure", async ({ page }) => {
   const ready = cloneP001ReturnFixture("ready");
+  let replacementFailureCount = 0;
   await page.route("**/api/handover/period-compare", async (route) => {
     const body = JSON.parse(route.request().postData() ?? "{}") as ReturnPeriodRequestBody;
     if (body.reviewStartAt === ready.period.requestedStartAt) {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ready) });
       return;
     }
+    replacementFailureCount += 1;
+    if (replacementFailureCount > 1) {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ready) });
+      return;
+    }
     await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "period unavailable" }) });
   });
+  await mockShiftReadinessApi(page);
 
   await page.goto("/");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
+  await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
   await expect(page.getByText(ready.summary.sections.situation[0]!.text, { exact: true })).toBeVisible();
 
   const summary = page.getByRole("complementary", { name: "복귀 인계 검토" });
@@ -658,6 +1473,14 @@ test("return handover keeps the prior result and user input after a replacement 
   await expect(recommendation).toBeEnabled();
   await expect(sourceConfirmation).toBeChecked();
   await expect(sourceConfirmation).toBeEnabled();
+  await expect(summary.getByRole("button", { name: "검토 완료" })).toBeEnabled();
+
+  await expect(summary.getByRole("button", { name: "다시 시도" })).toBeVisible();
+  await summary.getByRole("button", { name: "다시 시도" }).click();
+  await expect(page.getByRole("alert", { name: "기간 비교 상태" })).toHaveCount(0);
+  await expect(page.getByText(ready.summary.sections.situation[0]!.text, { exact: true })).toBeVisible();
+  await expect(recommendation).toHaveValue("실패 뒤에도 유지해야 하는 확인 메모");
+  await expect(sourceConfirmation).toBeChecked();
   await expect(summary.getByRole("button", { name: "검토 완료" })).toBeEnabled();
 
   await summary.getByRole("button", { name: "검토 완료" }).click();

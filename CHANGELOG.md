@@ -4,6 +4,38 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-02
+
+### Added
+
+- 휴무 복귀 간호사가 `환자 상태 → 검사·결과 → Line·Device → 투약 변경 → 보고·확인` 순서로 이번 근무 항목을 훑는 Task First Shift Readiness 보드
+- P001–P005의 기존 8개 snapshot과 시각별로 결합되는 합성 검사·영상·Line·투약 유효기간·명시된 전달 요청 sidecar
+- 기존 비교 API와 분리된 deterministic `/api/handover/shift-readiness`, 9개 규칙, `available`·`no_baseline`·`no_items`·`partial` 상태 계약
+- 각 준비 항목에서 정확한 원본 snapshot·필드 또는 기간 사건으로 이동하는 100% source reference와 읽기 전용 operational source 보기
+- 환자·복귀 시작·근무 구간·현재 기록 fingerprint별 세션 전용 `확인함`·수기 메모 상태
+
+### Changed
+
+- `휴무 복귀`의 기본 중앙 탭을 `근무 준비`로 전환하고 기존 `변화 근거` 24건·`원본 기록` 흐름은 그대로 보존
+- 환자 큐와 우측 레일에 임상 완료가 아닌 항목별 검토 진행만 표시하며, `no_items`는 `0/0` 대신 `표시 항목 없음`으로 구분
+- Python과 TypeScript의 Shift Readiness 시각 문법을 대문자 `Z`, `T` 구분자, offset 필수 규칙으로 일치
+- Shift Readiness는 OpenAI 키와 무관하게 동작하고, LLM은 기존 pair/period 비교의 제한된 문장화 경계에만 유지
+
+### Verification
+
+- 최종 Python unittest 155/155, frontend Vitest 274/274, Playwright 64/64 통과
+- ESLint, TypeScript no-emit, Next production build, harness, `git diff --check`, Python `py_compile` 통과
+- P001 계약 프로브에서 준비 항목 16건, 5개 도메인, 모든 항목 정확히 한 그룹, source reference 100% 확인
+- 390·960·1019·1024·1279·1440·1600·2544px에서 임상 본문·근거 판독성, rail containment, 모바일 정보 순서와 수평 overflow 없음 확인
+- 독립 Luna Max 최종 리뷰에서 발견된 `no_items` 진행 표현과 Python/TypeScript timestamp parity를 수정하고 재리뷰 Critical/Important/Minor 0 승인
+
+### Known limits
+
+- 공개 데모는 합성 데이터이며 실제 EMR·근무표·사용자 인증·공유 저장소·EMR 쓰기와 연결되지 않는다.
+- `사실 상태`와 `이번 근무 예정`은 기록된 상태·시각을 재구성한 것이며, 임상 우선순위·조치·보고 필요성을 새로 판단하지 않는다.
+- `확인함`과 메모는 브라우저 탭의 `sessionStorage`에만 남고 완료·안전·시행을 뜻하지 않는다.
+- OpenAI provider 크레딧 문제로 성공 AI 문장화는 실 API에서 미검증이지만 Shift Readiness와 deterministic 비교·근거는 API 키 없이 동작한다.
+
 ## [0.8.1] - 2026-09-01
 
 ### Changed
