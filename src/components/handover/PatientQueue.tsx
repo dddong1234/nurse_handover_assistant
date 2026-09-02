@@ -115,10 +115,10 @@ export function PatientQueue({
   reviewProgressByPatient,
 }: PatientQueueProps) {
   const readinessMode = scope === "return" && mode === "readiness";
-  const filteredResponses = orderPatientResponses(
-    filterPatientResponses(responses, searchTerm),
-    reviewedPatientIds,
-  );
+  const filteredResponses = filterPatientResponses(responses, searchTerm);
+  const visibleResponses = readinessMode
+    ? filteredResponses
+    : orderPatientResponses(filteredResponses, reviewedPatientIds);
 
   return (
     <aside className="patient-queue panel" aria-labelledby="patient-queue-title">
@@ -155,14 +155,14 @@ export function PatientQueue({
         </div>
       )}
 
-      {filteredResponses.length === 0 ? (
+      {visibleResponses.length === 0 ? (
         <div className="queue-empty" role="status" aria-live="polite">
           <strong>검색 결과가 없습니다.</strong>
           <span>이름, ID 또는 병실 번호를 확인하세요.</span>
         </div>
       ) : (
         <div className="queue-list" role="list" aria-label="환자 목록">
-          {filteredResponses.map(({ comparison }) => {
+          {visibleResponses.map(({ comparison }) => {
             const highPriorityCount = comparison.changes.filter(
               (change) => change.reviewPriority === "high",
             ).length;

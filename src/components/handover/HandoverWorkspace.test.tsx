@@ -104,7 +104,7 @@ function makePeriodResponse(
           currentValue: label,
           delta: null,
           evidence: {
-            fieldPath: `diagnosis[\"${label}\"]`,
+            fieldPath: "vitals.body_temperature",
             previousRecordedAt: reviewStartAt,
             currentRecordedAt,
           },
@@ -188,6 +188,7 @@ type ReadinessEvidenceFailureScenario = {
     eventId: string;
     fieldPath: string;
   };
+  bypassParserValidation?: boolean;
 };
 
 let readinessScenarioSeed = 0;
@@ -227,6 +228,9 @@ async function assertReadinessEvidenceFailure(scenario: ReadinessEvidenceFailure
   const response = buildDemoWorkspaceData()[0];
   if (!response) throw new Error("P001 데모 응답이 없습니다.");
 
+  if (scenario.bypassParserValidation) {
+    vi.spyOn(shiftReadinessContracts, "parseShiftReadinessResponse").mockImplementation((payload: unknown) => payload as ShiftReadinessResponse);
+  }
   const recordPairs = createUniqueP001RecordPairs();
   const periodLabel = `readiness-negative-${readinessScenarioSeed}`;
   const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
@@ -313,6 +317,30 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     expect(screen.getByRole("button", { name: /최수진.*확인 —/ })).toBeVisible();
     expect(screen.getByRole("button", { name: /이정호.*확인 오류/ })).toBeVisible();
     expect(screen.queryByText("완료")).not.toBeInTheDocument();
+  });
+
+  it("keeps readiness queue rows in roster order regardless of comparison review sorting", () => {
+    const responses = buildDemoWorkspaceData();
+    const firstPatient = responses[0]!.comparison.patient;
+
+    render(
+      <PatientQueue
+        responses={responses}
+        selectedPatientId={firstPatient.id}
+        searchTerm=""
+        onSearchChange={vi.fn()}
+        onSelectPatient={vi.fn()}
+        reviewedPatientIds={new Set([firstPatient.id])}
+        scope="return"
+        mode="readiness"
+      />,
+    );
+
+    const rows = within(screen.getByRole("list", { name: "환자 목록" })).getAllByRole("button");
+    expect(rows[0]).toHaveTextContent(firstPatient.name);
+    expect(rows.map((row) => row.textContent?.includes("홍길동") ? "P001" : row.textContent?.includes("김영희") ? "P002" : row.textContent?.includes("박민수") ? "P003" : row.textContent?.includes("최수진") ? "P004" : "P005")).toEqual(
+      responses.map((response) => response.comparison.patient.id),
+    );
   });
 
   it("defaults return scope to readiness and requests the five-patient roster", async () => {
@@ -464,6 +492,41 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     await waitFor(() => expect(fetchMock.mock.calls.filter(([url]) => url === "/api/handover/shift-readiness")).toHaveLength(6));
     await waitFor(() => expect(screen.getByRole("checkbox", { name: "CBC 결과 확인 확인함" })).toBeVisible());
     expect(screen.getByRole("checkbox", { name: "CBC 결과 확인 확인함" })).not.toBeChecked();
+  });
+
+  it("does not expose a prior readiness note while the next exact key is loading", async () => {
+    const responses = buildDemoWorkspaceData();
+    const recordPairs = createUniqueRosterRecordPairs();
+    const nextP001 = createDeferred<unknown>();
+    const initialStart = getDemoTimeline("P001").defaultReturnStartAt;
+    const alternateStart = getDemoTimeline("P001").snapshots[1]!.updated_at;
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/handover/shift-readiness") {
+        const request = JSON.parse(String(options.body)) as { records: Array<{ patient_id: string }>; reviewStartAt: string };
+        const patientId = request.records[0]!.patient_id;
+        if (patientId === "P001" && request.reviewStartAt === alternateStart) return nextP001.promise;
+        return Promise.resolve(responseWith(makeReadinessResponse(patientId, request.reviewStartAt)));
+      }
+      return Promise.resolve(responseWith(responses[0]!));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+
+    render(<HandoverWorkspace data={responses} recordPairs={recordPairs} />);
+    await waitFor(() => expect(screen.queryByText("환자 기록을 불러오는 중입니다.")).not.toBeInTheDocument());
+    await user.click(screen.getByRole("tab", { name: "휴무 복귀" }));
+    await waitFor(() => expect(screen.getByRole("checkbox", { name: "CBC 결과 확인 확인함" })).toBeVisible());
+    await user.click(screen.getByRole("checkbox", { name: "CBC 결과 확인 확인함" }));
+    const note = screen.getByRole("textbox", { name: "인계 메모" });
+    await user.type(note, "다음 근무에 전달할 내용");
+    expect(note).toHaveValue("다음 근무에 전달할 내용");
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "마지막 근무 시각" }), alternateStart);
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([url]) => url === "/api/handover/shift-readiness")).toHaveLength(6));
+    expect(screen.getByRole("textbox", { name: "인계 메모" })).toHaveValue("");
+
+    nextP001.resolve(responseWith(makeReadinessResponse("P001", alternateStart)));
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "인계 메모" })).toHaveValue(""));
   });
 
   it("creates a new readiness request key from a successfully edited current record", async () => {
@@ -707,6 +770,63 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
     }
   });
 
+  it("restores readiness evidence focus by stable trigger ID after the origin remounts", async () => {
+    const response = buildDemoWorkspaceData()[0];
+    if (!response) throw new Error("P001 데모 응답이 없습니다.");
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/handover/shift-readiness") {
+        const request = JSON.parse(String(options.body)) as { records: Array<{ patient_id: string }>; reviewStartAt: string };
+        return Promise.resolve(responseWith(makeReadinessResponse(request.records[0]!.patient_id, request.reviewStartAt)));
+      }
+      return Promise.resolve(responseWith(response));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    const recordPairs = createUniqueP001RecordPairs();
+
+    render(<HandoverWorkspace data={[response]} recordPairs={recordPairs} />);
+    await waitFor(() => expect(screen.queryByText("환자 기록을 불러오는 중입니다.")).not.toBeInTheDocument());
+    await user.click(screen.getByRole("tab", { name: "휴무 복귀" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: /검사·결과/ })).toBeVisible());
+
+    const trigger = screen.getByRole("button", { name: /CBC 결과 확인 근거 보기/ });
+    await user.click(trigger);
+    const replacement = trigger.cloneNode(true) as HTMLElement;
+    trigger.replaceWith(replacement);
+
+    const recordPanel = screen.getByRole("tabpanel", { name: "원본 기록" });
+    await user.click(within(recordPanel).getByRole("button", { name: "비교로 돌아가기" }));
+    await waitFor(() => expect(replacement).toHaveFocus());
+  });
+
+  it("closes read-only readiness evidence when the return start changes", async () => {
+    const response = buildDemoWorkspaceData()[0];
+    if (!response) throw new Error("P001 데모 응답이 없습니다.");
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/handover/shift-readiness") {
+        const request = JSON.parse(String(options.body)) as { records: Array<{ patient_id: string }>; reviewStartAt: string };
+        return Promise.resolve(responseWith(makeReadinessResponse(request.records[0]!.patient_id, request.reviewStartAt)));
+      }
+      return Promise.resolve(responseWith(response));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    const recordPairs = createUniqueP001RecordPairs();
+
+    render(<HandoverWorkspace data={[response]} recordPairs={recordPairs} />);
+    await waitFor(() => expect(screen.queryByText("환자 기록을 불러오는 중입니다.")).not.toBeInTheDocument());
+    await user.click(screen.getByRole("tab", { name: "휴무 복귀" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: /검사·결과/ })).toBeVisible());
+    await user.click(screen.getByRole("button", { name: /CBC 결과 확인 근거 보기/ }));
+    expect(screen.getByRole("tab", { name: "원본 기록" })).toHaveAttribute("aria-selected", "true");
+
+    const alternateStart = getDemoTimeline("P001").snapshots[1]!.updated_at;
+    await user.selectOptions(screen.getByRole("combobox", { name: "마지막 근무 시각" }), alternateStart);
+    await waitFor(() => expect(screen.getByRole("tab", { name: "근무 준비" })).toHaveAttribute("aria-selected", "true"));
+    expect(screen.getByRole("tab", { name: "원본 기록" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.queryByRole("button", { name: "변경사항 비교" })).not.toBeInTheDocument();
+  });
+
   it("opens a period-linked readiness source only after exact event, path, and current timestamp validation", async () => {
     const response = buildDemoWorkspaceData()[0];
     if (!response) throw new Error("P001 데모 응답이 없습니다.");
@@ -857,6 +977,69 @@ describe("HandoverWorkspace patient queue and comparison flow", () => {
         source.path = "vitals.body_temperature";
         source.periodEventId = "period-event-P001-vitals";
         source.recordedAt = "2026-07-02T08:00:00+09:00";
+      },
+    });
+  });
+
+  it("fails closed when a period readiness source field path cannot resolve to the exact snapshots", async () => {
+    await assertReadinessEvidenceFailure({
+      itemId: "P001-patient-status-recent-change",
+      triggerName: /현재 기록 변화 근거 보기/,
+      period: {
+        eventId: "period-event-P001-unresolvable-field",
+        fieldPath: "vitals.not_a_real_field",
+      },
+      mutateSource: (source) => {
+        source.path = "vitals.not_a_real_field";
+        source.periodEventId = "period-event-P001-unresolvable-field";
+        source.recordedAt = "2026-07-02T09:00:00+09:00";
+      },
+    });
+  });
+
+  it("fails closed when a normal period event field path cannot resolve to the exact snapshots", async () => {
+    const response = buildDemoWorkspaceData()[0];
+    if (!response) throw new Error("P001 데모 응답이 없습니다.");
+    const invalidFieldPath = "vitals.not_a_real_field";
+    const fetchMock = vi.fn().mockImplementation((url: string, options: RequestInit) => {
+      if (url === "/api/handover/shift-readiness") {
+        const request = JSON.parse(String(options.body)) as { records: Array<{ patient_id: string }>; reviewStartAt: string };
+        return Promise.resolve(responseWith(makeReadinessResponse(request.records[0]!.patient_id, request.reviewStartAt)));
+      }
+      if (url === "/api/handover/period-compare") {
+        const request = JSON.parse(String(options.body)) as { reviewStartAt: string };
+        const period = makePeriodResponse("P001", request.reviewStartAt, "unresolvable-period-field");
+        period.events[0]!.change.evidence.fieldPath = invalidFieldPath;
+        return Promise.resolve(responseWith(period));
+      }
+      return Promise.resolve(responseWith(response));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    const recordPairs = createUniqueP001RecordPairs();
+
+    render(<HandoverWorkspace data={[response]} recordPairs={recordPairs} />);
+    await waitFor(() => expect(screen.queryByText("환자 기록을 불러오는 중입니다.")).not.toBeInTheDocument());
+    await user.click(screen.getByRole("tab", { name: "휴무 복귀" }));
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([url]) => url === "/api/handover/period-compare")).toHaveLength(1));
+    await user.click(screen.getByRole("tab", { name: "변화 근거" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "unresolvable-period-field" })).toBeVisible());
+
+    const evidenceTrigger = document.getElementById("return-evidence-period-event-P001-unresolvable-period-field");
+    if (!(evidenceTrigger instanceof HTMLElement)) throw new Error("기간 근거 트리거가 없습니다.");
+    await user.click(evidenceTrigger);
+    await waitFor(() => expect(screen.getByRole("alert", { name: "기간 비교 상태" })).toHaveTextContent("근거를 찾을 수 없습니다"));
+    expect(screen.getByRole("tab", { name: "변화 근거" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "원본 기록" })).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("fails closed when a direct readiness selector contains a lone surrogate", async () => {
+    await assertReadinessEvidenceFailure({
+      itemId: "P001-investigation-CBC-new-result",
+      triggerName: /CBC 결과 확인 근거 보기/,
+      bypassParserValidation: true,
+      mutateSource: (source) => {
+        source.path = `investigations[id=${String.fromCharCode(0xd800)}]`;
       },
     });
   });

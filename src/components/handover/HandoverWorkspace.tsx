@@ -118,6 +118,11 @@ type ReturnResultSnapshot = {
   records: DemoPatientRecord[];
 };
 
+type ReadinessReviewState = {
+  key: string;
+  review: ShiftReadinessReview;
+};
+
 const DEMO_IDENTITY_KEYS = ["patient_id", "name", "room_no", "age", "sex"] as const;
 
 function hasSameDemoPatientIdentity(left: DemoPatientRecord, right: DemoPatientRecord) {
@@ -186,9 +191,8 @@ function parseDirectSourceSelector(path: string | null | undefined): DirectSourc
     return null;
   }
   if (!value.trim()) return null;
-  const canonicalValue = encodeURIComponent(value).replace(/[!'()*]/g, (character) => (
-    `%${character.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`
-  ));
+  const canonicalValue = encodeDirectSourceValue(value);
+  if (canonicalValue === null) return null;
   if (encodedValue !== canonicalValue) return null;
 
   return {
@@ -198,15 +202,23 @@ function parseDirectSourceSelector(path: string | null | undefined): DirectSourc
   };
 }
 
+function encodeDirectSourceValue(value: string): string | null {
+  try {
+    return encodeURIComponent(value).replace(/[!'()*]/g, (character) => (
+      `%${character.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`
+    ));
+  } catch {
+    return null;
+  }
+}
+
 function directSourcePath(
   collection: DirectSourceSelector["collection"],
   selector: DirectSourceSelector["selector"],
   value: string,
 ) {
-  const encodedValue = encodeURIComponent(value).replace(/[!'()*]/g, (character) => (
-    `%${character.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`
-  ));
-  return `${collection}[${selector}=${encodedValue}]`;
+  const encodedValue = encodeDirectSourceValue(value);
+  return encodedValue === null ? null : `${collection}[${selector}=${encodedValue}]`;
 }
 
 function hasDirectReadinessSource(
@@ -223,6 +235,35 @@ function hasDirectReadinessSource(
     return record.medications.some((item) => item.name === selector.value);
   }
   return record.handoffRequests.some((item) => item.id === selector.value);
+}
+
+function hasRecordFieldPath(record: DemoPatientRecord | null | undefined, fieldPath: string) {
+  if (!record) return false;
+  const vitalMatch = fieldPath.match(/^vitals\.([a-z_]+)$/);
+  if (vitalMatch) return Object.prototype.hasOwnProperty.call(record.vitals, vitalMatch[1]);
+
+  const collectionMatch = fieldPath.match(/^(diagnosis|medications|notes)\[(.*)\]$/);
+  if (!collectionMatch) return false;
+  let value: unknown;
+  try {
+    value = JSON.parse(collectionMatch[2]);
+  } catch {
+    return false;
+  }
+  if (typeof value !== "string" || value.length === 0) return false;
+  if (collectionMatch[1] === "medications") {
+    return record.medications.some((medication) => medication.name === value);
+  }
+  const collection = collectionMatch[1] as "diagnosis" | "notes";
+  return record[collection].includes(value);
+}
+
+function periodFieldPathResolvesToPair(
+  fieldPath: string,
+  previous: DemoPatientRecord | null,
+  current: DemoPatientRecord,
+) {
+  return hasRecordFieldPath(previous, fieldPath) || hasRecordFieldPath(current, fieldPath);
 }
 
 function readinessSourceMatchesRecord(
@@ -338,7 +379,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const [returnResultsByPatient, setReturnResultsByPatient] = useState<Record<string, ReturnResultSnapshot>>({});
   const [returnSessions, setReturnSessions] = useState<PatientReviewSessions>({});
   const [returnAppliedKeys, setReturnAppliedKeys] = useState<Record<string, string>>({});
-  const [readinessReviewsByPatient, setReadinessReviewsByPatient] = useState<Record<string, ShiftReadinessReview>>({});
+  const [readinessReviewsByPatient, setReadinessReviewsByPatient] = useState<Record<string, ReadinessReviewState>>({});
   const [returnEvidenceState, setReturnEvidenceState] = useState<ReturnEvidenceState | null>(null);
   const [returnEvidenceError, setReturnEvidenceError] = useState<string | null>(null);
   const [recordDrawerBusy, setRecordDrawerBusy] = useState(false);
@@ -347,7 +388,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const apiStateRef = useRef<Record<string, PatientApiState>>({});
   const sessionsRef = useRef<PatientReviewSessions>({});
   const returnAppliedKeysRef = useRef<Record<string, string>>({});
-  const readinessReviewsRef = useRef<Record<string, ShiftReadinessReview>>({});
+  const readinessReviewsRef = useRef<Record<string, ReadinessReviewState>>({});
   const readinessAppliedKeysRef = useRef<Record<string, string>>({});
   const selectedPatientRef = useRef(firstValidPatientId);
   const recordDraftsLoadedRef = useRef(false);
@@ -440,7 +481,10 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
         progress.set(patientId, { status: "no_items" });
         continue;
       }
-      const review = readinessReviewsByPatient[patientId] ?? emptyShiftReadinessReview();
+      const storedReview = readinessReviewsByPatient[patientId];
+      const review = storedReview?.key === entry.key
+        ? storedReview.review
+        : emptyShiftReadinessReview();
       const itemIds = new Set(entry.response.items.map((item) => item.id));
       const acknowledged = review.acknowledgedItemIds.filter((itemId) => itemIds.has(itemId)).length;
       progress.set(patientId, {
@@ -536,7 +580,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   useEffect(() => {
     if (handoverScope !== "return") return;
 
-    const hydratedReviews: Record<string, ShiftReadinessReview> = {};
+    const hydratedReviews: Record<string, ReadinessReviewState> = {};
     let hasHydratedReview = false;
     for (const [patientId, build] of readinessBuildsByPatient) {
       const entry = readinessRoster.entriesByPatient.get(patientId);
@@ -568,7 +612,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
         ...readinessAppliedKeysRef.current,
         [patientId]: entry.key,
       };
-      hydratedReviews[patientId] = review;
+      hydratedReviews[patientId] = { key: entry.key, review };
       hasHydratedReview = true;
     }
 
@@ -766,7 +810,10 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const readinessErrorMessage = readinessBuild?.error || readinessStatus === "error"
     ? "근무 준비 정보를 불러오지 못했습니다."
     : returnEvidenceError;
-  const readinessReview = readinessReviewsByPatient[patientId] ?? emptyShiftReadinessReview();
+  const storedReadinessReview = readinessReviewsByPatient[patientId];
+  const readinessReview = storedReadinessReview?.key === readinessExpectedKey
+    ? storedReadinessReview.review
+    : emptyShiftReadinessReview();
   const returnSession = returnSessions[patientId] ?? (returnResponse
     ? createReturnReviewSession(returnResponse)
     : {
@@ -815,8 +862,9 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
       ...nextReview,
       acknowledgedItemIds: [...nextReview.acknowledgedItemIds],
     };
-    readinessReviewsRef.current = { ...readinessReviewsRef.current, [patientId]: next };
-    setReadinessReviewsByPatient((current) => ({ ...current, [patientId]: next }));
+    const nextState = { key: readinessEntry.key, review: next };
+    readinessReviewsRef.current = { ...readinessReviewsRef.current, [patientId]: nextState };
+    setReadinessReviewsByPatient((current) => ({ ...current, [patientId]: nextState }));
     if (typeof window !== "undefined") {
       persistShiftReadinessReview(window.sessionStorage, readinessEntry.key, next);
     }
@@ -889,6 +937,14 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
         trigger.focus();
         return;
       }
+      const stableTriggerId = returnEvidenceFocusRef.current;
+      if (stableTriggerId) {
+        const stableTrigger = document.getElementById(stableTriggerId);
+        if (stableTrigger) {
+          stableTrigger.focus();
+          return;
+        }
+      }
       document.getElementById(`return-evidence-${eventId}`)?.focus();
     });
   }
@@ -932,6 +988,10 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
       setReturnEvidenceError(READINESS_EVIDENCE_NOT_FOUND);
       return;
     }
+    if (!periodFieldPathResolvesToPair(periodSource.fieldPath, previous, current)) {
+      setReturnEvidenceError(READINESS_EVIDENCE_NOT_FOUND);
+      return;
+    }
 
     returnEvidenceFocusRef.current = eventId;
     returnEvidenceTriggerRef.current = typeof document !== "undefined" && document.activeElement instanceof HTMLElement
@@ -954,7 +1014,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
 
   function handleReadinessEvidenceActivate(itemId: string, sourceIndex: number, trigger: HTMLElement) {
     returnEvidenceTriggerRef.current = trigger;
-    returnEvidenceFocusRef.current = `readiness-${itemId}-${sourceIndex}`;
+    returnEvidenceFocusRef.current = trigger.id;
     const item = readinessResponse?.items.find((candidate) => candidate.id === itemId);
     const source = item?.sourceRefs[sourceIndex];
     const build = readinessBuild;
@@ -986,6 +1046,10 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
       const previous = returnResponseRecords.find((record) => record.updated_at === event.interval.previousRecordedAt);
       const current = returnResponseRecords.find((record) => record.updated_at === event.interval.currentRecordedAt);
       if (!previous || !current) {
+        fail();
+        return;
+      }
+      if (!periodFieldPathResolvesToPair(event.change.evidence.fieldPath, previous, current)) {
         fail();
         return;
       }
@@ -1229,6 +1293,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   }
 
   function handleReturnStartAtChange(nextStartAt: string) {
+    const previousMode = returnEvidenceState?.previousMode;
     setReturnStartAtByPatient((current) => ({
       ...current,
       [patientId]: nextStartAt,
@@ -1236,6 +1301,10 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
     setReturnEvidenceState(null);
     setReturnEvidenceError(null);
     returnEvidenceTriggerRef.current = null;
+    if (previousMode) {
+      setWorkspaceMode(previousMode);
+      setModeByScope((current) => ({ ...current, return: previousMode }));
+    }
   }
 
   return (
