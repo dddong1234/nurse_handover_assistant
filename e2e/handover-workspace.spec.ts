@@ -645,9 +645,12 @@ for (const { state, workspaceCopy, summaryCopy } of readinessStateCases) {
     if (state === "no_items") {
       await expect(readiness.locator(".shift-readiness-item")).toHaveCount(0);
       await expect(readiness.locator(".shift-readiness-domain-empty")).toHaveCount(5);
-      await expect(summary.getByText("0/0", { exact: true })).toBeVisible();
-      await expect(summary.getByTestId("shift-readiness-unreviewed-count")).toHaveText("미확인 0건");
-      await expect(summary.locator(".shift-readiness-summary-progress-track span")).toHaveAttribute("style", /width:\s*0%/);
+      await expect(summary.getByRole("heading", { name: "표시 항목 없음", exact: true })).toBeVisible();
+      await expect(summary.getByText("이번 근무에 표시 규칙에 해당하는 항목이 없습니다.", { exact: true })).toBeVisible();
+      await expect(summary.getByText("0/0", { exact: true })).toHaveCount(0);
+      await expect(summary.getByText("확인함", { exact: true })).toHaveCount(0);
+      await expect(summary.getByText("미확인 0건", { exact: true })).toHaveCount(0);
+      await expect(summary.locator(".shift-readiness-summary-progress-track")).toHaveCount(0);
     }
 
     const comparisonTab = page.getByRole("tab", { name: "변화 근거", exact: true });

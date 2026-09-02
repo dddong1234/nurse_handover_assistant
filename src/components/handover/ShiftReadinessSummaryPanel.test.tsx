@@ -158,7 +158,7 @@ describe("ShiftReadinessSummaryPanel", () => {
     expect(screen.getByRole("status")).toHaveTextContent("부분 결과");
   });
 
-  it("keeps a no-items response explicit and does not call it completion", () => {
+  it("renders a no-items state without progress or completion semantics", () => {
     const response = createValidShiftReadinessResponse();
     response.status = "no_items";
     response.items = [];
@@ -184,9 +184,15 @@ describe("ShiftReadinessSummaryPanel", () => {
     };
     render(<ShiftReadinessSummaryPanel {...summaryProps(response, [])} />);
 
-    expect(screen.getByText("0/0")).toBeVisible();
-    expect(screen.getByText("미확인 0건")).toBeVisible();
-    expect(within(screen.getByRole("region", { name: "기록 기반 요약" })).getByText("이번 근무에 표시할 항목 없음")).toBeVisible();
+    const panel = screen.getByTestId("shift-readiness-summary-panel");
+    expect(within(panel).getByRole("heading", { name: "표시 항목 없음" })).toBeVisible();
+    expect(screen.queryByText("0/0")).not.toBeInTheDocument();
+    expect(screen.queryByText("확인함", { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText("미확인 0건", { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "검토 진행" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "근무 항목 지표" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "기록 기반 요약" })).not.toBeInTheDocument();
+    expect(panel.querySelector(".shift-readiness-summary-progress-track")).not.toBeInTheDocument();
     expect(screen.queryByText(/완료|검토 완료|안전|악화|보고 필요/)).not.toBeInTheDocument();
   });
 });

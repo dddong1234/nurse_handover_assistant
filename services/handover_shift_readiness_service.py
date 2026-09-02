@@ -67,6 +67,9 @@ _MEDICATION_CORE_FIELDS = ("name", "route", "frequency")
 _SOURCE_SELECTOR_RE = re.compile(
     r"^(investigations|devices|medications|handoffRequests)\[(id|name)=([^\]]+)\]$"
 )
+_ISO_TIMESTAMP_RE = re.compile(
+    r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})\Z"
+)
 _PERCENT_ESCAPE_RE = re.compile(r"%[0-9A-F]{2}")
 _PATIENT_ID_FRAGMENT_RE = re.compile(r"[^0-9A-Za-z가-힣]+")
 
@@ -91,11 +94,9 @@ def _timestamp_error(field: str) -> ValueError:
 
 
 def _parse_timestamp(value: Any, field: str) -> datetime:
-    if not isinstance(value, str) or not value.strip():
+    if not isinstance(value, str) or _ISO_TIMESTAMP_RE.fullmatch(value) is None:
         raise _timestamp_error(field)
-    normalized = value.strip()
-    if normalized.endswith(("Z", "z")):
-        normalized = f"{normalized[:-1]}+00:00"
+    normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
     try:
         parsed = datetime.fromisoformat(normalized)
     except ValueError as exc:

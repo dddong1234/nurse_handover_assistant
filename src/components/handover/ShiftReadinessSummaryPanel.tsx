@@ -186,6 +186,17 @@ function DeterministicBrief({ response }: { response: ShiftReadinessResponse | n
   );
 }
 
+function NoItemsState() {
+  return (
+    <section className="shift-readiness-summary-brief" aria-labelledby="shift-readiness-no-items-title">
+      <header className="shift-readiness-summary-section-header">
+        <h3 id="shift-readiness-no-items-title">표시 항목 없음</h3>
+      </header>
+      <p className="shift-readiness-summary-empty">이번 근무에 표시 규칙에 해당하는 항목이 없습니다.</p>
+    </section>
+  );
+}
+
 function UnacknowledgedLinks({
   items,
   acknowledgedItemIds,
@@ -292,15 +303,21 @@ export function ShiftReadinessSummaryPanel({
       ) : null}
 
       <div className="shift-readiness-summary-body">
-        <ProgressSection response={response} acknowledgedItemIds={acknowledgedItemIds} />
-        <MetricsSection response={response} />
-        <DeterministicBrief response={response} />
-        <UnacknowledgedLinks
-          items={response?.items ?? []}
-          acknowledgedItemIds={acknowledgedItemIds}
-          onNavigateToItem={onNavigateToItem}
-          hasResponse={Boolean(response)}
-        />
+        {response?.status === "no_items" ? (
+          <NoItemsState />
+        ) : (
+          <>
+            <ProgressSection response={response} acknowledgedItemIds={acknowledgedItemIds} />
+            <MetricsSection response={response} />
+            <DeterministicBrief response={response} />
+            <UnacknowledgedLinks
+              items={response?.items ?? []}
+              acknowledgedItemIds={acknowledgedItemIds}
+              onNavigateToItem={onNavigateToItem}
+              hasResponse={Boolean(response)}
+            />
+          </>
+        )}
         {response?.dataWarnings.length ? (
           <div className="shift-readiness-summary-warnings" role="note">
             <strong>데이터 주의</strong>

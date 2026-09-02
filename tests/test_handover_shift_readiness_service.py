@@ -6,7 +6,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from services.handover_shift_readiness_service import build_shift_readiness
+from services.handover_shift_readiness_service import _parse_timestamp, build_shift_readiness
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -141,6 +141,27 @@ def minimal_record(
 
 
 class ShiftReadinessServiceTests(unittest.TestCase):
+    def test_timestamp_parser_matches_strict_iso_8601_grammar(self):
+        for value in (
+            "2026-07-02T08:00:00+09:00",
+            "2026-07-02T08:00:00.123456Z",
+        ):
+            with self.subTest(value=value):
+                self.assertIsNotNone(_parse_timestamp(value, "timestamp"))
+
+        for value in (
+            "2026-07-02T08:00:00z",
+            " 2026-07-02T08:00:00+09:00",
+            "2026-07-02T08:00:00+09:00 ",
+            "2026-07-02 08:00:00+09:00",
+        ):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    r"^timestamp must be an offset-aware ISO 8601 timestamp$",
+                ):
+                    _parse_timestamp(value, "timestamp")
+
     def test_effective_medication_keeps_matching_period_evidence(self):
         response = build_shift_readiness(
             records_with_medication_effective_and_period_change(),
