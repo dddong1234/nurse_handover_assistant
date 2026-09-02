@@ -1,0 +1,97 @@
+{
+  "patientId": "P002",
+  "defaultShift": {
+    "startsAt": "2026-07-02T07:00:00+09:00",
+    "endsAt": "2026-07-02T15:00:00+09:00"
+  },
+  "states": {
+    "2026-06-29T15:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-29T23:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-30T07:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-30T15:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-01T07:00:00+09:00": {
+      "investigations": [],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-01T20:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P002-CXR",
+          "kind": "imaging",
+          "name": "Chest PA",
+          "orderedAt": "2026-07-01T10:00:00+09:00",
+          "scheduledAt": "2026-07-03T09:00:00+09:00",
+          "status": "ordered",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-02T06:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P002-CXR",
+          "kind": "imaging",
+          "name": "Chest PA",
+          "orderedAt": "2026-07-01T10:00:00+09:00",
+          "scheduledAt": "2026-07-03T09:00:00+09:00",
+          "status": "ordered",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-02T09:10:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P002-CXR",
+          "kind": "imaging",
+          "name": "Chest PA",
+          "orderedAt": "2026-07-01T10:00:00+09:00",
+          "scheduledAt": "2026-07-03T09:00:00+09:00",
+          "status": "ordered",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [],
+      "medicationSchedules": [
+        {
+          "medicationName": "아세틸시스테인",
+          "effectiveFrom": "2026-07-01T21:00:00+09:00",
+          "effectiveTo": null,
+          "orderStatus": "active"
+        }
+      ],
+      "handoffRequests": []
+    }
+  }
+}

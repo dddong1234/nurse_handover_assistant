@@ -1,0 +1,182 @@
+{
+  "patientId": "P004",
+  "defaultShift": {
+    "startsAt": "2026-07-02T07:00:00+09:00",
+    "endsAt": "2026-07-02T15:00:00+09:00"
+  },
+  "states": {
+    "2026-06-29T14:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P004-CXR",
+          "kind": "imaging",
+          "name": "Abdomen AP",
+          "orderedAt": "2026-06-29T13:00:00+09:00",
+          "scheduledAt": null,
+          "status": "ordered",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-29T22:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P004-CXR",
+          "kind": "imaging",
+          "name": "Abdomen AP",
+          "orderedAt": "2026-06-29T13:00:00+09:00",
+          "scheduledAt": null,
+          "status": "cancelled",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-30T06:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P004-CXR",
+          "kind": "imaging",
+          "name": "Abdomen AP",
+          "orderedAt": "2026-06-29T13:00:00+09:00",
+          "scheduledAt": null,
+          "status": "cancelled",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-06-30T14:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P004-CXR",
+          "kind": "imaging",
+          "name": "Abdomen AP",
+          "orderedAt": "2026-06-29T13:00:00+09:00",
+          "scheduledAt": null,
+          "status": "cancelled",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-01T06:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P004-CXR",
+          "kind": "imaging",
+          "name": "Abdomen AP",
+          "orderedAt": "2026-06-29T13:00:00+09:00",
+          "scheduledAt": null,
+          "status": "cancelled",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": []
+    },
+    "2026-07-01T18:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P004-CXR",
+          "kind": "imaging",
+          "name": "Abdomen AP",
+          "orderedAt": "2026-06-29T13:00:00+09:00",
+          "scheduledAt": null,
+          "status": "cancelled",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": [
+        {
+          "id": "REQ-P004-DISCHARGE-1",
+          "topic": "퇴원 전 보행 상태 전달",
+          "requestedAt": "2026-07-01T18:00:00+09:00",
+          "dueBy": "2026-07-02T15:00:00+09:00",
+          "sourceType": "nursing_note",
+          "status": "open"
+        }
+      ]
+    },
+    "2026-07-02T06:00:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P004-CXR",
+          "kind": "imaging",
+          "name": "Abdomen AP",
+          "orderedAt": "2026-06-29T13:00:00+09:00",
+          "scheduledAt": null,
+          "status": "cancelled",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": [
+        {
+          "id": "REQ-P004-DISCHARGE-1",
+          "topic": "퇴원 전 보행 상태 전달",
+          "requestedAt": "2026-07-01T18:00:00+09:00",
+          "dueBy": "2026-07-02T15:00:00+09:00",
+          "sourceType": "nursing_note",
+          "status": "communicated"
+        }
+      ]
+    },
+    "2026-07-02T08:40:00+09:00": {
+      "investigations": [
+        {
+          "id": "INV-P004-CXR",
+          "kind": "imaging",
+          "name": "Abdomen AP",
+          "orderedAt": "2026-06-29T13:00:00+09:00",
+          "scheduledAt": null,
+          "status": "cancelled",
+          "resultedAt": null,
+          "resultSummary": null
+        },
+        {
+          "id": "INV-P004-US",
+          "kind": "imaging",
+          "name": "Abdomen ultrasound",
+          "orderedAt": "2026-07-02T08:00:00+09:00",
+          "scheduledAt": "2026-07-02T15:00:00+09:00",
+          "status": "scheduled",
+          "resultedAt": null,
+          "resultSummary": null
+        }
+      ],
+      "devices": [],
+      "medicationSchedules": [],
+      "handoffRequests": [
+        {
+          "id": "REQ-P004-DISCHARGE-1",
+          "topic": "퇴원 전 보행 상태 전달",
+          "requestedAt": "2026-07-01T18:00:00+09:00",
+          "dueBy": "2026-07-02T15:00:00+09:00",
+          "sourceType": "nursing_note",
+          "status": "communicated"
+        }
+      ]
+    }
+  }
+}
