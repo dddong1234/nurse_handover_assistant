@@ -21,6 +21,12 @@ const RETIRED_SAFETY_NOTICE = ["가상 데이터", "의사결정 보조가 아�
 const RETIRED_UTILITY_CONTEXT = ["일반 성인병동", "교대 검토"].join(" · ");
 const P001_RETURN_START_OPTIONS = getDemoTimeline("P001").snapshots.map((snapshot) => snapshot.updated_at);
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("nurse-handover:onboarding:v1", "dismissed");
+  });
+});
+
 async function forceCompareFailure(page: Page, status = 503) {
   await page.route("**/api/handover/compare", async (route) => {
     await route.fulfill({

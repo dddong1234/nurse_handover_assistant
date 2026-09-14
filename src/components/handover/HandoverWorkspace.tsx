@@ -33,6 +33,7 @@ import {
 
 import { ComparisonWorkspace } from "./ComparisonWorkspace";
 import { ClinicalHeader } from "./ClinicalHeader";
+import { OnboardingTour } from "./OnboardingTour";
 import { PatientContextHeader } from "./PatientContextHeader";
 import { PatientQueue, type PatientQueueProgress } from "./PatientQueue";
 import { PatientRecordWorkspace } from "./PatientRecordWorkspace";
@@ -371,6 +372,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   const [recordResetRequestId, setRecordResetRequestId] = useState(0);
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("comparison");
   const [handoverScope, setHandoverScope] = useState<ReturnHandoverScope>("shift");
+  const [onboardingOpenRequestId, setOnboardingOpenRequestId] = useState(0);
   const [modeByScope, setModeByScope] = useState<Record<ReturnHandoverScope, WorkspaceMode>>({
     shift: "comparison",
     return: "readiness",
@@ -1308,10 +1310,14 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
   }
 
   return (
-    <div className="app-shell">
-      <ClinicalHeader currentRecordedAt={selectedResponse.comparison.interval.currentRecordedAt} />
+    <>
+      <div className="app-shell">
+        <ClinicalHeader
+          currentRecordedAt={selectedResponse.comparison.interval.currentRecordedAt}
+          onOpenGuide={() => setOnboardingOpenRequestId((current) => current + 1)}
+        />
 
-      <div className="workspace-shell">
+        <div className="workspace-shell">
         <PatientQueue
           responses={responses}
           selectedPatientId={patientId}
@@ -1323,7 +1329,7 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
           mode={workspaceMode}
           reviewProgressByPatient={readinessProgressByPatient}
         />
-        <main className="comparison-workspace">
+        <main className="comparison-workspace" data-tour="center-workspace">
           <PatientContextHeader
             comparison={selectedResponse.comparison}
             scope={handoverScope}
@@ -1455,7 +1461,13 @@ export function HandoverWorkspace({ data, recordPairs }: HandoverWorkspaceProps)
             fallbackMessage={fallbackByPatient[patientId] ? API_FALLBACK_MESSAGE : null}
           />
         )}
+        </div>
       </div>
-    </div>
+      <OnboardingTour
+        scope={handoverScope}
+        mode={workspaceMode}
+        openRequestId={onboardingOpenRequestId}
+      />
+    </>
   );
 }

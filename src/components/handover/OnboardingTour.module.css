@@ -1,0 +1,313 @@
+.headerGuide {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--surface) 58%, transparent);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--surface);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.headerGuide:hover {
+  border-color: color-mix(in srgb, var(--surface) 82%, transparent);
+  background: color-mix(in srgb, var(--surface) 10%, transparent);
+}
+
+.headerGuide:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--surface) 85%, var(--primary));
+  outline-offset: 2px;
+}
+
+.backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  background: color-mix(in srgb, var(--navy) 43%, transparent);
+  pointer-events: auto;
+}
+
+.backdropCutout {
+  background:
+    linear-gradient(color-mix(in srgb, var(--navy) 43%, transparent), color-mix(in srgb, var(--navy) 43%, transparent)) 0 0 / 100% var(--cutout-top) no-repeat,
+    linear-gradient(color-mix(in srgb, var(--navy) 43%, transparent), color-mix(in srgb, var(--navy) 43%, transparent)) 0 var(--cutout-bottom) / 100% calc(100% - var(--cutout-bottom)) no-repeat,
+    linear-gradient(color-mix(in srgb, var(--navy) 43%, transparent), color-mix(in srgb, var(--navy) 43%, transparent)) 0 var(--cutout-top) / var(--cutout-left) calc(var(--cutout-bottom) - var(--cutout-top)) no-repeat,
+    linear-gradient(color-mix(in srgb, var(--navy) 43%, transparent), color-mix(in srgb, var(--navy) 43%, transparent)) var(--cutout-right) var(--cutout-top) / calc(100% - var(--cutout-right)) calc(var(--cutout-bottom) - var(--cutout-top)) no-repeat;
+}
+
+.spotlight {
+  position: fixed;
+  z-index: 1001;
+  border: 2px solid color-mix(in srgb, var(--primary) 70%, var(--surface));
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 9999px color-mix(in srgb, var(--navy) 17%, transparent),
+    0 0 0 5px color-mix(in srgb, var(--primary) 19%, transparent);
+  pointer-events: none;
+  transition: top 180ms ease, left 180ms ease, width 180ms ease, height 180ms ease;
+}
+
+.dialog {
+  position: fixed;
+  z-index: 1002;
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--surface));
+  border-radius: 5px;
+  background: var(--surface);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--navy) 28%, transparent);
+  color: var(--ink);
+  outline: none;
+}
+
+.welcomeDialog {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.stepDialog {
+  min-height: 214px;
+}
+
+.dialogEyebrow {
+  margin-bottom: 11px;
+  color: var(--primary);
+  font-family: "JetBrains Mono", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.dialog h2 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 1.25;
+}
+
+.dialogBody {
+  margin-top: 12px;
+  color: var(--secondary);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.dialogDetail {
+  margin-top: 10px;
+  padding-left: 11px;
+  border-left: 2px solid color-mix(in srgb, var(--primary) 35%, var(--surface));
+  color: var(--secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.overviewList {
+  display: grid;
+  gap: 7px;
+  margin: 17px 0 4px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  background: var(--canvas);
+  color: var(--secondary);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.overviewList li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.overviewList li span {
+  color: var(--primary);
+  font-family: "JetBrains Mono", Consolas, monospace;
+  font-size: 11px;
+}
+
+.welcomeActions,
+.stepActions,
+.navigationActions,
+.progressRow {
+  display: flex;
+  align-items: center;
+}
+
+.welcomeActions {
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 19px;
+}
+
+.progressRow {
+  justify-content: space-between;
+  margin-bottom: 11px;
+  color: var(--secondary);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.progressValue {
+  color: var(--primary);
+  font-family: "JetBrains Mono", Consolas, monospace;
+  font-size: 11px;
+}
+
+.progressTrack {
+  height: 3px;
+  margin-top: 18px;
+  overflow: hidden;
+  background: var(--primary-soft);
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  transition: width 180ms ease;
+}
+
+.stepActions {
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 17px;
+}
+
+.navigationActions {
+  gap: 7px;
+}
+
+.primaryButton,
+.secondaryButton,
+.skipButton {
+  min-height: 38px;
+  padding: 0 13px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.primaryButton {
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--surface);
+}
+
+.primaryButton:hover {
+  border-color: color-mix(in srgb, var(--primary) 82%, var(--navy));
+  background: color-mix(in srgb, var(--primary) 82%, var(--navy));
+}
+
+.secondaryButton,
+.skipButton {
+  border: 1px solid color-mix(in srgb, var(--line) 82%, var(--secondary));
+  background: var(--surface);
+  color: var(--primary);
+}
+
+.secondaryButton:hover:not(:disabled),
+.skipButton:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.secondaryButton:disabled {
+  border-color: var(--line);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.skipButton {
+  border-color: transparent;
+  background: transparent;
+  color: var(--secondary);
+  font-weight: 700;
+}
+
+.skipButton:hover {
+  border-color: var(--line);
+  background: var(--canvas);
+  color: var(--navy);
+}
+
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.skipButton:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .headerGuide {
+    min-height: 26px;
+    padding: 0 7px;
+    font-size: 12px;
+  }
+
+  .spotlight {
+    transition: none;
+  }
+
+  .dialog {
+    width: calc(100vw - 24px);
+    max-height: min(340px, calc(100dvh - 24px));
+    padding: 16px;
+  }
+
+  .welcomeDialog {
+    max-height: min(560px, calc(100dvh - 24px));
+  }
+
+  .stepDialog {
+    top: auto !important;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: 12px !important;
+    min-height: 0;
+    transform: none;
+  }
+
+  .dialog h2 {
+    font-size: 20px;
+  }
+
+  .dialogBody {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .dialogDetail {
+    font-size: 14px;
+  }
+
+  .stepActions {
+    margin-top: 14px;
+  }
+
+  .primaryButton,
+  .secondaryButton,
+  .skipButton {
+    min-height: 40px;
+    padding: 0 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spotlight,
+  .progressTrack span {
+    transition: none;
+  }
+}

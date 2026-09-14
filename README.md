@@ -15,6 +15,7 @@
 
 ## 현재 구현
 
+- 첫 방문 화면 안내: 환자 선택 → 인수인계 범위 → 변화·근거 → 요약·검토. 상단 `화면 안내`로 언제든 재실행
 - Next.js 16 + React 19 기반 통합 임상 워크벤치: 전역 헤더, 담당 환자 레일, 중앙 작업 모듈, 인계 검토 레일
 - 환자 검색·선택, Shift Seam 이전/현재 비교, 중요도별 변화 검토
 - `직전 교대`·`휴무 복귀` 모드와 마지막 근무 선택, 휴무 기간의 모든 인접 기록 변화 검토
@@ -38,9 +39,19 @@
 - API: FastAPI, Python 3.12
 - AI: OpenAI Responses API, Structured Outputs, deterministic fallback
 - Test: Vitest, Testing Library, Playwright, Python unittest
-- Deploy: Vercel Preview 검증 후 Production (`0.9.0`)
+- Deploy: Vercel Preview 검증 후 Production
 
 ## 로컬 실행
+
+### 처음 화면을 보는 경우
+
+`0.10.0`에서 구현·검증한 기능입니다. 모바일 원본 기록 안내의 영역 겹침도 수정·재검증했습니다. 검증 이력과 배포 절차는 `docs/AGENT_WORKLOG.md`를 참고하세요.
+
+첫 방문의 시작 창에서 `시작하기`를 누르면 현재 화면 영역을 따라 네 단계로 안내합니다. `건너뛰기` 또는 `안내 마치기`를 누르면 같은 브라우저에서는 자동 안내가 반복되지 않습니다. 상단 `화면 안내`로 다시 열 수 있으며 `Esc`로 닫을 수 있습니다.
+
+`직전 교대`에서는 이전·현재 변화 카드의 `근거 상세`를, `휴무 복귀 → 근무 준비`에서는 업무 항목의 `근거 보기`를 확인하세요. 안내는 현재 환자·탭·작성 내용·검토 상태를 변경하지 않습니다. 안내 선호만 localStorage에 기억하며 환자 초안과 검토 메모는 기존 sessionStorage에 남습니다.
+
+결정 근거와 후속 사용성 평가 항목: [첫 방문 안내 결정](docs/decisions/003-first-visit-guide.md).
 
 ### 1. 의존성 설치
 

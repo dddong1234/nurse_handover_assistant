@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { StrictMode, act } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildDemoWorkspaceData } from "@/lib/demo-adapter";
 import type { HandoverApiResponse, HandoverStatus } from "@/lib/contracts";
@@ -17,6 +17,7 @@ import { SHIFT_READINESS_REVIEW_STORAGE_KEY } from "@/lib/shift-readiness-review
 import { createValidShiftReadinessResponse } from "@/test/shift-readiness-fixtures";
 
 import { HandoverWorkspace } from "./HandoverWorkspace";
+import { ONBOARDING_STORAGE_KEY } from "./OnboardingTour";
 import { PatientQueue, type PatientQueueProgress } from "./PatientQueue";
 import { SummaryPanel } from "./SummaryPanel";
 import { clearReturnHandoverCache } from "./useReturnHandover";
@@ -280,8 +281,13 @@ async function assertReadinessEvidenceFailure(scenario: ReadinessEvidenceFailure
 }
 
 describe("HandoverWorkspace patient queue and comparison flow", () => {
+  beforeEach(() => {
+    window.localStorage.setItem(ONBOARDING_STORAGE_KEY, "dismissed");
+  });
+
   afterEach(() => {
     cleanup();
+    window.localStorage.clear();
     window.sessionStorage.clear();
     clearReturnHandoverCache();
     vi.restoreAllMocks();

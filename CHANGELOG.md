@@ -4,6 +4,27 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-09-14
+
+### Added
+
+- 첫 방문에 환자 → 인수인계 범위 → 변화·근거 → 요약·검토를 안내하는 선택형 4단계 튜토리얼
+- 상단 `화면 안내` 재실행, 건너뛰기·완료 선호 저장, 현재 범위·탭에 맞는 설명
+- 데스크톱 영역 강조와 모바일 하단 안내, 키보드 포커스 순환·Escape 종료·스크롤 복원
+
+### Verification
+
+- 감독 검증: Vitest 282/282, 기존 Playwright 64/64 및 안내 Playwright 4/4, Python unittest 155/155 통과
+- TypeScript, 변경 파일 ESLint, Next production build, harness, diff-check 통과
+- 390×844 원본 기록 안내 겹침 RED 재현 후 수정, 감독 화면 검증 및 독립 재리뷰 통과
+- 포커스 테스트의 준비 시점 경쟁을 안내창 focus 대기로 보완; 실제 브라우저 양방향 Tab·Escape 검증 통과
+
+### Known limits
+
+- 로컬 검증 후 사용자 배포 승인에 따라 Preview 검증 → main 병합 → Production 확인 절차 적용
+- 안내만 추가하며 환자·기록·임상 비교·검토 상태·API 계약은 변경하지 않음
+- 사용성 개선 및 시간 절감 효과는 아직 측정하지 않음; OpenAI 실 API 호출 없이 검증
+
 ## [0.9.0] - 2026-09-02
 
 ### Added
