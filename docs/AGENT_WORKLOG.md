@@ -4,6 +4,12 @@
 
 ## 상태 값
 
+2026-09-14 배포 승인: 사용자 `굿 좋은데 배포해`. `codex/0.10.0-onboarding`의 검증된 파일만 커밋·푸시하고 Preview 빌드·화면·API 확인 후 main PR 병합 및 Production smoke 검증을 수행한다. 아래 원격 미반영 문장은 구현 완료 시점의 이력이다. 배포 실행 결과와 URL·커밋 SHA는 해당 릴리스 PR의 검증 댓글에 기록한다. 최신 origin/main은 구현 기준과 동일한 `449dfddd`; 루트 checkout과 다른 작업은 보존한다. 배포 직전 Vitest282/282, Python155/155, harness 재실행 통과.
+
+2026-09-14 최종 상태: **PASSED · 0.10.0**. 사용자 `ㅇㅇ` 및 `다시 ㄱㄱ`로 재개 승인 후 동일 frontend Luna Max가 FIX ROUND 2를 수행했다. 아래 BLOCKED는 재개 전 이력이다. 활성 탭 패널의 표시된 대상만 참조하고 원본 기록 모드에서는 기록 헤더를 유지하도록 수정했다. 회귀 E2E RED(기록 하단590.203 > 안내 시작535.359) → GREEN 및 감독 화면 검사(기록379–464, 안내535–832), 독립 재리뷰 잔여 문제 0. 감독 최종 Vitest 282/282, 기존 E2E 64/64, 안내 E2E 4/4, Python 155/155, Next build, TypeScript, 변경 파일 ESLint, harness, diff-check 통과. Python 실행 경로: `.superpowers/.venv/Scripts/python.exe` (3.12). 첫 전체 Vitest의 포커스 검사 1건 실패는 안내창 focus 이전 이벤트를 발생시킨 테스트 준비 시점 문제로, focus 대기를 추가한 후 전체 재실행 통과; 브라우저 Tab 양방향·Escape도 독립 확인. VERSION/package.json/CHANGELOG를 함께 0.10.0으로 반영. 임상 로직·계약·API 키 접근 변경 없음. 원격 push·merge·배포는 수행하지 않음.
+
+튜토리얼 2026-09-14 최종 게이트: **BLOCKED (수정 1회 후 재검증)**. supervisor Python 155/155, Next build, 기존 E2E 64/64 통과; 수정 후 전용 E2E 3/3 통과. 구현 담당 focused 112/112, tsc/lint 통과 보고. 독립 리뷰의 기존 두 문제(환자 목록 재실행 스크롤, 1440→390 전환 시 대상 이탈)는 재현 검사로 해결 확인. 그러나 수정 코드의 `mobileActionTarget`이 document 전체에서 숨겨진 비교 버튼을 선택하여, 모바일 원본 기록 모드 3단계에서 실제 기록 헤더(y505–590)가 안내 카드(y535부터)와 겹치는 새 Important 회귀 확인. 근거: `OnboardingTour.tsx:546–550`; 재현: 390×844 → 원본 기록 → 화면 안내 → 시작 → 3단계. 활성 표시 패널/대상 안에서만 action을 찾도록 수정 필요. 하네스에 따라 추가 수정·버전 승격·커밋/푸시/머지를 중단하고 사용자에게 보고. VERSION은 0.9.0 유지; 원격 변경 없음.
+
 - `PLANNED`: 작업 범위만 정의됨
 - `IN_PROGRESS`: 담당 에이전트 작업 중
 - `REVIEW`: 감독 에이전트 검증 대기 또는 진행 중
@@ -12,6 +18,8 @@
 - `BLOCKED`: 사용자 판단 또는 외부 조건 필요
 
 ## 작업 기록
+
+2026-09-14 첫 방문 안내: PASSED. frontend Luna Max (`/root/onboarding_ui`) HARNESS_ACK 1.2.0 및 소유 파일/비범위 수용 확인. 계획: `docs/superpowers/plans/2026-09-14-onboarding.md`. 기존 격리 worktree에서 `codex/0.10.0-onboarding` 브랜치 생성, 기준 탭 테스트 11/11 통과 후 단계별 구현·감독 검증. Figma 신규 MCP 조회는 Starter 호출 한도; 기존 node 39:3 검토 기록과 승인된 토큰 재사용. 중간 화면과 독립 리뷰에서 발견한 스크롤·가림 문제는 수정 및 재검토를 거쳤고, 사용자 재개 승인 후 최종 게이트 통과.
 
 | 날짜 | 작업 | 담당 | 하네스 | 상태 | 변경 범위 | 검증 | 수정 라운드 | 비고 |
 |---|---|---|---|---|---|---|---:|---|
