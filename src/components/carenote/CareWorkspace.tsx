@@ -33,10 +33,10 @@ export type CareWorkspaceProps = {
 type DomainFilter = "all" | ShiftReadinessDomain;
 type StatusFilter = "all" | "new_result" | "scheduled_this_shift" | "pending_result" | "requests";
 
-const MODULES: Array<{ id: CareModule; label: string; description: string }> = [
-  { id: "readiness", label: "근무 준비", description: "이번 근무에서 먼저 확인할 변화" },
-  { id: "records", label: "환자 기록", description: "시간순 원본 스냅샷" },
-  { id: "charting", label: "간호기록", description: "이번 세션에 남길 기록" },
+const MODULES: Array<{ id: CareModule; label: string }> = [
+  { id: "readiness", label: "근무 준비" },
+  { id: "records", label: "환자 기록" },
+  { id: "charting", label: "간호기록" },
 ];
 
 const DOMAIN_LABELS: Record<ShiftReadinessDomain, string> = {
@@ -177,7 +177,6 @@ function PatientRail({
     <aside className={styles.patientRail} aria-label="환자 목록">
       <div className={styles.railHeading}>
         <div>
-          <span className={styles.kicker}>WARD LIST</span>
           <h2>환자 목록</h2>
         </div>
         <span className={styles.patientCount}>{patients.length}명</span>
@@ -216,7 +215,7 @@ function PatientRail({
         })}
         {!filteredPatients.length ? <p className={styles.noPatients}>검색 결과가 없습니다.</p> : null}
       </div>
-      <p className={styles.syntheticNote}><span className={styles.syntheticDot} /> 합성 데이터 데모</p>
+      <p className={styles.syntheticNote}><span className={styles.syntheticDot} /> 합성 데이터 · 확인·메모는 새로고침 시 초기화</p>
     </aside>
   );
 }
@@ -282,7 +281,6 @@ function ModuleTabs({ module, onChange }: { module: CareModule; onChange: (value
           onClick={() => onChange(item.id)}
         >
           <span>{item.label}</span>
-          <small>{item.description}</small>
         </button>
       ))}
     </nav>
@@ -440,7 +438,6 @@ function ReadinessItemRow({
 
 function ReadinessSection({
   title,
-  eyebrow,
   items,
   readIds,
   onRead,
@@ -449,7 +446,6 @@ function ReadinessSection({
   onToggle,
 }: {
   title: string;
-  eyebrow?: string;
   items: ShiftReadinessItem[];
   readIds: Set<string>;
   onRead: (id: string, checked: boolean) => void;
@@ -462,7 +458,6 @@ function ReadinessSection({
     <section className={`${styles.readinessSection} ${collapsed ? styles.readinessSectionCollapsed : ""}`} aria-labelledby={`section-${title}`}>
       <div className={styles.sectionHeading}>
         <div>
-          {eyebrow ? <span className={styles.kicker}>{eyebrow}</span> : null}
           <h2 id={`section-${title}`}>{title}<span>{items.length}</span></h2>
         </div>
         {onToggle ? (
@@ -511,31 +506,32 @@ function ReadinessMain({
   const primary = filtered.filter((item) => ["new_result", "scheduled_this_shift", "explicit_follow_up"].includes(item.factStatus));
   const pending = filtered.filter((item) => item.factStatus === "pending_result");
   const recent = filtered.filter((item) => item.factStatus === "recent_change");
+  const showStatusBanner = status === "loading"
+    || status === "error"
+    || stale
+    || response?.status === "partial"
+    || response?.status === "no_baseline";
 
   return (
     <div className={styles.moduleContent}>
       <div className={styles.contentIntro}>
         <div>
-          <span className={styles.kicker}>SHIFT READINESS / {response?.reviewPeriod?.currentRecordedAt ? dateLabel(response.reviewPeriod.currentRecordedAt, true) : "LIVE VIEW"}</span>
-          <h2>이번 근무, 여기부터 확인하세요</h2>
-          <p>새로운 결과와 이번 근무 중 확인할 일을 한 화면에서 정리했습니다. 확인 표시는 읽음 상태만 남깁니다.</p>
+          <h2>근무 준비</h2>
         </div>
           <div className={styles.introMetric} aria-label="확인 현황">
             <strong>{readIds.size}<span>/</span>{items.length}</strong>
-            <span>읽음</span>
+            <span>확인 = 읽음</span>
           </div>
       </div>
       <div className={styles.reviewControl}>
         <div>
-          <span className={styles.kicker}>REVIEW WINDOW</span>
           <strong>비교 기준 시각</strong>
-          <span>기존 원본 시점에서 선택합니다.</span>
         </div>
         <select aria-label="비교 기준 시각" value={reviewStartAt} onChange={(event) => onReviewStartAtChange(event.target.value)}>
           {reviewOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
       </div>
-      <StatusBanner response={response} status={status} stale={stale} onRetry={onRetry} />
+      {showStatusBanner ? <StatusBanner response={response} status={status} stale={stale} onRetry={onRetry} /> : null}
       {response?.dataWarnings?.length ? (
         <div className={styles.warningStrip} role="note">
           <span className={styles.warningIcon}>!</span>
@@ -564,12 +560,11 @@ function ReadinessMain({
         </div>
       ) : (
         <>
-          <ReadinessSection title="먼저 확인할 항목" eyebrow="PRIORITY QUEUE" items={primary} readIds={readIds} onRead={onRead} onEvidence={onOpenEvidence} />
-          <ReadinessSection title="결과 대기" eyebrow="PENDING" items={pending} readIds={readIds} onRead={onRead} onEvidence={onOpenEvidence} />
-          <ReadinessSection title="최근 변화" eyebrow="RECENT CHANGES" items={recent} readIds={readIds} onRead={onRead} onEvidence={onOpenEvidence} collapsed={!showRecent} onToggle={() => setShowRecent((value) => !value)} />
+          <ReadinessSection title="먼저 확인할 항목" items={primary} readIds={readIds} onRead={onRead} onEvidence={onOpenEvidence} />
+          <ReadinessSection title="결과 대기" items={pending} readIds={readIds} onRead={onRead} onEvidence={onOpenEvidence} />
+          <ReadinessSection title="최근 변화" items={recent} readIds={readIds} onRead={onRead} onEvidence={onOpenEvidence} collapsed={!showRecent} onToggle={() => setShowRecent((value) => !value)} />
         </>
       )}
-      <p className={styles.readOnlyHint}>확인 표시는 간호 업무 완료나 처치 완료를 의미하지 않습니다.</p>
     </div>
   );
 }
@@ -595,12 +590,8 @@ function EvidenceRail({
     return (
       <aside className={styles.evidenceRail} aria-label="근거 안내">
         <div className={styles.guidanceCard}>
-          <span className={styles.guidanceMark}>{icon("pulse")}</span>
-          <span className={styles.kicker}>SOURCE TRACE</span>
-          <h2>근거를 한 번에 확인하세요</h2>
-          <p>항목의 근거 버튼을 누르면 어떤 원본 기록에서 확인했는지 이곳에 표시됩니다.</p>
-          <div className={styles.guidanceRule} />
-          <span className={styles.guidanceMeta}>원본 시각 · 필드 경로 · 이전/현재 값</span>
+          <h2>근거</h2>
+          <p>항목에서 근거를 열면 원본 값을 확인합니다.</p>
         </div>
       </aside>
     );
@@ -611,7 +602,6 @@ function EvidenceRail({
       <div className={styles.evidencePanel}>
         <div className={styles.evidencePanelHeading}>
           <div>
-            <span className={styles.kicker}>SOURCE TRACE</span>
             <h2 ref={headingRef} tabIndex={-1}>근거 상세</h2>
           </div>
           <button className={styles.closeButton} type="button" onClick={onClose} aria-label="근거 상세 닫기">{icon("close")}</button>
@@ -650,10 +640,10 @@ function EvidenceRail({
                   rows={3}
                   value={reviewMemo}
                   onChange={(event) => onReviewMemoChange(event.target.value)}
-                  placeholder="이 항목을 확인하며 남길 메모"
+                  placeholder="이 항목의 검토 메모"
                 />
               </label>
-              <span className={styles.reviewMemoHint}>이 메모는 이번 검토 화면에만 남으며 진료기록으로 저장되지 않습니다.</span>
+              <span className={styles.reviewMemoHint}>화면에만 남는 메모입니다.</span>
             </div>
           </>
         ) : careEvidence ? (
@@ -677,15 +667,13 @@ function RecordsView({ scenario, notes }: { scenario: CareScenario; notes: CareN
     <div className={styles.moduleContent}>
       <div className={styles.contentIntro}>
         <div>
-          <span className={styles.kicker}>PATIENT RECORDS / READ ONLY</span>
           <h2>환자 기록</h2>
-          <p>원본 스냅샷과 이번 세션에 명시적으로 추가한 기록을 시간순으로 확인합니다.</p>
         </div>
         <span className={styles.readonlyPill}>읽기 전용</span>
       </div>
       <div className={styles.recordsLayout}>
         <div className={styles.recordTimeline} aria-label="기록 시각 목록">
-          <div className={styles.timelineHeading}><span className={styles.kicker}>SNAPSHOTS</span><strong>{records.length}개 시점</strong></div>
+          <div className={styles.timelineHeading}><strong>{records.length}개 시점</strong></div>
           {records.map((record, index) => {
             const selectedRecord = selected?.updated_at === record.updated_at;
             const isSession = index >= scenario.records.length;
@@ -707,7 +695,7 @@ function RecordSnapshot({ record, session }: { record: ShiftReadinessRecord; ses
   return (
     <article className={styles.recordSnapshot} aria-label={`${dateLabel(record.updated_at, true)} 기록`}>
       <div className={styles.snapshotHeading}>
-        <div><span className={styles.kicker}>RECORD SNAPSHOT</span><h3>{dateLabel(record.updated_at, true)}</h3></div>
+        <div><h3>{dateLabel(record.updated_at, true)}</h3></div>
         <span className={session ? styles.sessionPill : styles.originalPill}>{session ? "이번 세션 추가" : "원본 기록"}</span>
       </div>
       <div className={styles.snapshotGrid}>
@@ -744,19 +732,10 @@ function ChartingView({
 }) {
   return (
     <div className={`${styles.moduleContent} ${styles.chartingContent}`}>
-      <div className={styles.contentIntro}>
-        <div>
-          <span className={styles.kicker}>SESSION CHARTING / UNSIGNED DEMO</span>
-          <h2>관찰을 기록으로 이어갑니다</h2>
-          <p>이번 세션의 관찰을 직접 작성하고, 필요한 원본 근거를 연결합니다. 추가 전에는 환자 기록에 반영되지 않습니다.</p>
-        </div>
-        <span className={styles.sessionHint}><span className={styles.sessionHintDot} /> 세션에서만 유지</span>
-      </div>
       {errorMessage ? <div className={styles.noteError} role="alert">{errorMessage}</div> : null}
       <div className={styles.chartingCard}>
         <ChartingPanel patient={scenario.patient} evidence={evidence} notes={notes} draft={draft} onDraftChange={onDraftChange} onAddNote={onAddNote} onOpenEvidence={onOpenEvidence} />
       </div>
-      <p className={styles.sessionSaveHint}>작업 중인 내용은 이 화면의 환자별 세션 상태에만 저장됩니다. 새로고침하면 초기화됩니다.</p>
     </div>
   );
 }
@@ -905,7 +884,7 @@ export function CareWorkspace({ initialModule = "readiness" }: CareWorkspaceProp
       <header className={styles.topbar}>
         <Link className={styles.brand} href="/" aria-label="CareNote 홈">
           <span className={styles.brandMark}>{icon("pulse")}</span>
-          <span><strong>CareNote</strong><small>nursing workspace</small></span>
+          <span><strong>CareNote</strong></span>
         </Link>
         <div className={styles.topbarMeta}>
           <span className={styles.wardLabel}><span className={styles.liveDot} /> 3병동 · 시연 근무</span>

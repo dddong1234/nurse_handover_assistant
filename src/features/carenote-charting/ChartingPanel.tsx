@@ -65,7 +65,7 @@ function ChartingEditor({ patient, evidence, notes, draft, onDraftChange, onAddN
 
   function addRecord() {
     if (draft.text.includes(MISSING_FACT_PLACEHOLDER)) {
-      setError("직접 확인·작성 필요로 표시된 항목을 실제 확인한 내용으로 작성하세요. 미완성 초안은 기록에 추가되지 않습니다.");
+      setError("직접 확인 항목을 작성하세요. 미완성 초안은 추가할 수 없습니다.");
       return;
     }
     const time = toKoreaLocal(draft.recordedAt);
@@ -84,16 +84,16 @@ function ChartingEditor({ patient, evidence, notes, draft, onDraftChange, onAddN
       onAddNote({ narrative: draft.text, recordedAt: draft.recordedAt, category: draft.category, sourceEvidenceIds });
       setError("");
     } catch {
-      setError("기록을 추가하지 못했습니다. 입력은 유지됩니다. 시각과 환자 문맥을 확인한 뒤 다시 시도하세요.");
+      setError("추가하지 못했습니다. 입력은 유지됩니다. 시각과 환자 문맥을 확인하세요.");
     }
   }
 
   return <section className={styles.panel} aria-label="간호기록 작성">
     <header className={styles.heading}>
-      <div><span className={styles.eyebrow}>NURSING NOTES</span><h2>간호기록</h2></div>
-      <span className={styles.badge}>기록 기반 추천 · 규칙</span>
+      <div><h2>간호기록</h2></div>
+      <span className={styles.badge}>기록 기반 추천</span>
     </header>
-    <p className={styles.intro}>지원하는 단문 사실만 옮깁니다. 입력에 없는 SOAP 항목은 직접 확인·작성한 뒤 기록에 추가하세요.</p>
+    <p className={styles.intro}>입력에 없는 SOAP 항목은 직접 확인해 작성하세요.</p>
     <div className={styles.composer}>
       <div className={styles.toolbar}>
         <label>기록 시각 (한국시간)
@@ -123,12 +123,12 @@ function ChartingEditor({ patient, evidence, notes, draft, onDraftChange, onAddN
         </div>
       </div>}
       <div className={styles.help} id={editorId + "-help"} role="status">
-        {!draft.text.trim() ? "짧은 관찰 사실을 입력하면 지원하는 표현의 추천이 표시됩니다." :
-          accepted ? "입력한 사실만 옮겼습니다. 직접 확인·작성 필요 항목을 완성한 뒤 기록을 추가하세요." :
-          isSoap ? "직접 작성 중 · 수정한 내용은 추천으로 덮어쓰지 않습니다." :
-          dismissed === scopeKey ? "추천을 무시했습니다. 입력은 그대로 유지됩니다." :
-          !suggestion ? "지원하지 않는 표현입니다. 복합 문장·정정·보행 횟수는 자동 변환하지 않습니다. 원문을 유지하고 직접 SOAP로 작성하세요." :
-          "호소·관찰·수행 여부는 추정하지 않습니다. 추천의 항목 배치와 미입력 항목을 직접 확인하세요."}
+        {!draft.text.trim() ? "짧은 관찰 사실을 입력하면 지원 표현을 제안합니다." :
+          accepted ? "입력한 사실만 옮겼습니다. 미입력 항목을 완성하세요." :
+          isSoap ? "직접 작성 중 · 수정 내용은 덮어쓰지 않습니다." :
+          dismissed === scopeKey ? "추천을 닫았습니다. 입력은 유지됩니다." :
+          !suggestion ? "지원하지 않는 표현입니다. 원문을 유지하고 SOAP로 작성하세요." :
+          "사실을 추정하지 않습니다. 미입력 항목을 직접 확인하세요."}
       </div>
     </div>
     {review?.conflict && <aside className={styles.review} role="region" aria-label="이전 기록과 차이">
@@ -141,19 +141,19 @@ function ChartingEditor({ patient, evidence, notes, draft, onDraftChange, onAddN
         <p>{prompt.message}</p>
         {prompt.evidenceIds[0] && <button type="button" onClick={() => onOpenEvidence(prompt.evidenceIds[0])}>투약 근거 보기</button>}
       </div>)}
-      <small>근거 문구의 존재 여부만 확인합니다. 투약 전후 시각·동일 투약 건 판정은 지원하지 않습니다.</small>
+      <small>근거 문구만 확인합니다. 투약 시각·동일 건 판정은 지원하지 않습니다.</small>
     </aside>}
     {error && <p className={styles.error} role="alert">{error}</p>}
     <footer className={styles.actions}>
-      <p>합성 데이터 데모 · 자동 저장·서명되지 않습니다.</p>
+      <p>세션 기록 · 새로고침 시 초기화 · 미서명</p>
       <button type="button" className={styles.primary} onClick={addRecord}>기록 추가</button>
     </footer>
     <section className={styles.timeline} aria-label="간호기록 타임라인">
       <div className={styles.timelineHeading}><h3>간호기록 타임라인</h3><span>{scopedNotes.length}건 · 최신순</span></div>
-      {scopedNotes.length === 0 ? <p className={styles.empty}>아직 간호기록이 없습니다. 검토한 기록을 추가해보세요.</p> :
+      {scopedNotes.length === 0 ? <p className={styles.empty}>기록이 없습니다. 검토한 기록을 추가하세요.</p> :
         scopedNotes.map((note) => <article className={styles.note} key={note.id}>
           <header><time dateTime={note.recordedAt}>{formatKoreaTime(note.recordedAt)}</time>
-            <span>{note.category}</span><span>{note.signatureState === "unsigned-demo" ? "미서명 · 데모 추가" : "합성 원본 기록"}</span></header>
+            <span>{note.category}</span><span>{note.signatureState === "unsigned-demo" ? "미서명 · 세션 추가" : "합성 원본"}</span></header>
           <p className={styles.narrative}>{note.narrative}</p>
           {note.sourceEvidenceIds.find((id) => scopedEvidence.some((item) => item.id === id)) && <button type="button"
             onClick={() => onOpenEvidence(note.sourceEvidenceIds.find((id) => scopedEvidence.some((item) => item.id === id))!)}>기록 근거 보기</button>}

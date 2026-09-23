@@ -9,7 +9,6 @@ type DemoTab = "handover" | "charting";
 
 type DemoContent = {
   label: string;
-  eyebrow: string;
   title: string;
   description: string;
   cta: string;
@@ -30,7 +29,6 @@ type DemoContent = {
 const demoContent: Record<DemoTab, DemoContent> = {
   handover: {
     label: "인수인계",
-    eyebrow: "SHIFT READINESS",
     title: "이번 근무 확인 항목을 먼저 봅니다.",
     description:
       "이번 근무의 요청과 검사 상태를 먼저 모아 보여주고, 각 항목을 원본 기록과 대조합니다.",
@@ -51,7 +49,6 @@ const demoContent: Record<DemoTab, DemoContent> = {
   },
   charting: {
     label: "차팅",
-    eyebrow: "CHARTING",
     title: "입력한 사실을 SOAP으로 이어갑니다.",
     description:
       "통증 3점 입력은 S에만 표시됩니다. O/A/P는 간호사가 직접 확인·작성한 뒤 명시적으로 추가합니다.",
@@ -198,7 +195,7 @@ function ProductMockup() {
     <div className={styles.productStage}>
       <div className={styles.productStageNote}>
         <span className={styles.noteRule} />
-        <span>예시 화면 · 실제 환자정보 아님</span>
+        <span>예시 화면</span>
       </div>
       <div className={styles.productWindow}>
         <div className={styles.windowTopbar}>
@@ -206,7 +203,6 @@ function ProductMockup() {
             <BrandMark compact />
             <span>CareNote</span>
           </div>
-          <span className={styles.windowMode}>SHIFT READINESS</span>
           <span className={styles.windowTime}>09:00 KST</span>
         </div>
         <div className={styles.windowLayout}>
@@ -219,7 +215,6 @@ function ProductMockup() {
           <div className={styles.windowContent}>
             <div className={styles.windowContextHeader}>
               <div>
-                <span className={styles.windowKicker}>PATIENT CONTEXT / SYNTHETIC</span>
                 <h2>P001 · 홍길동 <span>301호 · 합성 환자</span></h2>
               </div>
               <span className={styles.contextStatus}><i /> 검토 중</span>
@@ -283,22 +278,18 @@ function DemoStory({ activeTab }: { activeTab: DemoTab }) {
     <div className={styles.demoPanel}>
       <div className={styles.demoPanelHeader}>
         <div>
-          <span className={styles.demoEyebrow}>{content.eyebrow}</span>
           <h3>{content.title}</h3>
           <p>{content.description}</p>
         </div>
-        <span className={styles.demoStatus}><i /> 검토 가능한 예시</span>
       </div>
       <div className={styles.demoContextBar}>
         <span className={styles.demoContextDot} />
         <span>{content.context}</span>
-        <span className={styles.demoContextTag}>합성 데이터</span>
       </div>
       <div className={styles.demoBody}>
         <div className={styles.traceColumn}>
           <div className={styles.demoSubhead}>
             <span>기록 근거</span>
-            <span className={styles.demoSubheadNote}>SOURCE TRACE</span>
           </div>
           <div className={styles.traceList}>
             {content.trace.map((row, index) => (
@@ -312,12 +303,10 @@ function DemoStory({ activeTab }: { activeTab: DemoTab }) {
               </div>
             ))}
           </div>
-          <p className={styles.traceHelper}>정적 예시입니다. 실제 원본 대조는 작업공간에서 진행합니다.</p>
         </div>
         <div className={styles.soapColumn}>
           <div className={styles.demoSubhead}>
             <span>{activeTab === "handover" ? "간호사가 이어받을 맥락" : "SOAP 기록 초안"}</span>
-            <span className={styles.demoSubheadNote}>NURSE REVIEW</span>
           </div>
           <div className={styles.soapList}>
             {content.soap.map((item) => (
@@ -331,7 +320,6 @@ function DemoStory({ activeTab }: { activeTab: DemoTab }) {
         </div>
       </div>
       <div className={styles.demoPanelFooter}>
-        <span>예시 화면은 기능 이해를 위한 합성 데이터입니다.</span>
         <a href={content.href}>{content.cta}<ArrowIcon /></a>
       </div>
     </div>
@@ -365,7 +353,6 @@ export function LandingPage() {
         <section className={styles.hero} id="product" aria-labelledby="hero-heading">
           <div className={`${styles.container} ${styles.heroGrid}`}>
             <div className={styles.heroCopy}>
-              <p className={styles.eyebrow}><span className={styles.eyebrowMark} /> 간호업무를 위한 기록의 연결</p>
               <h1 id="hero-heading">기록을 잇고,<br /><span>간호에 집중하다.</span></h1>
               <p className={styles.heroLead}>
                 CareNote는 인수인계 준비와 간호기록을<br className={styles.desktopBreak} />
@@ -379,15 +366,10 @@ export function LandingPage() {
                   업무 흐름 보기 <ArrowIcon direction="down" />
                 </a>
               </div>
-              <p className={styles.heroScope}><span className={styles.scopeDot} /> 합성 환자 데이터로 동작하는 공개 제품 데모</p>
             </div>
             <div className={styles.heroVisual}>
               <ProductMockup />
             </div>
-          </div>
-          <div className={`${styles.container} ${styles.heroRule}`} aria-hidden="true">
-            <span>CARENOTE / RECORD THREAD</span>
-            <span>SCROLL TO EXPLORE</span>
           </div>
         </section>
 
@@ -398,14 +380,12 @@ export function LandingPage() {
               필요한 맥락은 한 화면에 모으고,<br />
               <span>판단의 자리는 간호사에게 남깁니다.</span>
             </p>
-            <p className={styles.statementAside}>01 / CONTEXT FIRST</p>
           </div>
         </section>
 
         <section className={styles.workflowSection} id="workflow" aria-labelledby="workflow-heading">
           <div className={styles.container}>
             <div className={styles.sectionIntro}>
-              <p className={styles.eyebrow}><span className={styles.eyebrowMark} /> 하나의 환자, 이어지는 두 장면</p>
               <h2 id="workflow-heading">준비에서 기록까지,<br /><span>맥락이 끊기지 않도록.</span></h2>
               <p>인수인계에서 확인한 항목이 차팅의 출발점이 됩니다. 서로 다른 화면을 오갈 필요 없이, 한 환자의 흐름을 따라갑니다.</p>
             </div>
@@ -413,7 +393,6 @@ export function LandingPage() {
               <article className={styles.featureCard}>
                 <div className={styles.featureCardTop}>
                   <span className={styles.featureNumber}>01</span>
-                  <span className={styles.featureTag}>SHIFT READINESS</span>
                 </div>
                 <HandoverPreview />
                 <div className={styles.featureCopy}>
@@ -425,7 +404,6 @@ export function LandingPage() {
               <article className={`${styles.featureCard} ${styles.featureCardCharting}`}>
                 <div className={styles.featureCardTop}>
                   <span className={styles.featureNumber}>02</span>
-                  <span className={styles.featureTag}>CHARTING</span>
                 </div>
                 <ChartingPreview />
                 <div className={styles.featureCopy}>
@@ -442,7 +420,6 @@ export function LandingPage() {
           <div className={styles.container}>
             <div className={styles.demoIntro}>
               <div>
-                <p className={styles.eyebrow}><span className={styles.eyebrowMark} /> 짧은 업무 이야기</p>
                 <h2 id="demo-heading">화면을 눌러,<br /><span>기록이 이어지는 방식을 보세요.</span></h2>
               </div>
               <p>CareNote의 핵심은 자동 판단이 아니라, 근거를 따라가며 사람이 검토할 수 있는 흐름입니다.</p>
@@ -468,10 +445,6 @@ export function LandingPage() {
                     </button>
                   );
                 })}
-                <div className={styles.demoRailNote}>
-                  <span className={styles.noteRule} />
-                  <p>같은 환자 맥락<br />안에서 이어집니다.</p>
-                </div>
               </div>
               <div id="demo-panel" role="tabpanel" aria-labelledby={`demo-tab-${activeTab}`} aria-live="polite">
                 <DemoStory activeTab={activeTab} />
@@ -483,16 +456,14 @@ export function LandingPage() {
         <section className={styles.traceSection} aria-labelledby="trace-heading">
           <div className={`${styles.container} ${styles.traceGrid}`}>
             <div className={styles.traceCopy}>
-              <p className={styles.eyebrow}><span className={styles.eyebrowMark} /> 근거를 남기는 설계</p>
               <h2 id="trace-heading">확인 항목은 짧게,<br /><span>출처는 가까이.</span></h2>
               <p>화면에 보이는 한 줄의 확인 항목은 원본 기록과 연결되어 있습니다. 요청과 검사 상태를 먼저 보고, 언제 어디에서 기록되었는지 다시 대조합니다.</p>
               <div className={styles.tracePrinciples}>
                 <div><span>01</span><strong>확인 항목에서 원본으로</strong><p>요청과 검사 상태에서 해당 기록의 시간과 출처를 확인합니다.</p></div>
-                <div><span>02</span><strong>간호사 검토를 중심에</strong><p>제안은 초안으로 남고, 최종 판단과 저장은 사용자가 합니다.</p></div>
+                <div><span>02</span><strong>간호사 검토를 중심에</strong><p>제안은 초안으로 남고, 검토 후 기록 추가는 사용자가 직접 합니다.</p></div>
               </div>
             </div>
             <div className={styles.traceDiagram} aria-label="기록 근거 연결 예시">
-              <div className={styles.diagramHeader}><span>TRACE / P001</span><span>정적 예시</span></div>
               <div className={styles.diagramPath}>
                 <div className={styles.diagramSource}><span className={styles.diagramNode}>01</span><div><strong>07:40 · 인수인계 요청</strong><span>회진 전 발열 경과 전달</span></div></div>
                 <div className={styles.diagramConnector}><i /><span>원본 대조</span><i /></div>
@@ -508,7 +479,6 @@ export function LandingPage() {
         <section className={styles.faqSection} id="faq" aria-labelledby="faq-heading">
           <div className={`${styles.container} ${styles.faqGrid}`}>
             <div className={styles.faqIntro}>
-              <p className={styles.eyebrow}><span className={styles.eyebrowMark} /> 먼저 알려드립니다</p>
               <h2 id="faq-heading"><span className={styles.faqTitleLine}>CareNote에 대해</span><br /><span>자주 묻는 질문.</span></h2>
             </div>
             <div className={styles.faqList}>
@@ -535,11 +505,9 @@ export function LandingPage() {
         <section className={styles.finalCta} aria-labelledby="final-heading">
           <div className={`${styles.container} ${styles.finalCtaInner}`}>
             <div>
-              <p className={styles.eyebrow}><span className={styles.eyebrowMark} /> 다음 교대를 준비하는 시간</p>
               <h2 id="final-heading">기록의 흐름을<br /><span>직접 확인해보세요.</span></h2>
             </div>
             <div className={styles.finalCtaAction}>
-              <p>합성 환자 데이터로 구성된 공개 데모에서<br />CareNote의 업무 흐름을 살펴볼 수 있습니다.</p>
               <a className={styles.primaryButton} href="/workspace">작업공간 열기 <ArrowIcon /></a>
             </div>
           </div>

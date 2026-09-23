@@ -73,6 +73,90 @@ afterEach(() => {
 });
 
 describe("CareWorkspace integrated patient context", () => {
+  it("keeps shell copy concise while preserving the review boundary", async () => {
+    const user = userEvent.setup();
+    render(<CareWorkspace />);
+
+    expect(screen.queryByText("WARD LIST")).not.toBeInTheDocument();
+    expect(screen.queryByText(/SHIFT READINESS/)).not.toBeInTheDocument();
+    expect(screen.queryByText("REVIEW WINDOW")).not.toBeInTheDocument();
+    expect(screen.queryByText("근무 준비 결과가 준비되었습니다")).not.toBeInTheDocument();
+    expect(screen.getByText("확인 = 읽음")).toBeInTheDocument();
+    expect(screen.queryByText("이번 근무에서 먼저 확인할 변화")).not.toBeInTheDocument();
+
+    const evidenceButton = screen.getByRole("button", { name: /CBC 결과 확인 근거/ });
+    await user.click(evidenceButton);
+    expect(screen.getByRole("heading", { name: "근거 상세" })).toBeInTheDocument();
+    expect(screen.queryByText("SOURCE TRACE")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /환자 기록/ }));
+    expect(screen.queryByText("PATIENT RECORDS / READ ONLY")).not.toBeInTheDocument();
+    expect(screen.queryByText("SNAPSHOTS")).not.toBeInTheDocument();
+  });
+
+  it("keeps partial and no-baseline status feedback visible", () => {
+    const scenario = getCareScenario("P001");
+    const state = mockReadinessForScenario(scenario, [], scenario.reviewStartAt);
+    mocks.useCareReadiness.mockImplementationOnce(() => ({
+      ...state,
+      response: { ...state.response, status: "partial", dataWarnings: ["일부 원본 구간"] },
+    }));
+    const { unmount } = render(<CareWorkspace />);
+    expect(screen.getByText("일부 데이터만 확인했습니다")).toBeInTheDocument();
+    expect(screen.getByText("일부 원본 구간")).toBeInTheDocument();
+    unmount();
+
+    mocks.useCareReadiness.mockImplementationOnce(() => ({
+      ...state,
+      response: { ...state.response, status: "no_baseline" },
+    }));
+    render(<CareWorkspace />);
+    expect(screen.getAllByText("비교할 기준 기록이 없습니다").length).toBeGreaterThan(0);
+  });
+
+  it("keeps an available response warning visible without restoring the ready banner", () => {
+    const scenario = getCareScenario("P001");
+    const state = mockReadinessForScenario(scenario, [], scenario.reviewStartAt);
+    mocks.useCareReadiness.mockImplementationOnce(() => ({
+      ...state,
+      response: { ...state.response, dataWarnings: ["원본 범위 안내"] },
+    }));
+    render(<CareWorkspace />);
+
+    expect(screen.queryByText("근무 준비 결과가 준비되었습니다")).not.toBeInTheDocument();
+    expect(screen.getAllByText("원본 범위 안내")).toHaveLength(1);
+  });
+
+  it("keeps loading, error, and stale status feedback actionable", () => {
+    const scenario = getCareScenario("P001");
+    const state = mockReadinessForScenario(scenario, [], scenario.reviewStartAt);
+    mocks.useCareReadiness.mockImplementationOnce(() => ({
+      ...state,
+      response: null,
+      status: "loading",
+      stale: false,
+    }));
+    const { unmount } = render(<CareWorkspace />);
+    expect(screen.getByText("최신 결과를 확인하고 있습니다")).toBeInTheDocument();
+    unmount();
+
+    mocks.useCareReadiness.mockImplementationOnce(() => ({
+      ...state,
+      response: null,
+      status: "error",
+      stale: false,
+    }));
+    render(<CareWorkspace />);
+    expect(screen.getAllByText("최신 결과를 불러오지 못했습니다").length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "다시 확인" }).length).toBeGreaterThan(0);
+    unmount();
+
+    mocks.useCareReadiness.mockImplementationOnce(() => ({ ...state, stale: true }));
+    render(<CareWorkspace />);
+    expect(screen.getByText("이전 결과를 표시하고 있습니다")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "다시 확인" }).length).toBeGreaterThan(0);
+  });
+
   it("switches patient context without leaving the previous patient's evidence selected", async () => {
     const user = userEvent.setup();
     render(<CareWorkspace />);

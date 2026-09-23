@@ -39,7 +39,7 @@ test("CareNote real API connects source, draft, explicit record and readiness", 
   await page.getByRole("navigation", { name: "환자 모듈" }).getByRole("button", { name: /^환자 기록/ }).click();
   await expect(page.getByRole("article")).toContainText(completed);
   await page.getByRole("navigation", { name: "환자 모듈" }).getByRole("button", { name: /^근무 준비/ }).click();
-  await expect(page.getByText("근무 준비 결과가 준비되었습니다", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CBC 새 결과", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /펼치기/ }).click();
   await expect(page.getByRole("main")).toContainText("3점");
   await page.reload();
@@ -91,8 +91,10 @@ test("CareNote review marks and memo are retained only for the same review conte
   await expect(row.getByRole("checkbox")).toBeChecked();
   await source.click();
   await expect(page.getByRole("textbox", { name: "검토 메모", exact: true })).toHaveValue("회진 전 원본 수치 재확인");
+  const changedPeriod = page.waitForResponse((response) => response.url().includes("/api/handover/shift-readiness") && response.request().method() === "POST");
   await page.getByRole("combobox", { name: "비교 기준 시각" }).selectOption("2026-07-02T07:00:00+09:00");
-  await expect(page.getByText("근무 준비 결과가 준비되었습니다", { exact: true })).toBeVisible();
+  expect((await changedPeriod).status()).toBe(200);
+  await expect(row.getByRole("heading", { name: "CBC 새 결과", exact: true })).toBeVisible();
   await expect(row.getByRole("checkbox")).not.toBeChecked();
   await source.click();
   await expect(page.getByRole("textbox", { name: "검토 메모", exact: true })).toHaveValue("");

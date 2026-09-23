@@ -23,6 +23,17 @@ function Harness({ onAddNote = () => {}, ...overrides }: Partial<ChartingPanelPr
 afterEach(cleanup);
 
 describe("ChartingPanel explicit authorship", () => {
+  it("keeps charting copy concise and shows the reset boundary near add", () => {
+    render(<Harness />);
+
+    expect(screen.getByRole("heading", { name: "간호기록" })).toBeInTheDocument();
+    expect(screen.getByText("기록 기반 추천")).toBeInTheDocument();
+    expect(screen.getByText("입력에 없는 SOAP 항목은 직접 확인해 작성하세요.")).toBeInTheDocument();
+    expect(screen.getByText("세션 기록 · 새로고침 시 초기화 · 미서명")).toBeInTheDocument();
+    expect(screen.queryByText("NURSING NOTES")).not.toBeInTheDocument();
+    expect(screen.queryByText("지원하는 단문 사실만 옮깁니다.")).not.toBeInTheDocument();
+  });
+
   it("does not add an accepted suggestion while unprovided sections remain incomplete", async () => {
     const user = userEvent.setup();
     const added: CareNoteInput[] = [];

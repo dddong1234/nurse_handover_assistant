@@ -67,7 +67,7 @@
 .topbarMeta,
 .wardLabel,
 .legacyLink,
-.brand > span:last-child,
+  .brand > span:last-child,
 .identityMain,
 .identityFacts,
 .snapshotLead,
@@ -82,10 +82,8 @@
 .traceValues,
 .snapshotHeading,
 .readonlyPill,
-.sessionHint,
-.syntheticNote,
+  .syntheticNote,
 .railHeading,
-.guidanceMark,
 .filterLine,
 .filterLineSecondary,
 .filterChip,
@@ -138,15 +136,6 @@
   line-height: 1;
 }
 
-.brand small {
-  margin-top: 4px;
-  color: #a5bac5;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
 .topbarMeta {
   gap: 16px;
   color: #bbccd4;
@@ -161,8 +150,7 @@
 }
 
 .liveDot,
-.syntheticDot,
-.sessionHintDot {
+.syntheticDot {
   display: inline-block;
   width: 7px;
   height: 7px;
@@ -218,16 +206,6 @@
   font-size: 18px;
   font-weight: 760;
   letter-spacing: -0.04em;
-}
-
-.kicker {
-  display: block;
-  color: var(--care-teal-deep);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.13em;
-  line-height: 1.2;
-  text-transform: uppercase;
 }
 
 .patientCount {
@@ -574,14 +552,6 @@
   letter-spacing: -0.035em;
 }
 
-.moduleTab small {
-  overflow: hidden;
-  color: #a0adb4;
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .moduleTab:hover {
   color: var(--care-teal-deep);
 }
@@ -599,10 +569,6 @@
   border-radius: 50%;
   background: var(--care-teal);
   content: "";
-}
-
-.moduleTabActive small {
-  color: var(--care-teal-deep);
 }
 
 .bodyGrid {
@@ -642,13 +608,6 @@
   font-weight: 790;
   letter-spacing: -0.075em;
   line-height: 1.12;
-}
-
-.contentIntro p {
-  max-width: 670px;
-  margin-top: 9px;
-  color: var(--care-muted);
-  font-size: 13px;
 }
 
 .introMetric {
@@ -705,17 +664,8 @@
   gap: 2px 9px;
 }
 
-.reviewControl .kicker {
-  grid-column: 1 / -1;
-}
-
 .reviewControl strong {
   color: var(--care-ink);
-  font-size: 12px;
-}
-
-.reviewControl > div > span:last-child {
-  color: #8a9a9f;
   font-size: 12px;
 }
 
@@ -1157,12 +1107,6 @@
   height: 13px;
 }
 
-.readOnlyHint {
-  margin-top: 25px;
-  color: #82949b;
-  font-size: 12px;
-}
-
 .loadingPanel,
 .emptyPanel {
   padding: 33px 23px;
@@ -1260,22 +1204,8 @@
   background: linear-gradient(148deg, #f5fbfa 0%, #fff 58%);
 }
 
-.guidanceMark {
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  margin-bottom: 22px;
-  border-radius: 10px;
-  background: var(--care-teal-soft);
-  color: var(--care-teal-deep);
-}
-
-.guidanceMark .icon {
-  width: 20px;
-}
-
 .guidanceCard h2 {
-  margin-top: 8px;
+  margin-top: 0;
   color: var(--care-navy);
   font-size: 19px;
   font-weight: 780;
@@ -1287,17 +1217,6 @@
   color: var(--care-muted);
   font-size: 12px;
   line-height: 1.65;
-}
-
-.guidanceRule {
-  height: 1px;
-  margin: 21px 0 9px;
-  background: var(--care-line-light);
-}
-
-.guidanceMeta {
-  color: #8b9ba0;
-  font-size: 12px;
 }
 
 .evidencePanel {
@@ -1626,8 +1545,7 @@
 
 .sessionPill,
 .originalPill,
-.readonlyPill,
-.sessionHint {
+.readonlyPill {
   justify-content: center;
   min-height: 24px;
   padding: 3px 8px;
@@ -1759,20 +1677,6 @@
   max-width: 940px;
 }
 
-.sessionHint {
-  gap: 7px;
-  border: 1px solid #e1dac9;
-  background: #fffaf1;
-  color: #98713a;
-}
-
-.sessionHintDot {
-  width: 6px;
-  height: 6px;
-  box-shadow: none;
-  background: var(--care-orange);
-}
-
 .chartingCard {
   min-width: 0;
   border: 1px solid var(--care-line);
@@ -1781,12 +1685,6 @@
 
 .chartingCard > * {
   min-width: 0;
-}
-
-.sessionSaveHint {
-  margin-top: 13px;
-  color: #87989e;
-  font-size: 12px;
 }
 
 .noteError {
@@ -2062,10 +1960,6 @@
     white-space: nowrap;
   }
 
-  .moduleTab small {
-    display: none;
-  }
-
   .identityMarker {
     width: 42px;
     height: 42px;
@@ -2092,10 +1986,6 @@
 
   .contentIntro {
     align-items: flex-end;
-  }
-
-  .contentIntro p {
-    font-size: 12px;
   }
 
   .introMetric {
