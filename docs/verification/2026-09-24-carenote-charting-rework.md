@@ -1,6 +1,6 @@
 # CareNote 차팅 재작업 — 감독 검증
 
-기준일: 2026-09-24. 기준 커밋 `9088607d`, 작업 브랜치 `codex/1.0-carenote-suite`. 버전 1.0.3. 현재 상태: 로컬 품질 게이트 통과 / 배포 전.
+기준일: 2026-09-24. 기준 커밋 `9088607d`, 작업 브랜치 `codex/1.0-carenote-suite`. 버전 1.0.3. 현재 상태: 로컬 품질 게이트 및 공개 배포 확인 완료.
 
 ## 사용자 피드백과 결정
 
@@ -36,6 +36,15 @@
 - 전체 E2E: `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3017`, `node node_modules/@playwright/test/cli.js test --workers=1` — 86건 통과(약 1.3분): 차팅 5, 랜딩 7, CareNote 실제 API 6, 기존 인계/안내 68. 검증기 최종 수정과 실행 시점이 일부 겹쳤으며, 최종 검증기 고정본의 경계는 위 단위·독립 재검토로 확인했다. 배포 후 신규 차팅 흐름을 다시 검사한다.
 - 전체 ESLint, Next production build(TypeScript 포함), 별도 TypeScript noEmit 통과. 버전 1.0.3 반영 후 harness 재검사 통과.
 - Vite 설정 및 Starlette/httpx의 미래 호환성 경고는 기존 비실패 경고로 남으며 범위 밖 설정을 변경하지 않았다.
+- 최종 파일 동결 및 커밋 후 CareNote 전체(차팅5 + 랜딩7 + 실API6) E2E 18건을 재실행해 통과했다(13.6초).
+
+## 배포
+
+- 제품 커밋: `16b242ca260aa9ba99445d0cac6176076c813374`, 동일 작업 브랜치에 푸시. 원격 main은 변경하지 않았다.
+- Preview `dpl_5CR7NvXDPRe9g9C99RkUBoAJA9sT` READY. 랜딩 새 문장/placeholder 제거/차팅 링크 및 workspace 입력기·새 안내 확인. 합성 P001 readiness API available, 16항목 확인.
+- Preview 확인 후 Production `dpl_8mWggwNE85tkB59Pn2t7jipXxauE` 승격, READY 및 공개 별칭 `https://carenote-suite.vercel.app` 확인.
+- 공개 주소에서 인증 우회 없이 차팅5+랜딩7+CareNote 실제API6, 총18건 E2E 통과(23.2초). 감독이 실제 공개 화면에 `잠 못잠`을 입력해 `S: 잠을 이루기 어려움.` 추천과 O/A/P 미완성 칸 부재를 확인했다.
+- 원본 차팅 서비스, 기존 인수인계 서비스, 원격 main, 기존 미추적 artifacts는 변경하거나 커밋하지 않았다. OpenAI 키 또는 외부 LLM 호출을 사용하지 않았다.
 
 ## 한계
 
