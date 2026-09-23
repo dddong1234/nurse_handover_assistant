@@ -31,4 +31,8 @@ CSS 교체 중 실행한 초기 legacy 검사는 일부 성공 후 timeout으로
 
 ## 배포
 
-로컬 검증 완료 후 Preview 및 Production 확인 결과를 아래에 추가한다. 기존 인수인계/차팅 서비스와 원격 main은 이번 범위에서 변경하지 않는다.
+- 제품 커밋: `f9b30bb98de6f8fe6b12cd5adaab728d774c131e`, `codex/1.0-carenote-suite`에 푸시.
+- Preview `dpl_4mCQGC3VKKNLsFnfQtKin3EMxsgc` READY. 새 제목·제품 탭·최종 제목 문구·workspace 링크 및 차팅 입력기 응답 확인. 합성 P001 readiness POST는 available, 16항목.
+- Preview 확인 후 승격한 Production `dpl_GnSk2BpYzFuJ66Sjg89k5SQgWVNH` READY. 공개 별칭은 `https://carenote-suite.vercel.app`.
+- 공개 사이트에서 인증 우회나 로그인 없이 랜딩 7건과 실제 API CareNote 6건, 합계 13건 모두 통과(16.9초). CUA로 공개 랜딩 표시도 직접 확인했다.
+- 기존 인수인계/차팅 서비스와 원격 main은 변경하지 않았다. 사용자의 기존 미추적 artifacts는 커밋하지 않았다.

@@ -43,6 +43,8 @@
 
 ## 작업 기록
 
+2026-09-23 CareNote 랜딩 **1.0.2 배포 완료**. 제품 커밋 f9b30bb9, Preview `dpl_4mCQGC3VKKNLsFnfQtKin3EMxsgc`의 랜딩/차팅/합성 API 확인 후 Production `dpl_GnSk2BpYzFuJ66Sjg89k5SQgWVNH`로 승격. 공개 주소에서 로그인 없는 랜딩+실 API E2E13/13 및 실제 화면 확인 완료. 기존 서비스·main 미변경. 협업 Notion COLLAB-023~026에 참고·수정·검증·배포 이력 기록.
+
 2026-09-23 CareNote SaaS 랜딩 최종 로컬 게이트: **PASSED · 1.0.2**. 같은 담당의 FIX ROUND 1과 마지막 제목 줄바꿈 조정 후 감독 화면 검토 및 독립 정적 재검토 통과. 전체 Vitest428, Python155, 전체 E2E81 통과; 마지막 랜딩 제목 변경 후 Vitest428와 CareNote/랜딩 E2E13 재실행 통과. Next build·ESLint·TypeScript·하네스 통과. CTA 대비 RED 1.151:1 → 기본/hover 4.5:1 이상 GREEN. 자세한 실행 범위는 `docs/verification/2026-09-23-carenote-saas-landing.md`. 아래 IN_PROGRESS는 착수 이력이다.
 
 2026-09-23 CareNote SaaS 랜딩 리디자인: **IN_PROGRESS**. 사용자 요청과 기존 자율 진행 범위에 따라 공식 Linear/Ramp/Heidi의 실제 화면을 확인하고 UI/UX Pro·frontend-design을 적용했다. Figma node 39:3 MCP 재확인. 프런트엔드 담당 `/root/carenote_landing`이 하네스 1.2.0 및 LandingPage 3파일 소유권을 수용했다. 감독은 별도 `e2e/carenote-landing.spec.ts`와 문서를 소유하며 키보드 탭 검사 RED를 확인했다. 제품 로직·API·환자 데이터·저장 정책은 비범위. 결정 근거: `docs/decisions/2026-09-23-carenote-saas-landing.md`. 협업 기록은 지정 Notion COLLAB-023부터 이어간다.
