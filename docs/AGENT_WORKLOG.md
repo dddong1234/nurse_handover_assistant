@@ -13,6 +13,7 @@
 - 감독 게이트: Vitest423, Python155, 기존 E2E68, 새 실제API E2E6 통과. lint/typecheck/build/harness 통과. 자세한 명령·제약은 릴리스 검증 기록 참조.
 - Notion 새 협업 페이지에 배정/보고/수정/재검증을 연속 기록. 사용자1인의 프로젝트이며 AI 협업을 사람 팀 경험으로 표현하지 않음.
 - 배포 상태는 `docs/verification/2026-09-23-carenote-release.md`에 별도 기록. 자동 테스트 결과와 사용자 과업/효과 검증을 구분한다.
+- 배포 완료: CareNote 별도 Preview 검증 후 Production `https://carenote-suite.vercel.app` READY. 배포 코드43713c4d. 공개 주소 익명 실제API E2E6/6 통과. 새 프로젝트의 자동 환경 감지 문제는 Next.js/Python3.12 명시로 수정했고 첫 빌드는 취소했다.
 
 ## 상태 값
 

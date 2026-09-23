@@ -37,7 +37,17 @@ Python 실행 경로: 이 작업폴더의 `.venv\carenote\Scripts\python.exe`. �
 ## 배포
 
 - 대상: 기존 서비스와 분리한 Vercel `carenote-suite` 프로젝트.
-- 현재 단계: 로컬 감독 게이트 통과, Preview 배포 및 원격 스모크 확인 대기.
+- 배포 코드: `43713c4d70b284b993c19622fd0591ab083914fc` (통합 구현357f6576 + 환경 설정 고정).
+- Preview: `https://carenote-suite-4m7br5k6z-olttemelona.vercel.app`, dpl_5UTje2qxU1cJzK4Lfr9TJaDCqhXd. READY 및 인증된 CLI 스모크 통과: 랜딩/차팅/health HTTP200, 실제 P001 readiness POST200·available·16항목.
+- Production: `https://carenote-suite.vercel.app`, dpl_HdEMFPR7bZ5vcJJhHT2Azahebvzq. 2026-09-23 18:06 KST 승격, READY 확인. 익명 Chromium에서 새 실제API E2E6/6 통과(16.2초): 기록 명시추가/재조회·환자 및 모듈 전환·390/960/1440·읽음/메모 범위·랜딩 CTA 확인.
 - 기존 인수인계/차팅 Production과 원격 main은 변경하지 않는다.
 - 새 배포가 실패하면 기존 서비스로 돌아갈 수 있으며, 새 프로젝트의 Production alias만 이전 검증 배포로 되돌린다. 최초 배포 전에는 기존 CareNote Production이 없다.
 - 배포에 `.env*`, 개발 가상환경, 사용자 artifacts, docs 등은 업로드하지 않는다. 인증 토큰·실제 환자정보를 커밋하지 않는다.
+
+### 배포 환경 수정 기록
+
+첫 신규 프로젝트의 자동 설정은 Other 프레임워크와 Python3.14였다. pandas 소스 빌드가 시작되어 해당 첫 배포를 CANCELED 처리했고 공개 완료로 인정하지 않았다. 새 프로젝트 설정과 vercel.json에 Next.js를 명시하고 `.python-version`을3.12로 고정했다. 이후 명시적 Preview를 빌드·검증하고 Production으로 승격했다.
+
+기존 requirements에 Streamlit 기준선 의존성이 포함되어 Python 번들이 크다는 빌드 안내가 있었다. Vercel 최적화 후 배포 성공했으며 별도 API 전용 의존성 정리는 후속 최적화다. 이번 작업에서 기존 프로토타입 실행 환경을 제거하지 않았다.
+
+설정 근거: [Vercel 공식 Python 런타임 문서](https://vercel.com/docs/functions/runtimes/python)의 프로젝트 루트 `.python-version` 지원 및 실제 빌드 로그. 비용·운영 성능·실사용 SLA는 검증하지 않았다.

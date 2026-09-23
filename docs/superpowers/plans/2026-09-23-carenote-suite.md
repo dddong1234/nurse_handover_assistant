@@ -70,15 +70,15 @@ Files: src/components/carenote/LandingPage.tsx, LandingPage.module.css; src/app/
 
 Files: e2e/carenote.spec.ts, documentation, version/changelog, scoped deployment config.
 
-- [ ] Run Vitest, ESLint, Next build, Python suite, harness and focused browser E2E. Review failures rather than weaken gates.
-- [ ] Get independent read-only review of patient isolation, date/source contracts, runtime UI, and marketing truthfulness.
-- [ ] Commit scoped files on codex/1.0-carenote-suite. Do not merge old local main or include unrelated files.
-- [ ] Create/link a separate Vercel project; deploy Preview, inspect / and /workspace plus Python API; deploy the verified build to Production.
-- [ ] Record exact deployed URLs, source commit, limitations and rollback reference in Notion and local worklog.
+- [x] Run Vitest, ESLint, Next build, Python suite, harness and focused browser E2E. Review failures rather than weaken gates.
+- [x] Get independent read-only review of patient isolation, date/source contracts, runtime UI, and marketing truthfulness.
+- [x] Commit scoped files on codex/1.0-carenote-suite. Do not merge old local main or include unrelated files.
+- [x] Create/link a separate Vercel project; deploy Preview, inspect / and /workspace plus Python API; deploy the verified build to Production.
+- [x] Record exact deployed URLs, source commit, limitations and rollback reference in Notion and local worklog.
 
 ## Execution ledger
 
 - User authorization supersedes skill-level repeated design/plan approvals; proceed autonomously.
 - Baseline: latest origin/main 2610a017, clean linked worktree, new branch codex/1.0-carenote-suite.
 - Figma node39:3 inspected via MCP on 2026-09-23; existing frame preserved. New design follows its navy/teal shell grammar while emphasizing task content.
-- Supervisor gate passed: frontend423, Python155, legacy E2E68, actual API CareNote E2E6; lint/typecheck/build/harness and independent contract/UI re-reviews. Preview deployment is next; no main merge or original production replacement.
+- Supervisor gate passed: frontend423, Python155, legacy E2E68, local actual API CareNote E2E6; lint/typecheck/build/harness and independent contract/UI re-reviews. Preview pages/API passed; Production https://carenote-suite.vercel.app is READY at code43713c4d, anonymous production E2E6/6 passed. No main merge or original production replacement.

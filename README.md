@@ -1,4 +1,15 @@
-# Nurse Handover Assistant
+# CareNote — 통합 간호 작업공간
+
+근무 준비·원본 기록 대조·간호기록을 같은 환자 맥락으로 연결하는 별도 제품 데모입니다.
+
+- [제품 소개](https://carenote-suite.vercel.app) · [통합 작업공간](https://carenote-suite.vercel.app/workspace)
+- [실제 기능·저장 경계](docs/CARENOTE_PRODUCT.md) · [구현/검증/배포 기록](docs/verification/2026-09-23-carenote-release.md)
+- 합성 환자5명, 규칙 기반 제한된 SOAP 초안, 명시적 미서명 기록 추가. 새 작업공간 상태는 새로고침하면 초기화됩니다.
+- 사용자1인의 기획과 AI 보조 구현입니다. 실제 운영 EMR·임상 효과·사용자 시간 절감 검증을 의미하지 않습니다.
+
+기존 인수인계 서비스와 원본 차팅 서비스는 유지합니다. 이 브랜치에서는 기존 인수인계 화면을 `/handover`에서 볼 수 있으며, 아래 내용은 해당 기준선의 설명입니다.
+
+## Nurse Handover Assistant 기준선
 
 가상 환자의 변화와 이번 근무에 확인할 항목을 원본 근거로 연결해, 휴무 복귀 간호사의 인계 준비를 돕는 포트폴리오 프로토타입입니다.
 
