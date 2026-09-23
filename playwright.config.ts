@@ -16,9 +16,14 @@ export default defineConfig({
   ],
   webServer: externalBaseURL
     ? undefined
-    : {
+    : [{
+        command: "python -m uvicorn api.index:app --host 127.0.0.1 --port 8017",
+        url: "http://127.0.0.1:8017/api/health",
+        reuseExistingServer: true,
+      }, {
         command: "pnpm dev --hostname 127.0.0.1",
         url: baseURL,
         reuseExistingServer: true,
-      },
+        env: { CARENOTE_API_ORIGIN: "http://127.0.0.1:8017" },
+      }],
 });

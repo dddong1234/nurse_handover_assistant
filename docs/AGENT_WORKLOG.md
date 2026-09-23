@@ -2,6 +2,18 @@
 
 이 문서는 서브에이전트 작업, 감독 검증, 수정 라운드와 품질 게이트 상태를 기록한다.
 
+## 2026-09-23 CareNote 통합 제품 — 1.0.0
+
+- 기준: origin/main `2610a017`, 별도 `codex/1.0-carenote-suite`. 기존 원본·배포 보존. 사용자 승인으로 구현·랜딩·배포까지 수행하며 파괴적 변경은 제외.
+- 하네스 1.2.0: 차팅 peer는 `src/features/carenote-charting/**`, UI는 `CareWorkspace*`와 `LandingPage*`로 분리. 감독은 공통 계약·라우팅·검증·문서·Git·배포 담당.
+- Figma39:3 MCP 검토 후 navy/teal 임상 UI 문맥만 사용. 근무 준비 우선 정보구조로 재구성.
+- 차팅 수정: Next 내부 import 해결; 독립 리뷰의 미입력 사실 생성·부분입력 유실·미래근거 연결 3건을 RED 재현 후 좁은 adapter/시간 경계로 해결. 독립 재리뷰132건 및 별도 재현 통과.
+- UI 수정: 모바일 핵심탭 노출, 원본시각 명시, reviewKey별 메모, 큰 글씨 적용 후 생긴 근거 overflow를 숨김 없이 수정. 독립390/960/1440 가로폭·내용·포커스·상태검사 통과.
+- 랜딩 수정: 실제 P001 시나리오 및 지원 차팅으로 예시 교체. 미입력 SOAP 직접작성, 메모리/서버 계산 구분. 허구 성과·고객·가격·결제 없음.
+- 감독 게이트: Vitest423, Python155, 기존 E2E68, 새 실제API E2E6 통과. lint/typecheck/build/harness 통과. 자세한 명령·제약은 릴리스 검증 기록 참조.
+- Notion 새 협업 페이지에 배정/보고/수정/재검증을 연속 기록. 사용자1인의 프로젝트이며 AI 협업을 사람 팀 경험으로 표현하지 않음.
+- 배포 상태는 `docs/verification/2026-09-23-carenote-release.md`에 별도 기록. 자동 테스트 결과와 사용자 과업/효과 검증을 구분한다.
+
 ## 상태 값
 
 2026-09-14 배포 승인: 사용자 `굿 좋은데 배포해`. `codex/0.10.0-onboarding`의 검증된 파일만 커밋·푸시하고 Preview 빌드·화면·API 확인 후 main PR 병합 및 Production smoke 검증을 수행한다. 아래 원격 미반영 문장은 구현 완료 시점의 이력이다. 배포 실행 결과와 URL·커밋 SHA는 해당 릴리스 PR의 검증 댓글에 기록한다. 최신 origin/main은 구현 기준과 동일한 `449dfddd`; 루트 checkout과 다른 작업은 보존한다. 배포 직전 Vitest282/282, Python155/155, harness 재실행 통과.

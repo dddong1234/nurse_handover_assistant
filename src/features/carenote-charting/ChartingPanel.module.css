@@ -1,0 +1,66 @@
+.panel {
+  --chart-ink: #0b253a;
+  --chart-accent: #176b87;
+  --chart-muted: #5b6876;
+  --chart-border: #dce3ea;
+  --chart-paper: #ffffff;
+  --chart-tint: #eaf5f8;
+  --chart-warning: #775715;
+  min-width: 0;
+  color: var(--chart-ink);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.heading, .toolbar, .suggestionHeader, .suggestionActions, .actions, .timelineHeading, .note header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.heading h2, .timeline h3 { margin: 0; font-size: 21px; font-weight: 750; letter-spacing: -.035em; }
+.eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .14em; color: var(--chart-muted); }
+.badge { font-size: 12px; color: var(--chart-accent); background: var(--chart-tint); padding: 4px 9px; border-radius: 4px; }
+.intro { color: var(--chart-muted); margin: 8px 0 20px; font-size: 14px; }
+.composer { border: 1px solid var(--chart-border); border-radius: 8px; background: var(--chart-paper); overflow: hidden; }
+.toolbar { justify-content: flex-start; padding: 14px 16px; border-bottom: 1px solid var(--chart-border); }
+.toolbar label { display: grid; gap: 4px; color: var(--chart-muted); font-size: 12px; min-width: 0; }
+.toolbar input, .toolbar select { font: inherit; font-size: 14px; color: var(--chart-ink); border: 1px solid var(--chart-border); border-radius: 4px; padding: 7px 9px; background: var(--chart-paper); max-width: 100%; }
+.editorLabel { display: block; margin: 14px 16px 4px; font-size: 12px; font-weight: 650; color: var(--chart-muted); }
+.composer textarea { display: block; width: 100%; box-sizing: border-box; min-height: 155px; padding: 8px 16px 16px; resize: vertical; border: 0; color: var(--chart-ink); background: var(--chart-paper); font: inherit; line-height: 1.85; border-radius: 0; }
+.panel :is(button, input, select, textarea):focus-visible { outline: 2px solid var(--chart-accent); outline-offset: 2px; }
+.composer textarea:focus-visible { outline-offset: -3px; }
+.panel button { font: inherit; font-size: 12px; line-height: 1.4; border: 1px solid var(--chart-border); border-radius: 4px; padding: 7px 10px; color: var(--chart-accent); background: var(--chart-paper); cursor: pointer; }
+.panel button:hover { border-color: var(--chart-accent); }
+.suggestion { margin: 0 12px 12px; padding: 13px 14px; border-left: 3px solid var(--chart-accent); background: var(--chart-tint); border-radius: 2px; }
+.suggestionHeader { font-size: 12px; color: var(--chart-accent); gap: 4px; }
+.suggestionHeader span { color: var(--chart-muted); }
+.narrative { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0; }
+.suggestionActions { justify-content: flex-start; gap: 6px; font-size: 11px; color: var(--chart-muted); margin-top: 12px; }
+.suggestionActions > span { flex: 1 1 140px; }
+.suggestionActions kbd { font: inherit; padding-left: 4px; color: var(--chart-muted); }
+.help { padding: 10px 16px; color: var(--chart-muted); font-size: 12px; border-top: 1px solid var(--chart-border); }
+.review { padding: 12px 14px; margin-top: 12px; border: 1px solid var(--chart-border); border-left: 3px solid var(--chart-warning); border-radius: 4px; font-size: 13px; }
+.review strong { color: var(--chart-warning); }
+.review p { margin: 4px 0 8px; overflow-wrap: anywhere; }
+.review small { display: block; margin-top: 8px; color: var(--chart-muted); font-size: 11px; }
+.actions { margin: 16px 0 25px; gap: 8px; }
+.actions p { color: var(--chart-muted); font-size: 12px; margin: 0; }
+.panel .primary { background: var(--chart-accent); border-color: var(--chart-accent); color: var(--chart-paper); font-weight: 650; padding: 10px 19px; font-size: 14px; }
+.error { color: var(--chart-warning); font-size: 13px; border-left: 3px solid var(--chart-warning); padding-left: 10px; }
+.timeline { border-top: 1px solid var(--chart-border); padding-top: 20px; }
+.timelineHeading h3 { font-size: 16px; }
+.timelineHeading > span { font-size: 12px; color: var(--chart-muted); }
+.note { margin-top: 14px; padding: 14px 0 14px 14px; border-bottom: 1px solid var(--chart-border); border-left: 2px solid var(--chart-border); }
+.note header { justify-content: flex-start; gap: 10px; font-size: 11px; color: var(--chart-muted); }
+.note time { color: var(--chart-ink); font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 700; }
+.note .narrative { font-size: 14px; }
+.empty { padding: 24px 0; color: var(--chart-muted); font-size: 13px; }
+@media (max-width: 560px) {
+  .toolbar { align-items: stretch; }
+  .toolbar label:first-child { flex: 1 1 210px; }
+  .heading { align-items: flex-start; }
+  .actions { align-items: stretch; }
+  .actions p { flex-basis: 100%; }
+}

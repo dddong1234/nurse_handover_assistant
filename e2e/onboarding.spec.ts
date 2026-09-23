@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 const ONBOARDING_KEY = "nurse-handover:onboarding:v1";
 
 async function openFirstVisit(page: import("@playwright/test").Page, resetPreference = false) {
-  await page.goto("/");
+  await page.goto("/handover");
   if (resetPreference) {
     await page.evaluate((key) => window.localStorage.removeItem(key), ONBOARDING_KEY);
     await page.reload();

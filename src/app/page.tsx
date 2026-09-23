@@ -1,7 +1,5 @@
-import { HandoverWorkspace } from "@/components/handover/HandoverWorkspace";
-import { buildDemoWorkspaceData } from "@/lib/demo-adapter";
-import { demoRecordPairs } from "@/lib/demo-records";
+import { LandingPage } from "@/components/carenote/LandingPage";
 
 export default function Home() {
-  return <HandoverWorkspace data={buildDemoWorkspaceData()} recordPairs={demoRecordPairs} />;
+  return <LandingPage />;
 }

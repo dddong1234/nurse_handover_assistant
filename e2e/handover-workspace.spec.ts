@@ -437,7 +437,7 @@ test("return handover P001 completes the 24-event evidence review workflow", asy
   });
   await mockShiftReadinessApi(page);
 
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
   await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
@@ -559,7 +559,7 @@ test("return handover P001 completes the 24-event evidence review workflow", asy
 test("shift readiness P001 follows the task-first evidence journey and retains acknowledgement", async ({ page }) => {
   await mockP001ReturnApi(page);
   await mockShiftReadinessApi(page);
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
 
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
@@ -634,7 +634,7 @@ for (const { state, workspaceCopy, summaryCopy } of readinessStateCases) {
   test(`shift readiness announces the ${state} state distinctly while period evidence stays available`, async ({ page }) => {
     await mockP001ReturnApi(page);
     await mockShiftReadinessApi(page, state);
-    await page.goto("/");
+    await page.goto("/handover");
     await p001Patient(page).click();
     await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
 
@@ -686,7 +686,7 @@ test("shift readiness isolates a failed P002 retry and retains exact-key P001 re
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(response) });
   });
 
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
   const readiness = page.getByTestId("shift-readiness-workspace");
@@ -733,7 +733,7 @@ test("shift readiness rejects malformed responses without hiding the period tab"
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ status: "available" }) });
   });
 
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
   const readiness = page.getByTestId("shift-readiness-workspace");
@@ -766,7 +766,7 @@ test("shift readiness isolates a slow P001 response from a faster P002 selection
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(response) });
   });
 
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
   await p001Seen;
@@ -799,7 +799,7 @@ test("shift readiness fails closed for a missing direct source and restores its 
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(response) });
   });
 
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
   const readiness = page.getByTestId("shift-readiness-workspace");
@@ -815,7 +815,7 @@ test("shift readiness fails closed for a missing direct source and restores its 
 test("shift readiness mode tabs, quick links, and keyboard evidence focus are accessible", async ({ page }) => {
   await mockP001ReturnApi(page);
   await mockShiftReadinessApi(page);
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
 
@@ -877,7 +877,7 @@ test("shift readiness uses a dense clinical hierarchy with visible fact-status t
   await mockP001ReturnApi(page);
   await mockShiftReadinessApi(page);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
   const readiness = page.getByTestId("shift-readiness-workspace");
@@ -912,7 +912,7 @@ for (const viewportWidth of readinessViewportMatrix) {
     await mockP001ReturnApi(page);
     await mockShiftReadinessApi(page);
     await page.setViewportSize({ width: viewportWidth, height: viewportWidth === 390 ? 844 : 900 });
-    await page.goto("/");
+    await page.goto("/handover");
     await p001Patient(page).click();
     await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
 
@@ -991,7 +991,7 @@ for (const viewportWidth of readinessViewportMatrix) {
 test("shift readiness mobile order keeps the board before its summary rail", async ({ page }) => {
   await mockP001ReturnApi(page);
   await mockShiftReadinessApi(page);
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
   await expect(page.getByTestId("shift-readiness-workspace")).toBeVisible();
@@ -1018,7 +1018,7 @@ test("shift readiness narrow item rows pair time with status and acknowledgement
   await mockP001ReturnApi(page);
   await mockShiftReadinessApi(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
 
@@ -1082,7 +1082,7 @@ for (const viewport of returnViewportMatrix) {
     await mockShiftReadinessApi(page);
     const ready = cloneP001ReturnFixture("ready");
     await page.setViewportSize(viewport);
-    await page.goto("/");
+    await page.goto("/handover");
     await p001Patient(page).click();
     await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
     await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
@@ -1163,7 +1163,7 @@ test("return handover hierarchy separates group surfaces and SBAR blocks across 
   await mockP001ReturnApi(page);
   await mockShiftReadinessApi(page);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
   await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
@@ -1215,7 +1215,7 @@ test("return handover exposes keyboard scope, landmarks, text status, and exact 
   await mockP001ReturnApi(page);
   await mockShiftReadinessApi(page);
   const ready = cloneP001ReturnFixture("ready");
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
   await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
@@ -1331,7 +1331,7 @@ for (const { state, visibleState, announcement, retentionOnly } of returnDomainS
       : undefined,
     );
     await mockShiftReadinessApi(page);
-    await page.goto("/");
+    await page.goto("/handover");
     await p001Patient(page).click();
     await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
     await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
@@ -1420,7 +1420,7 @@ test("return handover keeps the fast newer period result when an older request f
   });
   await mockShiftReadinessApi(page);
 
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
   await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
@@ -1457,7 +1457,7 @@ test("return handover keeps the prior result and user input after a replacement 
   });
   await mockShiftReadinessApi(page);
 
-  await page.goto("/");
+  await page.goto("/handover");
   await p001Patient(page).click();
   await page.getByRole("tab", { name: "휴무 복귀", exact: true }).click();
   await page.getByRole("tab", { name: "변화 근거", exact: true }).click();
@@ -1495,7 +1495,7 @@ test("return handover keeps the prior result and user input after a replacement 
 });
 
 test("P001 exposes a visible before/current pair with traceable evidence", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/handover");
 
   const patient = page.getByRole("button", { name: /홍길동, P001, 301호/ });
   await expect(patient).toBeVisible();
@@ -1518,7 +1518,7 @@ test("P001 exposes a visible before/current pair with traceable evidence", async
 });
 
 test("summary evidence stays collapsed until requested", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/handover");
 
   const summary = page.getByRole("complementary", { name: "인계 검토" });
   const situation = summary.getByRole("region", { name: "Situation" });
@@ -1536,7 +1536,7 @@ test("summary evidence stays collapsed until requested", async ({ page }) => {
 });
 
 test("an expanded SBAR evidence link visibly selects the matching change", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/handover");
 
   const temperature = temperatureChange(page);
   const summary = page.getByRole("complementary", { name: "인계 검토" });
@@ -1565,7 +1565,7 @@ test("an expanded SBAR evidence link visibly selects the matching change", async
 
 test("a failed comparison is not reviewed until source confirmation, then review locks the workspace", async ({ page }) => {
   await forceCompareFailure(page);
-  await page.goto("/");
+  await page.goto("/handover");
 
   const patient = p001Patient(page);
   const reviewButton = page.getByRole("button", { name: "검토 완료" });
@@ -1591,7 +1591,7 @@ test("a failed comparison is not reviewed until source confirmation, then review
 
 test("a provider failure shows the deterministic fallback banner without hiding the demo evidence", async ({ page }) => {
   await forceCompareFailure(page, 503);
-  await page.goto("/");
+  await page.goto("/handover");
 
   const banner = await expectFallbackBanner(page);
   await expect(banner.getByText("서버 연결", { exact: true })).toBeVisible();
@@ -1602,7 +1602,7 @@ test("a provider failure shows the deterministic fallback banner without hiding 
 });
 
 test("the workspace uses clinician source labels without portfolio chrome or raw medication JSON", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/handover");
 
   await expect(page.locator(".source-tag")).toHaveText(/^(AI 요약|규칙 요약)$/);
   await expect(page.getByText(RETIRED_SAFETY_NOTICE, { exact: true })).toHaveCount(0);
@@ -1645,7 +1645,7 @@ test("applies an edited P001 temperature through the route-controlled compare wo
     });
   });
 
-  await page.goto("/");
+  await page.goto("/handover");
   const openButton = page.getByRole("tab", { name: "원본 기록", exact: true });
   await expect(openButton).toBeVisible();
   await openButton.click();
@@ -1675,7 +1675,7 @@ const responsiveViewports = [
 for (const viewport of responsiveViewports) {
   test(`responsive smoke at ${viewport.width}x${viewport.height} keeps the workflow reachable`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await page.goto("/");
+    await page.goto("/handover");
 
     const queueHeading = page.getByRole("heading", { name: "담당 환자" });
     const comparisonHeading = page.getByRole("heading", { name: "변화 검토" });
@@ -1746,7 +1746,7 @@ const shellGeometryCases = [
 for (const geometryCase of shellGeometryCases) {
   test(`uses the integrated clinical shell geometry at ${geometryCase.width}px`, async ({ page }) => {
     await page.setViewportSize({ width: geometryCase.width, height: geometryCase.height });
-    await page.goto("/");
+    await page.goto("/handover");
     await expect(page.locator(".workspace-shell")).toBeVisible({ timeout: 10_000 });
 
     const metrics = await page.evaluate(() => {
@@ -1776,7 +1776,7 @@ const tabletOverflowCases = [960, 1024, 1279] as const;
 for (const viewportWidth of tabletOverflowCases) {
   test(`keeps tablet center descendants inside the center column at ${viewportWidth}px`, async ({ page }) => {
     await page.setViewportSize({ width: viewportWidth, height: 768 });
-    await page.goto("/");
+    await page.goto("/handover");
     await expect(page.locator(".workspace-shell")).toBeVisible({ timeout: 10_000 });
 
     const metrics = await page.evaluate(() => {
@@ -1814,7 +1814,7 @@ for (const viewportWidth of tabletOverflowCases) {
 
 test("keeps both shift-summary timestamps readable at 960px", async ({ page }) => {
   await page.setViewportSize({ width: 960, height: 768 });
-  await page.goto("/");
+  await page.goto("/handover");
   await expect(page.locator(".workspace-shell")).toBeVisible({ timeout: 10_000 });
 
   const timestampPoints = page.locator(".shift-summary-strip .shift-summary-point");
@@ -1840,7 +1840,7 @@ test("keeps both shift-summary timestamps readable at 960px", async ({ page }) =
 
 test("keeps both center modules reachable and stacks structured medication inputs on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+  await page.goto("/handover");
 
   await expect(page.getByRole("tab", { name: "인수인계 비교" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "인계 검토" })).toBeVisible();
@@ -1872,7 +1872,7 @@ const densityCapViewports = [1440, 1279, 1024] as const;
 for (const viewportWidth of densityCapViewports) {
   test(`keeps the patient context dense and unclipped at ${viewportWidth}px`, async ({ page }) => {
     await page.setViewportSize({ width: viewportWidth, height: 768 });
-    await page.goto("/");
+    await page.goto("/handover");
 
     const context = page.locator(".patient-context");
     await expect(context).toBeVisible();
@@ -1917,7 +1917,7 @@ const evidenceLegibilityViewports = [1440, 1279, 1024, 960, 390] as const;
 for (const viewportWidth of evidenceLegibilityViewports) {
   test(`keeps evidence controls legible at ${viewportWidth}px`, async ({ page }) => {
     await page.setViewportSize({ width: viewportWidth, height: viewportWidth === 390 ? 844 : 768 });
-    await page.goto("/");
+    await page.goto("/handover");
 
     const evidenceDisclosures = page.locator(".summary-evidence-disclosure");
     await expect(evidenceDisclosures.first()).toBeVisible();
@@ -1986,7 +1986,7 @@ for (const viewportWidth of evidenceLegibilityViewports) {
 
 test("wide-screen 2544px restores clinical readability without horizontal clipping", async ({ page }) => {
   await page.setViewportSize({ width: 2544, height: 1258 });
-  await page.goto("/");
+  await page.goto("/handover");
   await expect(page.locator(".workspace-shell")).toBeVisible({ timeout: 10_000 });
 
   await page.locator("details.evidence-details, details.summary-evidence-disclosure").evaluateAll((elements) => {
