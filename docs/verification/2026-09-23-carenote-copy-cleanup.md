@@ -28,4 +28,10 @@
 
 자동 테스트·화면 검증 결과이며 사용자 과업 시간, 임상 효과를 측정한 결과가 아니다. Vite 설정 미래 변경 예고와 Starlette/httpx deprecation 안내가 있으나 검사는 통과했다. 기존 인수인계 E2E68건은 이번 좁은 UI 작업에서는 재실행하지 않았다.
 
-배포: 검증된 코드의 별도 Preview 및 Production 확인 예정. 기존 두 서비스와 원격 main은 변경하지 않는다.
+## 배포 확인
+
+- 제품 코드: `95c778e385bf8869a2620be519b354e5967f03c5`, 별도 `codex/1.0-carenote-suite` 브랜치에 푸시.
+- Preview `dpl_8WcXXWxGVqnJA4hreoofFUwqX1TY` READY. 랜딩/차팅 HTTP 성공 및 삭제 문구 부재, 입력기·초기화 안내 확인. 합성 P001 readiness POST: available, 16항목.
+- 해당 Preview 승격으로 Production `dpl_2hcUF9UPSqZKu5DpDbgeeZxB2t9F` READY.
+- 공개 주소 `https://carenote-suite.vercel.app`에서 로그인·인증 우회 없는 Chromium으로 정리된 제목/정상 배너 부재를 확인하고 실제 API E2E6/6 통과(10.9초).
+- 기존 두 서비스와 원격 main은 변경하지 않았다. 추가 화면 자료는 로컬 artifacts에만 보관한다.
