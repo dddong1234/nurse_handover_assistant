@@ -2,8 +2,8 @@
 
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import type { CareDraft, ChartingPanelProps } from "@/lib/carenote/types";
-import { createChartingSuggestion, MISSING_FACT_PLACEHOLDER } from "./chartingAdapter";
-import { validateDraft } from "./legacy/charting";
+import { createChartingSuggestion } from "./chartingAdapter";
+import { validateChartingDraft } from "./chartingValidation";
 import { formatKoreaTime, fromKoreaLocal, isZonedIso, toKoreaLocal } from "./time";
 import styles from "./ChartingPanel.module.css";
 
@@ -21,7 +21,7 @@ function ChartingEditor({ patient, evidence, notes, draft, onDraftChange, onAddN
   const [acceptedSnapshot, setAcceptedSnapshot] = useState<{ suggestion: Suggestion; context: string } | null>(null);
   const [error, setError] = useState("");
   const scopeKey = JSON.stringify([draft.text, draft.category, draft.recordedAt]);
-  const isSoap = /^S:/m.test(draft.text);
+  const isSoap = /^[SOAP]:/m.test(draft.text);
   const scopedEvidence = evidence.filter((item) =>
     item.patientId === patient.id && item.encounterId === patient.encounterId
     && isZonedIso(item.recordedAt) && isZonedIso(draft.recordedAt)
@@ -64,16 +64,9 @@ function ChartingEditor({ patient, evidence, notes, draft, onDraftChange, onAddN
   }
 
   function addRecord() {
-    if (draft.text.includes(MISSING_FACT_PLACEHOLDER)) {
-      setError("직접 확인 항목을 작성하세요. 미완성 초안은 추가할 수 없습니다.");
-      return;
-    }
-    const time = toKoreaLocal(draft.recordedAt);
-    const validation = validateDraft({ timestamp: time.slice(11), narrative: draft.text });
-    if (!isZonedIso(draft.recordedAt) || !validation.valid) {
-      setError(!isZonedIso(draft.recordedAt)
-        ? "날짜와 한국시간을 확인하세요."
-        : validation.errors.join(" "));
+    const validation = validateChartingDraft(draft);
+    if (!validation.valid) {
+      setError(validation.errors.join(" "));
       return;
     }
     const validIds = new Set(scopedEvidence.map((item) => item.id));
@@ -93,7 +86,7 @@ function ChartingEditor({ patient, evidence, notes, draft, onDraftChange, onAddN
       <div><h2>간호기록</h2></div>
       <span className={styles.badge}>기록 기반 추천</span>
     </header>
-    <p className={styles.intro}>입력에 없는 SOAP 항목은 직접 확인해 작성하세요.</p>
+    <p className={styles.intro}>짧은 입력을 기록 문장으로 다듬습니다.</p>
     <div className={styles.composer}>
       <div className={styles.toolbar}>
         <label>기록 시각 (한국시간)
@@ -112,8 +105,11 @@ function ChartingEditor({ patient, evidence, notes, draft, onDraftChange, onAddN
         placeholder="예: 잘잠 · 잠 못잠 · 통증 3점 · 오심 없음"
         aria-describedby={editorId + "-help"} onKeyDown={onEditorKeyDown}
         onChange={(event) => edit({ ...draft, text: event.target.value })} />
+      {accepted && <div className={styles.help} role="region" aria-label="입력 원문">
+        <strong>입력 원문</strong> · {accepted.sourceText}
+      </div>}
       {suggestion && <div className={styles.suggestion} role="region" aria-label="SOAP 추천">
-        <div className={styles.suggestionHeader}><strong>통합 SOAP 초안</strong><span>검토 전 · 본문 미반영</span></div>
+        <div className={styles.suggestionHeader}><strong>기록 문장 추천</strong><span>검토 전 · 본문 미반영</span></div>
         <p className={styles.narrative}>{suggestion.narrative}</p>
         <div className={styles.suggestionActions}>
           <span>현재 입력을 바탕으로 작성</span>
@@ -124,11 +120,11 @@ function ChartingEditor({ patient, evidence, notes, draft, onDraftChange, onAddN
       </div>}
       <div className={styles.help} id={editorId + "-help"} role="status">
         {!draft.text.trim() ? "짧은 관찰 사실을 입력하면 지원 표현을 제안합니다." :
-          accepted ? "입력한 사실만 옮겼습니다. 미입력 항목을 완성하세요." :
+          accepted ? "원문과 비교해 확인·수정한 뒤 기록을 추가하세요." :
           isSoap ? "직접 작성 중 · 수정 내용은 덮어쓰지 않습니다." :
           dismissed === scopeKey ? "추천을 닫았습니다. 입력은 유지됩니다." :
           !suggestion ? "지원하지 않는 표현입니다. 원문을 유지하고 SOAP로 작성하세요." :
-          "사실을 추정하지 않습니다. 미입력 항목을 직접 확인하세요."}
+          "입력한 사실만 문장화합니다. 필요한 항목은 직접 덧붙일 수 있습니다."}
       </div>
     </div>
     {review?.conflict && <aside className={styles.review} role="region" aria-label="이전 기록과 차이">

@@ -10,12 +10,30 @@ const dose: CareEvidence = { id: "dose", patientId: "p1", encounterId: "e1",
 
 describe("CareNote charting adapter", () => {
   it.each([
-    ["배액 30cc", "S: [직접 확인·작성 필요]\nO: 배액 30cc\nA: [직접 확인·작성 필요]\nP: [직접 확인·작성 필요]"],
-    ["통증 3점", "S: 통증 3점\nO: [직접 확인·작성 필요]\nA: [직접 확인·작성 필요]\nP: [직접 확인·작성 필요]"],
-    ["오심 없음", "S: 오심 없음\nO: [직접 확인·작성 필요]\nA: [직접 확인·작성 필요]\nP: [직접 확인·작성 필요]"],
-    ["잘잠", "S: 잘잠\nO: [직접 확인·작성 필요]\nA: [직접 확인·작성 필요]\nP: [직접 확인·작성 필요]"],
-  ])("preserves only the supplied fact for %s and leaves unprovided sections incomplete", (text, expected) => {
-    expect(createChartingSuggestion({ patient, draft: { ...draft, text }, evidence: [] })?.narrative).toBe(expected);
+    ["잘잠", "S: 잘 잤음."],
+    ["잠 못잠", "S: 잠을 이루기 어려움."],
+    ["통증 3점", "S: 통증 정도 3점."],
+    ["오심 없음", "S: 오심 없음."],
+  ])("does not fill additional current facts from historical evidence for %s", (text, expected) => {
+    for (const evidence of [[], [dose, { ...dose, id: "old-vs", category: "V/S" as const, text: "BP 110/70 mmHg" }]]) {
+      const result = createChartingSuggestion({ patient, draft: { ...draft, text }, evidence });
+      expect(result?.narrative).toBe(expected);
+      expect(result?.sourceText).toBe(text);
+    }
+  });
+  it.each([
+    ["배액 30cc", "O: 배액량 30cc."],
+    ["통증 3점", "S: 통증 정도 3점."],
+    ["오심 없음", "S: 오심 없음."],
+    ["잘잠", "S: 잘 잤음."],
+    ["잠 못잠", "S: 잠을 이루기 어려움."],
+    ["잠 안옴", "S: 잠을 이루기 어려움."],
+    ["NRS 3점", "S: 통증 NRS 3점."],
+  ])("phrases %s without inventing unprovided facts or demanding empty sections", (text, expected) => {
+    const result = createChartingSuggestion({ patient, draft: { ...draft, text }, evidence: [] });
+    expect(result?.narrative).toBe(expected);
+    expect(result?.sourceText).toBe(text);
+    expect(result?.narrative).not.toMatch(/호소|말함|관찰|확인함|계획|투약|직접 확인/);
   });
   it.each([
     "보행 3회 시행함", "복도 한바퀴", "통증 3점 아니고 7점", "통증 3점 아님",
@@ -84,8 +102,7 @@ describe("CareNote charting adapter", () => {
       draft: { text: "잘잠", recordedAt: "2026-09-23T22:00:00+09:00", category: "PRN" },
       evidence: [],
     });
-    expect(result?.narrative).toContain("S: 잘잠");
-    expect(result?.narrative).toContain("O: [직접 확인·작성 필요]");
+    expect(result?.narrative).toBe("S: 잘 잤음.");
     expect(result?.sourceEvidenceIds).toEqual([]);
   });
 });

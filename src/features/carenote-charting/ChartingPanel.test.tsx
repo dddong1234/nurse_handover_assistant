@@ -23,30 +23,69 @@ function Harness({ onAddNote = () => {}, ...overrides }: Partial<ChartingPanelPr
 afterEach(cleanup);
 
 describe("ChartingPanel explicit authorship", () => {
+  it("invalidates source provenance after direct editing instead of retaining the accepted links", async () => {
+    const user = userEvent.setup();
+    const added: CareNoteInput[] = [];
+    render(<Harness evidence={[{ ...medication, id: "prior-sleep", text: "잠 못잠" }]} onAddNote={(note) => added.push(note)} />);
+    await user.click(screen.getByRole("button", { name: "추천 채택" }));
+    await user.click(screen.getByRole("button", { name: "기록 추가" }));
+    expect(added[0].sourceEvidenceIds).toEqual(["prior-sleep"]);
+    const editor = screen.getByRole("textbox", { name: "간호기록 입력" });
+    fireEvent.change(editor, { target: { value: "S: 간호사가 직접 수정한 기록." } });
+    await user.click(screen.getByRole("button", { name: "기록 추가" }));
+    expect(added[1].sourceEvidenceIds).toEqual([]);
+    expect(added[1].narrative).toBe("S: 간호사가 직접 수정한 기록.");
+    expect(screen.queryByRole("region", { name: "입력 원문" })).not.toBeInTheDocument();
+  });
+  it("keeps an accepted objective-only note editable and addable without generating other fields", async () => {
+    const user = userEvent.setup();
+    const added: CareNoteInput[] = [];
+    render(<Harness draft={{ ...initialDraft, text: "배액 30cc", category: "일반" }} onAddNote={(note) => added.push(note)} />);
+    await user.click(screen.getByRole("button", { name: "추천 채택" }));
+    const editor = screen.getByRole("textbox", { name: "간호기록 입력" });
+    expect(editor).toHaveValue("O: 배액량 30cc.");
+    fireEvent.change(editor, { target: { value: "O: 배액량 35cc." } });
+    editor.focus();
+    await user.keyboard("{Tab}");
+    expect(editor).toHaveValue("O: 배액량 35cc.");
+    await user.click(screen.getByRole("button", { name: "기록 추가" }));
+    expect(added[0].narrative).toBe("O: 배액량 35cc.");
+  });
+  it("still blocks a pasted unresolved placeholder without changing the input", async () => {
+    const user = userEvent.setup();
+    const added: CareNoteInput[] = [];
+    const text = "S: 잘 잤음.\nO: [직접 확인·작성 필요]";
+    render(<Harness draft={{ ...initialDraft, text }} onAddNote={(note) => added.push(note)} />);
+    await user.click(screen.getByRole("button", { name: "기록 추가" }));
+    expect(added).toHaveLength(0);
+    expect(screen.getByRole("alert")).toHaveTextContent("추가할 수 없습니다");
+    expect(screen.getByRole("textbox", { name: "간호기록 입력" })).toHaveValue(text);
+  });
   it("keeps charting copy concise and shows the reset boundary near add", () => {
     render(<Harness />);
 
     expect(screen.getByRole("heading", { name: "간호기록" })).toBeInTheDocument();
     expect(screen.getByText("기록 기반 추천")).toBeInTheDocument();
-    expect(screen.getByText("입력에 없는 SOAP 항목은 직접 확인해 작성하세요.")).toBeInTheDocument();
+    expect(screen.getByText("짧은 입력을 기록 문장으로 다듬습니다.")).toBeInTheDocument();
     expect(screen.getByText("세션 기록 · 새로고침 시 초기화 · 미서명")).toBeInTheDocument();
     expect(screen.queryByText("NURSING NOTES")).not.toBeInTheDocument();
     expect(screen.queryByText("지원하는 단문 사실만 옮깁니다.")).not.toBeInTheDocument();
   });
 
-  it("does not add an accepted suggestion while unprovided sections remain incomplete", async () => {
+  it("lets the nurse accept and explicitly add a supported phrase without filling three invented fields", async () => {
     const user = userEvent.setup();
     const added: CareNoteInput[] = [];
     render(<Harness onAddNote={(note) => added.push(note)} />);
-    await user.click(screen.getByRole("button", { name: "추천 채택" }));
-    await user.click(screen.getByRole("button", { name: "기록 추가" }));
-    expect(added).toHaveLength(0);
-    expect(screen.getByRole("alert")).toHaveTextContent("직접");
     const editor = screen.getByRole("textbox", { name: "간호기록 입력" });
-    expect((editor as HTMLTextAreaElement).value).toContain("[직접 확인·작성 필요]");
-    fireEvent.change(editor, { target: { value: nurseCompletedText } });
+    expect(editor).toHaveValue("잠 못잠");
+    expect(added).toHaveLength(0);
+    await user.click(screen.getByRole("button", { name: "추천 채택" }));
+    expect(editor).toHaveValue("S: 잠을 이루기 어려움.");
+    expect(screen.getByRole("region", { name: "입력 원문" })).toHaveTextContent("잠 못잠");
+    expect(added).toHaveLength(0);
     await user.click(screen.getByRole("button", { name: "기록 추가" }));
-    expect(added[0].narrative).toBe(nurseCompletedText);
+    expect(added[0].narrative).toBe("S: 잠을 이루기 어려움.");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
   it("keeps every word of an unsupported compound observation on Tab", async () => {
     const user = userEvent.setup();
@@ -77,7 +116,6 @@ describe("ChartingPanel explicit authorship", () => {
     render(<Harness onAddNote={() => { throw new Error("outside shift"); }} />);
     await user.click(screen.getByRole("button", { name: "추천 채택" }));
     const editor = screen.getByRole("textbox", { name: "간호기록 입력" });
-    fireEvent.change(editor, { target: { value: nurseCompletedText } });
     const acceptedText = (editor as HTMLTextAreaElement).value;
     await user.click(screen.getByRole("button", { name: "기록 추가" }));
     expect(screen.getByRole("alert")).toHaveTextContent("입력은 유지됩니다");
@@ -199,7 +237,7 @@ describe("ChartingPanel explicit authorship", () => {
     expect(added).toHaveLength(0);
     await user.click(editor);
     await user.keyboard("{Tab}");
-    expect((editor as HTMLTextAreaElement).value).toContain("S: 잠 못잠");
+    expect((editor as HTMLTextAreaElement).value).toContain("S: 잠을 이루기 어려움.");
     expect((editor as HTMLTextAreaElement).value).not.toContain("찾지 못했습니다");
     expect(added).toHaveLength(0);
     fireEvent.change(editor, { target: { value: nurseCompletedText } });

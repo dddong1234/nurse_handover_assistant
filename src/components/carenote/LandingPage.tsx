@@ -172,23 +172,20 @@ function ChartingPanel() {
       <div className={styles.panelHeading}>
         <div>
           <span className={styles.panelLabel}>간호기록 초안</span>
-          <h3>입력한 사실에서 기록을 시작합니다.</h3>
+          <h3>입력한 사실을 문장으로 정리합니다.</h3>
         </div>
         <span className={styles.panelCount}>SOAP</span>
       </div>
       <div className={styles.chartingSource}>
         <span>입력한 사실</span>
         <strong>통증 3점</strong>
-        <small>규칙 기반 결과 · S에만 표시</small>
+        <small>원본 입력</small>
       </div>
-      <div className={styles.soapList} aria-label="SOAP 기록 초안">
-        <div className={styles.soapRow}><span>S</span><strong>통증 3점</strong></div>
-        <div className={styles.soapRow}><span>O</span><em>[직접 확인·작성 필요]</em></div>
-        <div className={styles.soapRow}><span>A</span><em>[직접 확인·작성 필요]</em></div>
-        <div className={styles.soapRow}><span>P</span><em>[직접 확인·작성 필요]</em></div>
+      <div className={styles.soapList} aria-label="통증 3점 입력의 기록 문장화">
+        <div className={styles.soapRow}><span>S:</span><strong>통증 정도 3점.</strong></div>
       </div>
       <div className={styles.chartingFooter}>
-        <span>빈 항목은 직접 작성 후 명시적으로 추가합니다.</span>
+        <span>검토 후 필요한 내용만 기록 추가합니다.</span>
         <a href="/workspace?module=charting">차팅 화면 열기 <ArrowIcon /></a>
       </div>
     </div>
@@ -325,15 +322,12 @@ function HandoverDiagram() {
 
 function ChartingDiagram() {
   return (
-    <div className={`${styles.editorialDiagram} ${styles.chartingDiagram}`} aria-label="통증 3점 SOAP 기록 예시">
-      <div className={styles.diagramTopline}><span>간호기록 초안</span><strong>직접 검토</strong></div>
+    <div className={`${styles.editorialDiagram} ${styles.chartingDiagram}`} aria-label="통증 3점 입력을 S 문장으로 정리한 예시">
+      <div className={styles.diagramTopline}><span>간호기록 초안</span><strong>검토 후 기록 추가</strong></div>
       <div className={styles.soapDiagram}>
-        <div><span>S</span><strong>통증 3점</strong><small>입력한 사실</small></div>
-        <div><span>O</span><em>[직접 확인·작성 필요]</em></div>
-        <div><span>A</span><em>[직접 확인·작성 필요]</em></div>
-        <div><span>P</span><em>[직접 확인·작성 필요]</em></div>
+        <div><span>S:</span><strong>통증 정도 3점.</strong><small>입력 → 문장화</small></div>
       </div>
-      <div className={styles.diagramCaption}><span>빈 항목은 직접 작성 후 추가</span><CheckIcon /></div>
+      <div className={styles.diagramCaption}><span>검토 후 필요한 내용만 기록 추가</span><CheckIcon /></div>
     </div>
   );
 }
@@ -415,7 +409,7 @@ export function LandingPage() {
             <div className={styles.editorialCopy}>
               <span className={styles.sectionRule} aria-hidden="true" />
               <h2 id="charting-heading">입력한 사실로,<br /><span>기록을 시작합니다.</span></h2>
-              <p>통증 3점은 S에만 표시됩니다. O/A/P는 간호사가 직접 확인하고 작성한 뒤 명시적으로 추가합니다.</p>
+              <p>입력한 통증 3점은 S 문장으로 정리되고, 사용자가 확인한 내용만 필요에 따라 직접 추가합니다.</p>
               <a className={styles.textLink} href="/workspace?module=charting">간호기록 화면 열기 <ArrowIcon /></a>
             </div>
             <ChartingDiagram />
@@ -437,7 +431,7 @@ export function LandingPage() {
               </details>
               <details>
                 <summary><span>요약이나 차팅을 AI가 자동으로 결정하나요?</span><span className={styles.summaryIcon} aria-hidden="true" /></summary>
-                <p>아니요. 현재 데모의 확인 항목과 차팅 초안은 결정론적 규칙으로 동작합니다. 선택형 AI 연결은 활성화되어 있지 않으며, 미입력 항목을 직접 작성하고 ‘기록 추가’를 눌러야 추가됩니다.</p>
+                <p>아니요. 현재 데모의 확인 항목과 차팅 초안은 결정론적 규칙으로 동작합니다. 선택형 AI 연결은 활성화되어 있지 않으며, 원본 입력과 문장화를 확인한 뒤 필요한 내용을 직접 작성해 명시적으로 추가할 수 있습니다.</p>
               </details>
               <details>
                 <summary><span>인수인계와 차팅은 어떻게 연결되나요?</span><span className={styles.summaryIcon} aria-hidden="true" /></summary>

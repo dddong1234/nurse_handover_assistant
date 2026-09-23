@@ -42,8 +42,11 @@ describe("LandingPage", () => {
     await user.click(tabs[1]);
     await user.keyboard("{ArrowRight}");
     expect(tabs[2]).toHaveAttribute("aria-selected", "true");
-    expect(within(panel).getAllByText("통증 3점")).toHaveLength(2);
-    expect(within(panel).getAllByText("[직접 확인·작성 필요]")).toHaveLength(3);
+    expect(within(panel).getAllByText("통증 3점")).toHaveLength(1);
+    expect(within(panel).getByText("S:")).toBeInTheDocument();
+    expect(within(panel).getByText("통증 정도 3점.")).toBeInTheDocument();
+    expect(within(panel).getByText(/검토 후 필요한 내용만 기록 추가/)).toBeInTheDocument();
+    expect(within(panel).queryByText("[직접 확인·작성 필요]")).not.toBeInTheDocument();
 
     await user.keyboard("{Home}");
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
@@ -56,6 +59,8 @@ describe("LandingPage", () => {
 
     expect(screen.getByText(/결정론적 규칙으로 동작합니다/)).toBeInTheDocument();
     expect(screen.getByText(/선택형 AI 연결은 활성화되어 있지 않/)).toBeInTheDocument();
+    expect(screen.getByText(/필요한 내용을 직접 작성해 명시적으로 추가할 수 있습니다/)).toBeInTheDocument();
+    expect(screen.queryByText(/미입력 항목을 직접 작성하고/)).not.toBeInTheDocument();
 
     const storage = screen.getByText("저장되는 환자 데이터가 있나요?").closest("details");
     expect(storage).not.toBeNull();

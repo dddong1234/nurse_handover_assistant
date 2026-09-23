@@ -41,7 +41,8 @@ test("landing product preview supports keyboard navigation and factual panels", 
   await expect(charting).toBeFocused();
   await charting.press("Enter");
   await expect(page.getByRole("tabpanel")).toContainText("통증 3점");
-  await expect(page.getByRole("tabpanel")).toContainText("직접 확인·작성 필요");
+  await expect(page.getByRole("tabpanel")).toContainText("통증 정도 3점.");
+  await expect(page.getByRole("tabpanel")).not.toContainText("직접 확인·작성 필요");
   await charting.press("Home");
   await expect(readiness).toBeFocused();
   await readiness.press("Enter");
