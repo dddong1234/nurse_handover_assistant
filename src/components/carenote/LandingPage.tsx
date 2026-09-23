@@ -1,73 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 
 import styles from "./LandingPage.module.css";
 
-type DemoTab = "handover" | "charting";
+type PreviewTab = "readiness" | "evidence" | "charting";
 
-type DemoContent = {
+type PreviewTabDefinition = {
+  id: PreviewTab;
   label: string;
-  title: string;
-  description: string;
-  cta: string;
-  href: string;
-  context: string;
-  trace: Array<{
-    time: string;
-    source: string;
-    detail: string;
-    status: string;
-  }>;
-  soap: Array<{
-    key: string;
-    value: string;
-  }>;
 };
 
-const demoContent: Record<DemoTab, DemoContent> = {
-  handover: {
-    label: "인수인계",
-    title: "이번 근무 확인 항목을 먼저 봅니다.",
-    description:
-      "이번 근무의 요청과 검사 상태를 먼저 모아 보여주고, 각 항목을 원본 기록과 대조합니다.",
-    cta: "인수인계 화면 열기",
-    href: "/workspace",
-    context: "합성 환자 P001 · 홍길동 · 301호 · 09:00 기록 기준",
-    trace: [
-      { time: "07:40", source: "인수인계 요청", detail: "회진 전 발열 경과 전달", status: "요청" },
-      { time: "08:20", source: "CBC 결과", detail: "WBC 12.1 ×10³/μL", status: "결과" },
-      { time: "11:00", source: "Chest AP", detail: "검사 일정 예정", status: "일정" },
-    ],
-    soap: [
-      { key: "S", value: "인후통 호소 · 미열 지속" },
-      { key: "O", value: "체온 38.2°C · 혈압 150/95 mmHg" },
-      { key: "A", value: "원본 기록과 함께 확인" },
-      { key: "P", value: "회진 전 발열 경과 전달" },
-    ],
-  },
-  charting: {
-    label: "차팅",
-    title: "입력한 사실을 SOAP으로 이어갑니다.",
-    description:
-      "통증 3점 입력은 S에만 표시됩니다. O/A/P는 간호사가 직접 확인·작성한 뒤 명시적으로 추가합니다.",
-    cta: "차팅 화면 열기",
-    href: "/workspace?module=charting",
-    context: "합성 환자 P001 · 홍길동 · 301호 · 09:01 기록 초안",
-    trace: [
-      { time: "09:01", source: "간호사 입력", detail: "통증 3점", status: "입력" },
-      { time: "09:01", source: "규칙 기반 결과", detail: "S: 통증 3점", status: "표시" },
-      { time: "09:01", source: "간호사 작성", detail: "O/A/P 직접 확인·작성 필요", status: "대기" },
-    ],
-    soap: [
-      { key: "S", value: "통증 3점" },
-      { key: "O", value: "[직접 확인·작성 필요]" },
-      { key: "A", value: "[직접 확인·작성 필요]" },
-      { key: "P", value: "[직접 확인·작성 필요]" },
-    ],
-  },
+type ReadinessRow = {
+  time: string;
+  title: string;
+  detail: string;
+  source: string;
 };
+
+const previewTabs: PreviewTabDefinition[] = [
+  { id: "readiness", label: "근무 준비" },
+  { id: "evidence", label: "원본 근거" },
+  { id: "charting", label: "간호기록" },
+];
+
+const readinessRows: ReadinessRow[] = [
+  {
+    time: "07:40",
+    title: "회진 전 발열 경과 전달",
+    detail: "10:30까지 전달 요청",
+    source: "전달 요청 원본",
+  },
+  {
+    time: "08:20",
+    title: "CBC 결과 확인",
+    detail: "WBC 12.1 ×10³/μL",
+    source: "CBC 원본",
+  },
+  {
+    time: "11:00",
+    title: "Chest AP 일정 확인",
+    detail: "검사 예정",
+    source: "Chest AP 원본",
+  },
+];
 
 function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
@@ -93,242 +70,296 @@ function ArrowIcon({ direction = "right" }: { direction?: "right" | "down" }) {
   );
 }
 
-function HandoverPreview() {
+function CheckIcon() {
   return (
-    <div className={`${styles.featureVisual} ${styles.featureVisualHandover}`} aria-label="인수인계 예시 화면">
-      <div className={styles.visualTopline}>
-        <span className={styles.visualWindowTitle}>인수인계 준비</span>
-        <span className={styles.exampleLabel}>예시 화면</span>
-      </div>
-      <div className={styles.visualPatientLine}>
-        <span className={styles.visualPatientDot} />
-        <strong>홍길동 · P001</strong>
-        <span>301호 · 합성 환자</span>
-        <span className={styles.visualTime}>09:00</span>
-      </div>
-      <div className={styles.visualSectionLabel}>
-        <span>이번 근무 확인 항목</span>
-        <span className={styles.seamLabel}>원본 대조</span>
-        <span>기록 근거</span>
-      </div>
-      <div className={styles.miniChangeList}>
-        <div className={styles.miniChangeRow}>
-          <span className={styles.changeBar} />
-          <div>
-            <strong>회진 전 발열 경과</strong>
-            <span>요청 07:40 · 10:30까지</span>
-          </div>
-          <span className={styles.changeArrow}>↗</span>
-          <div className={styles.currentValue}>
-            <strong>전달 요청</strong>
-            <span>원본 확인</span>
-          </div>
-          <span className={styles.sourceChip}>REQ-P001-ROUND-1</span>
-        </div>
-        <div className={styles.miniChangeRow}>
-          <span className={`${styles.changeBar} ${styles.changeBarWatch}`} />
-          <div>
-            <strong>CBC 결과</strong>
-            <span>08:20 결과</span>
-          </div>
-          <span className={styles.changeArrow}>↗</span>
-          <div className={styles.currentValue}>
-            <strong>WBC 12.1</strong>
-            <span>검사 결과</span>
-          </div>
-          <span className={styles.sourceChip}>INV-P001-CBC</span>
-        </div>
-      </div>
-      <div className={styles.visualFooter}>
-        <span><i className={styles.footerDot} /> 원본 기록 대조</span>
-        <span>확인 항목 3</span>
-      </div>
-    </div>
+    <svg className={styles.checkIcon} viewBox="0 0 16 16" aria-hidden="true">
+      <path d="m3.2 8.3 3.1 3 6.5-6.6" />
+    </svg>
   );
 }
 
-function ChartingPreview() {
+function PreviewContext() {
   return (
-    <div className={`${styles.featureVisual} ${styles.featureVisualCharting}`} aria-label="차팅 예시 화면">
-      <div className={styles.visualTopline}>
-        <span className={styles.visualWindowTitle}>간호기록 · SOAP</span>
-        <span className={styles.exampleLabel}>예시 화면</span>
-      </div>
-      <div className={styles.visualPatientLine}>
-        <span className={styles.visualPatientDot} />
-        <strong>홍길동 · P001</strong>
-        <span>통증 관찰</span>
-        <span className={styles.visualTime}>09:01</span>
-      </div>
-      <div className={styles.soapMiniList}>
-        <div className={styles.soapMiniRow}>
-          <span className={styles.soapKey}>S</span>
-          <span>통증 3점</span>
-          <span className={styles.soapTrace}>입력</span>
-        </div>
-        <div className={styles.soapMiniRowMuted}>
-          <span className={styles.soapKey}>O</span>
-          <span>[직접 확인·작성 필요]</span>
-          <span className={styles.soapTrace}>직접 작성</span>
-        </div>
-        <div className={styles.soapMiniRowMuted}>
-          <span className={styles.soapKey}>A</span>
-          <span>[직접 확인·작성 필요]</span>
-          <span className={styles.soapTrace}>직접 작성</span>
-        </div>
-        <div className={styles.soapMiniRowMuted}>
-          <span className={styles.soapKey}>P</span>
-          <span>[직접 확인·작성 필요]</span>
-          <span className={styles.soapTrace}>직접 작성</span>
-        </div>
-      </div>
-      <div className={styles.chartingReviewBar}>
-        <span><i className={styles.reviewCheck} /> 규칙 기반 결과 · S만 표시 · O/A/P 직접 작성 후 추가</span>
-        <span className={styles.reviewAction}>빈 항목 추가 불가</span>
-      </div>
-    </div>
-  );
-}
-
-function ProductMockup() {
-  return (
-    <div className={styles.productStage}>
-      <div className={styles.productStageNote}>
-        <span className={styles.noteRule} />
-        <span>예시 화면</span>
-      </div>
-      <div className={styles.productWindow}>
-        <div className={styles.windowTopbar}>
-          <div className={styles.windowBrand}>
-            <BrandMark compact />
-            <span>CareNote</span>
-          </div>
-          <span className={styles.windowTime}>09:00 KST</span>
-        </div>
-        <div className={styles.windowLayout}>
-          <aside className={styles.windowRail} aria-label="예시 화면 탐색">
-            <span className={`${styles.railIcon} ${styles.railIconActive}`} aria-hidden="true">⌁</span>
-            <span className={styles.railIcon} aria-hidden="true">⌑</span>
-            <span className={styles.railIcon} aria-hidden="true">＋</span>
-            <span className={styles.railIcon} aria-hidden="true">⋮</span>
-          </aside>
-          <div className={styles.windowContent}>
-            <div className={styles.windowContextHeader}>
-              <div>
-                <h2>P001 · 홍길동 <span>301호 · 합성 환자</span></h2>
-              </div>
-              <span className={styles.contextStatus}><i /> 검토 중</span>
-            </div>
-            <div className={styles.windowTabs}>
-              <span className={styles.windowTabActive}>인수인계</span>
-              <span>기록 타임라인</span>
-              <span>차팅</span>
-            </div>
-            <div className={styles.windowColumns}>
-              <div className={styles.windowMainColumn}>
-                <div className={styles.windowSectionHeader}>
-                  <span>이번 근무 확인 항목</span>
-                  <span className={styles.windowSectionCount}>03</span>
-                </div>
-                <div className={styles.windowDeltaRow}>
-                  <div className={styles.deltaMeta}><span>회진 전 발열 경과</span><small>REQ-P001-ROUND-1</small></div>
-                  <span className={styles.deltaFrom}>07:40 요청</span>
-                  <span className={styles.deltaSeam}>↗</span>
-                  <span className={styles.deltaTo}>10:30까지</span>
-                </div>
-                <div className={styles.windowDeltaRow}>
-                  <div className={styles.deltaMeta}><span>CBC</span><small>INV-P001-CBC</small></div>
-                  <span className={styles.deltaFrom}>검사 요청</span>
-                  <span className={styles.deltaSeam}>↗</span>
-                  <span className={styles.deltaTo}>WBC 12.1</span>
-                </div>
-                <div className={styles.windowDeltaRowMuted}>
-                  <div className={styles.deltaMeta}><span>Chest AP</span><small>INV-P001-CXR</small></div>
-                  <span className={styles.deltaFrom}>—</span>
-                  <span className={styles.deltaSeam}>↗</span>
-                  <span className={styles.deltaTo}>11:00 예정</span>
-                </div>
-              </div>
-              <div className={styles.windowSideColumn}>
-                <span className={styles.sideColumnLabel}>원본 기록 대조</span>
-                <div className={styles.taskItem}><span className={styles.taskMarker}>01</span><span>회진 요청 확인</span></div>
-                <div className={styles.taskItem}><span className={styles.taskMarker}>02</span><span>CBC 결과 확인</span></div>
-                <div className={styles.taskItemMuted}><span className={styles.taskMarkerMuted}>03</span><span>Chest AP 일정 확인</span></div>
-              </div>
-            </div>
-            <div className={styles.windowBottomRow}>
-              <span><i className={styles.bottomDot} /> 모든 확인 항목은 원본 기록으로 돌아갈 수 있습니다.</span>
-              <span>간호사 직접 검토</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className={styles.productStageCallout}>
-        <span className={styles.calloutLine} />
-        <span>환자 맥락을 유지한 채<br />기록의 흐름을 읽습니다.</span>
-      </div>
-    </div>
-  );
-}
-
-function DemoStory({ activeTab }: { activeTab: DemoTab }) {
-  const content = demoContent[activeTab];
-
-  return (
-    <div className={styles.demoPanel}>
-      <div className={styles.demoPanelHeader}>
+    <div className={styles.previewContext}>
+      <div className={styles.patientIdentity}>
+        <span className={styles.patientDot} aria-hidden="true" />
         <div>
-          <h3>{content.title}</h3>
-          <p>{content.description}</p>
+          <strong>P001 · 홍길동</strong>
+          <span>301호 · 합성 환자</span>
         </div>
       </div>
-      <div className={styles.demoContextBar}>
-        <span className={styles.demoContextDot} />
-        <span>{content.context}</span>
-      </div>
-      <div className={styles.demoBody}>
-        <div className={styles.traceColumn}>
-          <div className={styles.demoSubhead}>
-            <span>기록 근거</span>
-          </div>
-          <div className={styles.traceList}>
-            {content.trace.map((row, index) => (
-              <div className={styles.traceRow} key={`${activeTab}-${row.time}-${row.source}-${index}`}>
-                <time>{row.time}</time>
-                <div className={styles.traceDetail}>
-                  <strong>{row.detail}</strong>
-                  <span>{row.source}</span>
-                </div>
-                <span className={styles.traceStatus}>{row.status}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className={styles.soapColumn}>
-          <div className={styles.demoSubhead}>
-            <span>{activeTab === "handover" ? "간호사가 이어받을 맥락" : "SOAP 기록 초안"}</span>
-          </div>
-          <div className={styles.soapList}>
-            {content.soap.map((item) => (
-              <div className={styles.soapRow} key={`${activeTab}-${item.key}`}>
-                <span className={styles.soapRowKey}>{item.key}</span>
-                <span>{item.value}</span>
-              </div>
-            ))}
-          </div>
-          <div className={styles.reviewNote}><i className={styles.reviewCheck} /> 규칙 기반 결과 · S만 표시 · O/A/P 직접 작성 · 빈 항목 추가 불가</div>
-        </div>
-      </div>
-      <div className={styles.demoPanelFooter}>
-        <a href={content.href}>{content.cta}<ArrowIcon /></a>
+      <div className={styles.previewContextMeta}>
+        <span>09:00 기록 기준</span>
+        <span className={styles.reviewStatus}><i aria-hidden="true" /> 간호사 검토</span>
       </div>
     </div>
+  );
+}
+
+function ReadinessPanel() {
+  return (
+    <div className={styles.panelContent}>
+      <div className={styles.panelHeading}>
+        <div>
+          <span className={styles.panelLabel}>이번 근무 확인 항목</span>
+          <h3>확인할 일부터 먼저 봅니다.</h3>
+          <p className={styles.panelSubline}>비교 기준 · 직전 교대·휴무 기간 중 보유 기록 기준 선택</p>
+        </div>
+        <span className={styles.panelCount}>3건</span>
+      </div>
+      <div className={styles.readinessList} aria-label="이번 근무 확인 항목">
+        {readinessRows.map((row) => (
+          <div className={styles.readinessRow} key={row.time}>
+            <time>{row.time}</time>
+            <div className={styles.rowMain}>
+              <strong>{row.title}</strong>
+              <span>{row.detail}</span>
+            </div>
+            <div className={styles.rowSource}>
+              <span>{row.source}</span>
+              <small>원본 대조</small>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className={styles.panelNote}>
+        <CheckIcon />
+        <span>확인 항목은 원본 기록의 시간과 출처로 이어집니다.</span>
+      </div>
+    </div>
+  );
+}
+
+function EvidencePanel() {
+  return (
+    <div className={styles.panelContent}>
+      <div className={styles.panelHeading}>
+        <div>
+          <span className={styles.panelLabel}>원본 기록 대조</span>
+          <h3>한 줄의 근거를 원본 가까이에서 봅니다.</h3>
+        </div>
+        <span className={styles.panelCount}>CBC</span>
+      </div>
+      <div className={styles.evidenceFocus}>
+        <div className={styles.evidenceFocusHeader}>
+          <span className={styles.evidenceSignal}>현재 기록</span>
+          <span>08:20 기록</span>
+        </div>
+        <strong>WBC 12.1 ×10³/μL</strong>
+        <span className={styles.evidencePath}>원본 · INV-P001-CBC</span>
+      </div>
+      <div className={styles.evidenceList} aria-label="연결된 원본 기록">
+        <div className={styles.evidenceRow}>
+          <span>07:40</span>
+          <div><strong>회진 전 발열 경과 전달</strong><small>전달 요청 원본</small></div>
+        </div>
+        <div className={styles.evidenceRow}>
+          <span>11:00 예정</span>
+          <div><strong>Chest AP 일정 확인</strong><small>Chest AP 원본</small></div>
+        </div>
+      </div>
+      <div className={styles.panelNote}>
+        <CheckIcon />
+        <span>원본을 확인한 뒤 간호사가 다음 기록을 결정합니다.</span>
+      </div>
+    </div>
+  );
+}
+
+function ChartingPanel() {
+  return (
+    <div className={styles.panelContent}>
+      <div className={styles.panelHeading}>
+        <div>
+          <span className={styles.panelLabel}>간호기록 초안</span>
+          <h3>입력한 사실에서 기록을 시작합니다.</h3>
+        </div>
+        <span className={styles.panelCount}>SOAP</span>
+      </div>
+      <div className={styles.chartingSource}>
+        <span>입력한 사실</span>
+        <strong>통증 3점</strong>
+        <small>규칙 기반 결과 · S에만 표시</small>
+      </div>
+      <div className={styles.soapList} aria-label="SOAP 기록 초안">
+        <div className={styles.soapRow}><span>S</span><strong>통증 3점</strong></div>
+        <div className={styles.soapRow}><span>O</span><em>[직접 확인·작성 필요]</em></div>
+        <div className={styles.soapRow}><span>A</span><em>[직접 확인·작성 필요]</em></div>
+        <div className={styles.soapRow}><span>P</span><em>[직접 확인·작성 필요]</em></div>
+      </div>
+      <div className={styles.chartingFooter}>
+        <span>빈 항목은 직접 작성 후 명시적으로 추가합니다.</span>
+        <a href="/workspace?module=charting">차팅 화면 열기 <ArrowIcon /></a>
+      </div>
+    </div>
+  );
+}
+
+function PreviewPanel({ activeTab }: { activeTab: PreviewTab }) {
+  if (activeTab === "evidence") return <EvidencePanel />;
+  if (activeTab === "charting") return <ChartingPanel />;
+  return <ReadinessPanel />;
+}
+
+function ProductPreview() {
+  const [activeTab, setActiveTab] = useState<PreviewTab>("readiness");
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const activeIndex = previewTabs.findIndex((tab) => tab.id === activeTab);
+
+  const focusTab = (index: number) => {
+    const nextIndex = (index + previewTabs.length) % previewTabs.length;
+    setActiveTab(previewTabs[nextIndex].id);
+    tabRefs.current[nextIndex]?.focus();
+  };
+
+  const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      focusTab(index + 1);
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      focusTab(index - 1);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      focusTab(0);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      focusTab(previewTabs.length - 1);
+    }
+  };
+
+  const activeTabLabel = previewTabs[activeIndex].label;
+
+  return (
+      <div className={styles.previewStage} id="product">
+      <div className={styles.previewStageLabel}>
+        <span className={styles.stageRule} aria-hidden="true" />
+        <span>제품 미리보기</span>
+      </div>
+      <div className={styles.previewShell}>
+        <div className={styles.previewTopbar}>
+          <div className={styles.previewBrand}><BrandMark compact /><strong>CareNote</strong></div>
+          <span className={styles.previewTopbarTitle}>간호 업무공간</span>
+          <span className={styles.previewTopbarTime}>09:00</span>
+        </div>
+        <PreviewContext />
+        <div className={styles.previewTabs} role="tablist" aria-label="제품 미리보기">
+          {previewTabs.map((tab, index) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                aria-controls="preview-panel"
+                aria-selected={isActive}
+                className={isActive ? styles.previewTabActive : styles.previewTab}
+                id={`preview-tab-${tab.id}`}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                onKeyDown={(event) => handleTabKeyDown(event, index)}
+                ref={(element) => { tabRefs.current[index] = element; }}
+                role="tab"
+                tabIndex={isActive ? 0 : -1}
+                type="button"
+              >
+                <span>{tab.label}</span>
+                {isActive && <span className={styles.tabIndicator} aria-hidden="true" />}
+              </button>
+            );
+          })}
+        </div>
+        <div
+          aria-labelledby={`preview-tab-${activeTab}`}
+          className={styles.previewPanel}
+          id="preview-panel"
+          role="tabpanel"
+          aria-live="polite"
+        >
+          <PreviewPanel activeTab={activeTab} />
+        </div>
+        <div className={styles.previewBottomline}>
+          <span><i aria-hidden="true" /> {activeTabLabel} · 간호사 검토 전</span>
+          <span>합성 환자 P001</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BenefitStrip() {
+  return (
+    <section className={styles.benefitStrip} aria-label="CareNote가 연결하는 업무">
+      <div className={styles.container}>
+        <div className={styles.benefitItem}>
+          <span className={styles.benefitIcon}><CheckIcon /></span>
+          <div><strong>근무 준비</strong><span>확인할 항목을 먼저 봅니다.</span></div>
+        </div>
+        <div className={styles.benefitItem}>
+          <span className={styles.benefitIcon}><CheckIcon /></span>
+          <div><strong>원본 대조</strong><span>시간과 출처를 가까이 확인합니다.</span></div>
+        </div>
+        <div className={styles.benefitItem}>
+          <span className={styles.benefitIcon}><CheckIcon /></span>
+          <div><strong>간호기록</strong><span>입력한 사실에서 직접 이어갑니다.</span></div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HandoverDiagram() {
+  return (
+    <div className={styles.editorialDiagram} aria-label="이번 근무 확인 항목과 원본 기록 예시">
+      <div className={styles.diagramTopline}><span>이번 근무</span><strong>3건</strong></div>
+      <div className={styles.diagramTimeline}>
+        {readinessRows.map((row) => (
+          <div className={styles.diagramTimelineRow} key={row.time}>
+            <time>{row.time}</time>
+            <span className={styles.timelineDot} aria-hidden="true" />
+            <div><strong>{row.title}</strong><span>{row.detail}</span></div>
+          </div>
+        ))}
+      </div>
+      <div className={styles.diagramCaption}><span>원본 기록으로 연결</span><ArrowIcon /></div>
+    </div>
+  );
+}
+
+function ChartingDiagram() {
+  return (
+    <div className={`${styles.editorialDiagram} ${styles.chartingDiagram}`} aria-label="통증 3점 SOAP 기록 예시">
+      <div className={styles.diagramTopline}><span>간호기록 초안</span><strong>직접 검토</strong></div>
+      <div className={styles.soapDiagram}>
+        <div><span>S</span><strong>통증 3점</strong><small>입력한 사실</small></div>
+        <div><span>O</span><em>[직접 확인·작성 필요]</em></div>
+        <div><span>A</span><em>[직접 확인·작성 필요]</em></div>
+        <div><span>P</span><em>[직접 확인·작성 필요]</em></div>
+      </div>
+      <div className={styles.diagramCaption}><span>빈 항목은 직접 작성 후 추가</span><CheckIcon /></div>
+    </div>
+  );
+}
+
+function WorkflowSteps() {
+  return (
+    <section className={styles.workflowSteps} id="workflow" aria-labelledby="workflow-heading">
+      <div className={styles.container}>
+        <div className={styles.sectionHeadingCompact}>
+          <span className={styles.sectionRule} aria-hidden="true" />
+          <h2 id="workflow-heading">확인하고, 대조하고, 기록합니다.</h2>
+          <p>같은 환자 맥락을 따라 다음 업무로 자연스럽게 이어집니다.</p>
+        </div>
+        <div className={styles.stepList}>
+          <div className={styles.stepItem}><strong>확인</strong><span>이번 근무 항목을 먼저 봅니다.</span></div>
+          <ArrowIcon />
+          <div className={styles.stepItem}><strong>대조</strong><span>원본 기록의 시간과 출처를 확인합니다.</span></div>
+          <ArrowIcon />
+          <div className={styles.stepItem}><strong>기록</strong><span>확인한 사실을 직접 완성합니다.</span></div>
+        </div>
+      </div>
+    </section>
   );
 }
 
 export function LandingPage() {
-  const [activeTab, setActiveTab] = useState<DemoTab>("handover");
-
   return (
     <div className={styles.landing}>
       <a className={styles.skipLink} href="#main-content">본문으로 바로가기</a>
@@ -343,143 +374,61 @@ export function LandingPage() {
             <a href="#workflow">업무 흐름</a>
             <a href="#faq">자주 묻는 질문</a>
           </nav>
-          <a className={styles.headerCta} href="/workspace">
-            체험하기 <ArrowIcon />
-          </a>
+          <a className={styles.headerCta} href="/workspace">데모 체험하기 <ArrowIcon /></a>
         </div>
       </header>
 
       <main id="main-content">
-        <section className={styles.hero} id="product" aria-labelledby="hero-heading">
-          <div className={`${styles.container} ${styles.heroGrid}`}>
+        <section className={styles.hero} aria-labelledby="hero-heading">
+          <div className={styles.container}>
             <div className={styles.heroCopy}>
-              <h1 id="hero-heading">기록을 잇고,<br /><span>간호에 집중하다.</span></h1>
+              <h1 id="hero-heading">인수인계와 간호기록,<br /><span>이제 한 곳에서.</span></h1>
               <p className={styles.heroLead}>
-                CareNote는 인수인계 준비와 간호기록을<br className={styles.desktopBreak} />
-                같은 환자 맥락 안에서 이어주는 작업공간입니다.
+                근무 중 확인할 변화부터 원본 기록, 간호기록 작성까지.<br className={styles.desktopBreak} />
+                {" "}같은 환자 맥락으로 이어집니다.
               </p>
               <div className={styles.heroActions}>
-                <a className={styles.primaryButton} href="/workspace">
-                  작업공간 열기 <ArrowIcon />
-                </a>
-                <a className={styles.secondaryButton} href="#workflow">
-                  업무 흐름 보기 <ArrowIcon direction="down" />
-                </a>
+                <a className={styles.primaryButton} href="/workspace">데모 체험하기 <ArrowIcon /></a>
+                <a className={styles.secondaryButton} href="#product">제품 둘러보기 <ArrowIcon direction="down" /></a>
               </div>
             </div>
-            <div className={styles.heroVisual}>
-              <ProductMockup />
-            </div>
+            <ProductPreview />
           </div>
         </section>
 
-        <section className={styles.statementSection} aria-label="제품 원칙">
-          <div className={`${styles.container} ${styles.statementGrid}`}>
-            <p className={styles.statementKicker}>기록의 경계를 선명하게</p>
-            <p className={styles.statementCopy}>
-              필요한 맥락은 한 화면에 모으고,<br />
-              <span>판단의 자리는 간호사에게 남깁니다.</span>
-            </p>
+        <BenefitStrip />
+
+        <section className={styles.editorialSection} aria-labelledby="handover-heading">
+          <div className={`${styles.container} ${styles.editorialGrid}`}>
+            <div className={styles.editorialCopy}>
+              <span className={styles.sectionRule} aria-hidden="true" />
+              <h2 id="handover-heading">확인할 일부터,<br /><span>원본으로.</span></h2>
+              <p>이번 근무의 요청과 검사 상태를 먼저 확인하고, 기록 시각과 출처를 원본에서 다시 대조합니다.</p>
+              <a className={styles.textLink} href="/workspace">근무 준비 화면 열기 <ArrowIcon /></a>
+            </div>
+            <HandoverDiagram />
           </div>
         </section>
 
-        <section className={styles.workflowSection} id="workflow" aria-labelledby="workflow-heading">
-          <div className={styles.container}>
-            <div className={styles.sectionIntro}>
-              <h2 id="workflow-heading">준비에서 기록까지,<br /><span>맥락이 끊기지 않도록.</span></h2>
-              <p>인수인계에서 확인한 항목이 차팅의 출발점이 됩니다. 서로 다른 화면을 오갈 필요 없이, 한 환자의 흐름을 따라갑니다.</p>
+        <section className={`${styles.editorialSection} ${styles.editorialSectionTint}`} aria-labelledby="charting-heading">
+          <div className={`${styles.container} ${styles.editorialGrid} ${styles.editorialGridReverse}`}>
+            <div className={styles.editorialCopy}>
+              <span className={styles.sectionRule} aria-hidden="true" />
+              <h2 id="charting-heading">입력한 사실로,<br /><span>기록을 시작합니다.</span></h2>
+              <p>통증 3점은 S에만 표시됩니다. O/A/P는 간호사가 직접 확인하고 작성한 뒤 명시적으로 추가합니다.</p>
+              <a className={styles.textLink} href="/workspace?module=charting">간호기록 화면 열기 <ArrowIcon /></a>
             </div>
-            <div className={styles.featureGrid}>
-              <article className={styles.featureCard}>
-                <div className={styles.featureCardTop}>
-                  <span className={styles.featureNumber}>01</span>
-                </div>
-                <HandoverPreview />
-                <div className={styles.featureCopy}>
-                  <h3>이번 근무 확인 항목부터<br />원본으로 대조</h3>
-                  <p>이번 근무의 요청과 검사 상태를 먼저 보고, 각 항목을 원본 기록으로 다시 대조합니다.</p>
-                  <a href="/workspace">인수인계 살펴보기 <ArrowIcon /></a>
-                </div>
-              </article>
-              <article className={`${styles.featureCard} ${styles.featureCardCharting}`}>
-                <div className={styles.featureCardTop}>
-                  <span className={styles.featureNumber}>02</span>
-                </div>
-                <ChartingPreview />
-                <div className={styles.featureCopy}>
-                  <h3>관찰 사실을<br />직접 완성하는 차팅</h3>
-                  <p>입력된 사실은 규칙 결과로 구분하고, SOAP의 나머지 항목은 간호사가 직접 확인·작성한 뒤 명시적으로 추가합니다.</p>
-                  <a href="/workspace?module=charting">차팅 살펴보기 <ArrowIcon /></a>
-                </div>
-              </article>
-            </div>
+            <ChartingDiagram />
           </div>
         </section>
 
-        <section className={styles.demoSection} aria-labelledby="demo-heading">
-          <div className={styles.container}>
-            <div className={styles.demoIntro}>
-              <div>
-                <h2 id="demo-heading">화면을 눌러,<br /><span>기록이 이어지는 방식을 보세요.</span></h2>
-              </div>
-              <p>CareNote의 핵심은 자동 판단이 아니라, 근거를 따라가며 사람이 검토할 수 있는 흐름입니다.</p>
-            </div>
-            <div className={styles.demoShell}>
-              <div className={styles.demoRail} role="tablist" aria-label="업무 장면 선택">
-                {(Object.keys(demoContent) as DemoTab[]).map((tab) => {
-                  const isActive = tab === activeTab;
-                  return (
-                    <button
-                      className={isActive ? styles.demoTabActive : styles.demoTab}
-                      key={tab}
-                      id={`demo-tab-${tab}`}
-                      type="button"
-                      role="tab"
-                      aria-selected={isActive}
-                      aria-controls="demo-panel"
-                      onClick={() => setActiveTab(tab)}
-                    >
-                      <span className={styles.demoTabIndex}>{tab === "handover" ? "01" : "02"}</span>
-                      <span>{demoContent[tab].label}</span>
-                      <ArrowIcon />
-                    </button>
-                  );
-                })}
-              </div>
-              <div id="demo-panel" role="tabpanel" aria-labelledby={`demo-tab-${activeTab}`} aria-live="polite">
-                <DemoStory activeTab={activeTab} />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.traceSection} aria-labelledby="trace-heading">
-          <div className={`${styles.container} ${styles.traceGrid}`}>
-            <div className={styles.traceCopy}>
-              <h2 id="trace-heading">확인 항목은 짧게,<br /><span>출처는 가까이.</span></h2>
-              <p>화면에 보이는 한 줄의 확인 항목은 원본 기록과 연결되어 있습니다. 요청과 검사 상태를 먼저 보고, 언제 어디에서 기록되었는지 다시 대조합니다.</p>
-              <div className={styles.tracePrinciples}>
-                <div><span>01</span><strong>확인 항목에서 원본으로</strong><p>요청과 검사 상태에서 해당 기록의 시간과 출처를 확인합니다.</p></div>
-                <div><span>02</span><strong>간호사 검토를 중심에</strong><p>제안은 초안으로 남고, 검토 후 기록 추가는 사용자가 직접 합니다.</p></div>
-              </div>
-            </div>
-            <div className={styles.traceDiagram} aria-label="기록 근거 연결 예시">
-              <div className={styles.diagramPath}>
-                <div className={styles.diagramSource}><span className={styles.diagramNode}>01</span><div><strong>07:40 · 인수인계 요청</strong><span>회진 전 발열 경과 전달</span></div></div>
-                <div className={styles.diagramConnector}><i /><span>원본 대조</span><i /></div>
-                <div className={styles.diagramSummary}><span className={styles.diagramNodeActive}>→</span><div><strong>이번 근무 확인</strong><span>요청·검사 상태를 확인</span></div></div>
-                <div className={styles.diagramConnector}><i /><span>직접 검토</span><i /></div>
-                <div className={styles.diagramSource}><span className={styles.diagramNode}>02</span><div><strong>09:01 · 차팅 초안</strong><span>통증 3점 SOAP 정리</span></div></div>
-              </div>
-              <div className={styles.diagramFooter}><span><i className={styles.footerDot} /> 연결된 사실만 표시</span><span>판단은 사용자에게</span></div>
-            </div>
-          </div>
-        </section>
+        <WorkflowSteps />
 
         <section className={styles.faqSection} id="faq" aria-labelledby="faq-heading">
           <div className={`${styles.container} ${styles.faqGrid}`}>
             <div className={styles.faqIntro}>
-              <h2 id="faq-heading"><span className={styles.faqTitleLine}>CareNote에 대해</span><br /><span>자주 묻는 질문.</span></h2>
+              <span className={styles.sectionRule} aria-hidden="true" />
+              <h2 id="faq-heading">CareNote에 대해<br /><span>자주 묻는 질문.</span></h2>
             </div>
             <div className={styles.faqList}>
               <details open>
@@ -488,7 +437,7 @@ export function LandingPage() {
               </details>
               <details>
                 <summary><span>요약이나 차팅을 AI가 자동으로 결정하나요?</span><span className={styles.summaryIcon} aria-hidden="true" /></summary>
-                <p>아니요. 현재 데모의 확인 항목과 차팅 초안은 결정론적 규칙으로 동작합니다. 선택형 AI 연결은 활성화되어 있지 않으며, 차팅 초안은 간호사가 직접 검토한 뒤에만 저장할 수 있습니다.</p>
+                <p>아니요. 현재 데모의 확인 항목과 차팅 초안은 결정론적 규칙으로 동작합니다. 선택형 AI 연결은 활성화되어 있지 않으며, 미입력 항목을 직접 작성하고 ‘기록 추가’를 눌러야 추가됩니다.</p>
               </details>
               <details>
                 <summary><span>인수인계와 차팅은 어떻게 연결되나요?</span><span className={styles.summaryIcon} aria-hidden="true" /></summary>
@@ -505,11 +454,10 @@ export function LandingPage() {
         <section className={styles.finalCta} aria-labelledby="final-heading">
           <div className={`${styles.container} ${styles.finalCtaInner}`}>
             <div>
-              <h2 id="final-heading">기록의 흐름을<br /><span>직접 확인해보세요.</span></h2>
+              <span className={styles.sectionRule} aria-hidden="true" />
+              <h2 id="final-heading">다음 근무를 위한 기록의 흐름,<br /><span>직접 확인해보세요.</span></h2>
             </div>
-            <div className={styles.finalCtaAction}>
-              <a className={styles.primaryButton} href="/workspace">작업공간 열기 <ArrowIcon /></a>
-            </div>
+            <a className={styles.primaryButton} href="/workspace">데모 체험하기 <ArrowIcon /></a>
           </div>
         </section>
       </main>
